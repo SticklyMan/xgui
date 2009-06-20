@@ -17,7 +17,7 @@ function xgui_tab_admin()
 	xgad_admin_list = vgui.Create( "DListView" )
 	xgad_admin_list:SetParent( xgui_admin )
 	xgad_admin_list:SetPos( 10,30 )
-	xgad_admin_list:SetSize( 280,250 )
+	xgad_admin_list:SetSize( 280,265 )
 	xgad_admin_list:AddColumn( "Name" )
 	xgad_admin_list:AddColumn( "Groups" )
 	xgad_admin_list:AddColumn( "Status" )
@@ -25,7 +25,7 @@ function xgui_tab_admin()
 	local xgad_player_list = vgui.Create( "DListView" )
 	xgad_player_list:SetParent( xgui_admin )
 	xgad_player_list:SetPos( 300,30 )
-	xgad_player_list:SetSize( 280,250 )
+	xgad_player_list:SetSize( 280,265 )
 	xgad_player_list:AddColumn( "Name" )
 	xgad_player_list:AddColumn( "Groups" )
 	
@@ -37,7 +37,7 @@ function xgui_tab_admin()
 -----------
 	local xgad_pm = vgui.Create( "DButton", xgui_admin )
 	xgad_pm:SetSize( 280,20 )
-	xgad_pm:SetPos( 10, 280 )
+	xgad_pm:SetPos( 10, 295 )
 	xgad_pm:SetText( "Send online admins a private message..." )
 	xgad_pm.DoClick = function()
 				
@@ -63,7 +63,7 @@ function xgui_tab_admin()
 -----------
 	local xgad_dm_button = vgui.Create( "DButton", xgui_admin )
 	xgad_dm_button:SetSize( 280, 20 )
-	xgad_dm_button:SetPos( 300, 280 )
+	xgad_dm_button:SetPos( 300, 340 )
 	xgad_dm_button:SetText( "Display a message on the screen..." )
 	xgad_dm_button.DoClick = function()
 				
@@ -83,12 +83,12 @@ function xgui_tab_admin()
 			RunConsoleCommand( "ulx", "csay", unpack( string.Explode(" ", xgui_dm_text:GetValue() ) ) )
 			xgad_dm:Remove()
 				
-		end	
+		end
 	end
 ------------
 	local xgad_tm_button = vgui.Create( "DButton", xgui_admin )
 	xgad_tm_button:SetSize( 280, 20 )
-	xgad_tm_button:SetPos( 300, 300 )
+	xgad_tm_button:SetPos( 10, 315 )
 	xgad_tm_button:SetText( "Send a text message to all users..." )
 	xgad_tm_button.DoClick = function()
 				
@@ -108,13 +108,13 @@ function xgui_tab_admin()
 			RunConsoleCommand( "ulx", "tsay", unpack( string.Explode(" ", xgad_tm_text:GetValue() ) ) )
 			xgad_tm:Remove()
 				
-		end	
-	end	
+		end
+	end
 ------------
 	local xgad_lua_button = vgui.Create( "DButton", xgui_admin )
 	xgad_lua_button:SetSize( 280, 20 )
-	xgad_lua_button:SetPos( 10, 300 )
-	xgad_lua_button:SetText( "Run a Lua command on the server..." )
+	xgad_lua_button:SetPos( 300, 295 )
+	xgad_lua_button:SetText( "Promote selected player to admin..." )
 	xgad_lua_button.DoClick = function()
 				
 		local xgad_lua = vgui.Create( "DFrame" )
@@ -133,12 +133,12 @@ function xgui_tab_admin()
 			RunConsoleCommand( "ulx", "luarun", unpack( string.Explode(" ", xgad_lua_text:GetValue() ) ) )
 			xgad_lua:Remove()
 				
-		end	
-	end	
+		end
+	end
 ------------
 	local xgad_rcon_button = vgui.Create( "DButton", xgui_admin )
 	xgad_rcon_button:SetSize( 280, 20 )
-	xgad_rcon_button:SetPos( 10, 320 )
+	xgad_rcon_button:SetPos( 10, 340 )
 	xgad_rcon_button:SetText( "Send a console command to the server..." )
 	xgad_rcon_button.DoClick = function()
 				
@@ -162,9 +162,9 @@ function xgui_tab_admin()
 	end	
 ------------
 	local xgad_add_button = vgui.Create( "DButton", xgui_admin )
-	xgad_add_button:SetPos( 300,320 )
+	xgad_add_button:SetPos( 300,315 )
 	xgad_add_button:SetSize( 280, 20 )
-	xgad_add_button:SetText( "Add selected or other player as admin..." )
+	xgad_add_button:SetText( "Add Admin by SteamID..." )
 	xgad_add_button.DoClick = function()
 	
 		local xgad_add_admin = vgui.Create( "DFrame" )
@@ -218,7 +218,7 @@ function xgui_tab_admin()
 		xgad_add_ok:SetSize( 50, 20 )
 		xgad_add_ok:SetText( "OK" )
 		xgad_add_ok.DoClick = function()
-		
+			
 		end
 	end	
 ------------

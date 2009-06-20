@@ -3,7 +3,7 @@
 --Table storing the functions to show modules
 xgui_modules={}
 
---Creates instance to avoid  returning nil problems later
+--Creates instance to avoid returning nil problems later
 xgui_base = vgui.Create( "DPropertySheet" )
 xgui_base:Remove()
 Msg( "\n///////////////////////////////////\n" )
@@ -44,7 +44,7 @@ end
 
 
 function xgui_hide()
-		--Easiest way to find the index of the active tab
+		--Easiest way to find the index of the active tab, since just using GetActiveTab causes strange problems
 		for x,obj in ipairs(xgui_base.Items) do  
 			if obj.Tab == xgui_base:GetActiveTab() then  
 				xgui_lasttab = x
@@ -57,7 +57,7 @@ function xgui_hide()
 end
 
 function xgui_toggle()
-	if !xgui_base:IsVisible() || !xgui_base then
+	if !xgui_base:IsVisible() then
 		xgui_show()
 	else
 		xgui_hide()
