@@ -116,23 +116,44 @@ function xgui_tab_admin()
 	xgad_lua_button:SetPos( 300, 295 )
 	xgad_lua_button:SetText( "Promote selected player to admin..." )
 	xgad_lua_button.DoClick = function()
-				
-		local xgad_lua = vgui.Create( "DFrame" )
-		xgad_lua:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
-		xgad_lua:SetSize( 400, 60 )
-		xgad_lua:SetTitle( "Run a Lua command on the server" )
-		xgad_lua:MakePopup()
-		
-		local xgad_lua_text = vgui.Create( "DTextEntry", xgad_lua )
-		xgad_lua_text:SetPos( 10, 30 )
-		xgad_lua_text:SetTall( 20 )
-		xgad_lua_text:SetWide( 380 )
-		xgad_lua_text:SetEnterAllowed( true )
-		xgad_lua_text.OnEnter = function()
+		if xgad_player_list:GetSelectedLine() ~= nil then		
+			local xgad_add_admin = vgui.Create( "DFrame" )
+			xgad_add_admin:SetPos( ScrW()/2 - 100, ScrH()/2 - 50 )
+			xgad_add_admin:SetSize( 200, 100 )
+			xgad_add_admin:SetTitle( "Promote " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
+			xgad_add_admin:MakePopup()
+			xgad_add_admin.PaintOver = function()
+				surface.SetTextColor( 0, 0, 0, 255 )
+				surface.SetTextPos( 10, 30 )
+				surface.DrawText( "Group" )
+				surface.SetTextPos( 10, 53 )
+				surface.DrawText( "Immunity" )
+			end
 			
-			RunConsoleCommand( "ulx", "luarun", unpack( string.Explode(" ", xgad_lua_text:GetValue() ) ) )
-			xgad_lua:Remove()
-				
+			local xgad_add_group = vgui.Create( "DButton", xgad_add_admin )
+			xgad_add_group:SetPos( 65,27 )
+			xgad_add_group:SetSize( 125,20 )
+			xgad_add_group:SetText( "Select..." )
+			xgad_add_group.DoClick = function()
+				xgad_list_groups = DermaMenu()
+				xgad_list_groups:SetParent( xgad_add_admin )
+				for k, v in pairs( ULib.ucl.groups ) do
+					xgad_list_groups:AddOption( k, function() xgad_add_group:SetText(k) end )
+				end
+				xgad_list_groups:Open()
+			end
+
+			local xgad_add_immunity = vgui.Create( "DCheckBox", xgad_add_admin )
+			xgad_add_immunity:SetPos( 65, 55 )
+			
+			local xgad_add_ok = vgui.Create( "DButton", xgad_add_admin )
+			xgad_add_ok:SetPos( 75, 73 )
+			xgad_add_ok:SetSize( 50, 20 )
+			xgad_add_ok:SetText( "OK" )
+			xgad_add_ok.DoClick = function()
+				RunConsoleCommand( "ulx", "adduser", xgad_player_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_add_immunity:GetValue() )
+				xgad_add_admin:Remove()
+			end
 		end
 	end
 ------------
@@ -168,7 +189,7 @@ function xgui_tab_admin()
 	xgad_add_button.DoClick = function()
 	
 		local xgad_add_admin = vgui.Create( "DFrame" )
-		xgad_add_admin:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
+		xgad_add_admin:SetPos( ScrW()/2 - 100, ScrH()/2 - 75 )
 		xgad_add_admin:SetSize( 200, 150 )
 		xgad_add_admin:SetTitle( "Add an Admin" )
 		xgad_add_admin:MakePopup()
@@ -181,7 +202,7 @@ function xgui_tab_admin()
 			surface.SetTextPos( 10, 76 )
 			surface.DrawText( "Group" )
 			surface.SetTextPos( 10, 99 )
-			surface.DrawText( "Password" )
+			surface.DrawText( "Immunity" )
 		end
 		
 		local xgad_add_group = vgui.Create( "DButton", xgad_add_admin )
@@ -191,7 +212,6 @@ function xgui_tab_admin()
 		xgad_add_group.DoClick = function()
 			xgad_list_groups = DermaMenu()
 			xgad_list_groups:SetParent( xgad_add_admin )
-			xgad_list_groups:SetPos( 475,247 )
 			for k, v in pairs( ULib.ucl.groups ) do
 				xgad_list_groups:AddOption( k, function() xgad_add_group:SetText(k) end )
 			end
@@ -208,17 +228,16 @@ function xgui_tab_admin()
 		xgad_add_userID:SetTall( 20 )
 		xgad_add_userID:SetWide( 125 )
 
-		local xgad_add_pw = vgui.Create( "DTextEntry", xgad_add_admin )
-		xgad_add_pw:SetPos( 65, 96 )
-		xgad_add_pw:SetTall( 20 )
-		xgad_add_pw:SetWide( 125 )
+		local xgad_add_immunity = vgui.Create( "DCheckBox", xgad_add_admin )
+		xgad_add_immunity:SetPos( 65, 100 )
 		
 		local xgad_add_ok = vgui.Create( "DButton", xgad_add_admin )
 		xgad_add_ok:SetPos( 75, 123 )
 		xgad_add_ok:SetSize( 50, 20 )
 		xgad_add_ok:SetText( "OK" )
 		xgad_add_ok.DoClick = function()
-			
+			RunConsoleCommand( "ulx", "adduserid", xgad_add_name:GetValue(), xgad_add_group:GetValue(), xgad_add_userID:GetValue(), xgad_add_immunity:GetValue() )
+			xgad_add_admin:Remove()
 		end
 	end	
 ------------

@@ -8,14 +8,13 @@ local function getAdmins( ply )
 		umsg.String( k )
 		umsg.String( table.concat( v.groups ) )
 		for a, b in pairs( player.GetAll() ) do
-			print( "Searching Player-" .. b:SteamID() )
-			print( "Looking For-" .. v.id )
 			if b:SteamID() == v.id then
-					status = "Online"
-				else
-					status = "Unavailable"
-				end
+				status = "Online"
+				break
+			else
+				status = "Unavailable"
 			end
+		end
 		umsg.String( status )
 		umsg.End()
 	end
