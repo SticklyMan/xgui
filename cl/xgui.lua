@@ -15,7 +15,6 @@ local xgui_module_files = file.FindInLua( "ulx/modules/cl/gui_modules/*.lua" )
 
 for _, file in ipairs( xgui_module_files ) do
 	include( "ulx/modules/cl/gui_modules/" .. file )
-	AddCSLuaFile( "ulx/modules/cl/gui_modules/" .. file )
 	Msg( "//Added module: " .. file .. string.rep( " ", 17 - file:len() ) .. "//\n" )
 end
 
