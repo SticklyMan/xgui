@@ -63,6 +63,11 @@ function xgui_toggle()
 	end
 end
 
+function xgui_refresh()
+	xgui_hide()
+	xgui_show()
+end
+
 concommand.Add( "xgui_show", xgui_show )
 concommand.Add( "xgui_hide", xgui_hide )
 concommand.Add( "+xgui", xgui_show )

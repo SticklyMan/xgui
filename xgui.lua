@@ -19,17 +19,19 @@ local function getAdmins( ply )
 	local status
 	for k, v in pairs( ULib.ucl.users ) do
 		umsg.Start( "xgui_admin", ply )
-		umsg.String( k )
-		umsg.String( table.concat( v.groups ) )
 		for a, b in pairs( player.GetAll() ) do
 			if b:SteamID() == v.id then
 				status = "Online"
+				umsg.String( b:Nick() )
 				break
 			else
 				status = "Unavailable"
+				umsg.String( k )
 			end
 		end
+		umsg.String( table.concat( v.groups ) )
 		umsg.String( status )
+		umsg.String( v.id )
 		umsg.End()
 	end
 end

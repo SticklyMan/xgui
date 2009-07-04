@@ -9,10 +9,11 @@ local function xgui_tab_player()
 		surface.DrawRect( 0, 0, 590, 390 )
 	end
 -----------
-	local xgpl_player_list = vgui.Create( "DListView" )
+	xgpl_player_list = vgui.Create( "DListView" )
 	xgpl_player_list:SetParent( xgui_player )
 	xgpl_player_list:SetPos( 10,30 )
 	xgpl_player_list:SetSize( 200,300 )
+	xgpl_player_list:SetMultiSelect( false )
 	xgpl_player_list:AddColumn( "Name" )
 	xgpl_player_list:AddColumn( "Groups" )
 -----------
@@ -41,15 +42,14 @@ local function xgui_tab_player()
 					
 				RunConsoleCommand( "ulx", "psay", xgpl_temp_player, unpack( string.Explode( " ", xgui_pm_text:GetValue() ) ) )
 				xgui_pm:Remove()
-					
 			end
 		end
 	end
 -----------
-	for k, v in pairs( player.GetAll() ) do
+	xgpl_player_list:Clear()
+	for k, v in pairs( player.GetAll() ) do	
 		xgpl_player_list:AddLine( v:Nick(), table.concat( v:GetGroups() ) )
 	end
-
 	xgui_base:AddSheet( "Players", xgui_player, "gui/silkicons/group", false, false )
 end
 

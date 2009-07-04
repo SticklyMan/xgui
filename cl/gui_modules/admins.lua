@@ -14,20 +14,30 @@ function xgui_tab_admin()
 		surface.DrawText( "Non-Admin Players" )
 	end
 -----------
-	xgad_admin_list = vgui.Create( "DListView" )
-	xgad_admin_list:SetParent( xgui_admin )
+	xgad_admin_list = vgui.Create( "DListView", xgui_admin )
 	xgad_admin_list:SetPos( 10,30 )
 	xgad_admin_list:SetSize( 280,265 )
+	xgad_admin_list:SetMultiSelect( false )
 	xgad_admin_list:AddColumn( "Name" )
 	xgad_admin_list:AddColumn( "Groups" )
 	xgad_admin_list:AddColumn( "Status" )
+	xgad_admin_list.OnRowSelected = function()
+		
+		xgad_player_list:ClearSelection()
+		
+	end
 -----------
-	local xgad_player_list = vgui.Create( "DListView" )
-	xgad_player_list:SetParent( xgui_admin )
+	xgad_player_list = vgui.Create( "DListView", xgui_admin )
 	xgad_player_list:SetPos( 300,30 )
 	xgad_player_list:SetSize( 280,265 )
+	xgad_player_list:SetMultiSelect( false )
 	xgad_player_list:AddColumn( "Name" )
 	xgad_player_list:AddColumn( "Groups" )
+	xgad_player_list.OnRowSelected = function()
+	
+		xgad_admin_list:ClearSelection()
+		
+	end
 	
 	for k, v in pairs( player.GetAll() ) do
 		if not v:IsAdmin() then
@@ -63,13 +73,12 @@ function xgui_tab_admin()
 -----------
 	local xgad_dm_button = vgui.Create( "DButton", xgui_admin )
 	xgad_dm_button:SetSize( 280, 20 )
-	xgad_dm_button:SetPos( 300, 340 )
+	xgad_dm_button:SetPos( 10, 340 )
 	xgad_dm_button:SetText( "Display a message on the screen..." )
 	xgad_dm_button.DoClick = function()
 				
 		local xgad_dm = vgui.Create( "DFrame" )
 		xgad_dm:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
-		xgad_dm:SetSize( 400, 60 )
 		xgad_dm:SetTitle( "Display a message on the screen" )
 		xgad_dm:MakePopup()
 		
@@ -114,13 +123,18 @@ function xgui_tab_admin()
 	local xgad_lua_button = vgui.Create( "DButton", xgui_admin )
 	xgad_lua_button:SetSize( 280, 20 )
 	xgad_lua_button:SetPos( 300, 295 )
-	xgad_lua_button:SetText( "Promote selected player to admin..." )
+	xgad_lua_button:SetText( "Assign selected player to group..." )
 	xgad_lua_button.DoClick = function()
-		if xgad_player_list:GetSelectedLine() ~= nil then		
+		if xgad_player_list:GetSelectedLine() ~= nil or xgad_admin_list:GetSelectedLine() ~= nil then
+			
 			local xgad_add_admin = vgui.Create( "DFrame" )
 			xgad_add_admin:SetPos( ScrW()/2 - 100, ScrH()/2 - 50 )
 			xgad_add_admin:SetSize( 200, 100 )
-			xgad_add_admin:SetTitle( "Promote " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
+			if xgad_player_list:GetSelectedLine() ~= nil then
+				xgad_add_admin:SetTitle( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
+			else
+				xgad_add_admin:SetTitle( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
+			end
 			xgad_add_admin:MakePopup()
 			xgad_add_admin.PaintOver = function()
 				surface.SetTextColor( 0, 0, 0, 255 )
@@ -151,15 +165,33 @@ function xgui_tab_admin()
 			xgad_add_ok:SetSize( 50, 20 )
 			xgad_add_ok:SetText( "OK" )
 			xgad_add_ok.DoClick = function()
-				RunConsoleCommand( "ulx", "adduser", xgad_player_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_add_immunity:GetValue() )
-				xgad_add_admin:Remove()
+			if xgad_player_list:GetSelectedLine() ~= nil then
+				if xgad_add_group:GetValue() ~= "user" then
+					RunConsoleCommand( "ulx", "adduser", xgad_player_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_add_immunity:GetValue() )
+				else
+					RunConsoleCommand( "ulx", "removeuser", xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
+				end
+			else
+				if xgad_add_group:GetValue() ~= "user" then
+					if xgad_admin_list:GetSelected()[1]:GetColumnText(3) == "Online" then
+						RunConsoleCommand( "ulx", "adduser", xgad_admin_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_add_immunity:GetValue() )
+					else
+						RunConsoleCommand( "ulx", "adduserid", xgad_admin_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_admin_list:GetSelected()[1]:GetColumnText(4), xgad_add_immunity:GetValue() )
+					end
+				else
+				
+					RunConsoleCommand( "ulx", "removeuser", xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
+				end
+			end
+			xgad_add_admin:Remove()
+			xgui_refresh()
 			end
 		end
 	end
 ------------
 	local xgad_rcon_button = vgui.Create( "DButton", xgui_admin )
 	xgad_rcon_button:SetSize( 280, 20 )
-	xgad_rcon_button:SetPos( 10, 340 )
+	xgad_rcon_button:SetPos( 300, 340 )
 	xgad_rcon_button:SetText( "Send a console command to the server..." )
 	xgad_rcon_button.DoClick = function()
 				
@@ -185,7 +217,7 @@ function xgui_tab_admin()
 	local xgad_add_button = vgui.Create( "DButton", xgui_admin )
 	xgad_add_button:SetPos( 300,315 )
 	xgad_add_button:SetSize( 280, 20 )
-	xgad_add_button:SetText( "Add Admin by SteamID..." )
+	xgad_add_button:SetText( "Assign Player's Group by SteamID..." )
 	xgad_add_button.DoClick = function()
 	
 		local xgad_add_admin = vgui.Create( "DFrame" )
@@ -236,8 +268,13 @@ function xgui_tab_admin()
 		xgad_add_ok:SetSize( 50, 20 )
 		xgad_add_ok:SetText( "OK" )
 		xgad_add_ok.DoClick = function()
-			RunConsoleCommand( "ulx", "adduserid", xgad_add_name:GetValue(), xgad_add_group:GetValue(), xgad_add_userID:GetValue(), xgad_add_immunity:GetValue() )
+			if xgad_add_group:GetValue() ~= "user" then
+				RunConsoleCommand( "ulx", "adduserid", xgad_add_name:GetValue(), xgad_add_group:GetValue(), xgad_add_userID:GetValue(), xgad_add_immunity:GetValue() )
+			else
+				RunConsoleCommand( "ulx", "removeuser", xgad_add_name:GetValue() )
+			end
 			xgad_add_admin:Remove()
+			xgui_refresh()
 		end
 	end	
 ------------
@@ -247,7 +284,7 @@ end
 
 local function xgui_admin_RecieveAdmin( um )
 	if xgui_base:IsVisible() then
-		xgad_admin_list:AddLine( um:ReadString(), um:ReadString(), um:ReadString() )
+		xgad_admin_list:AddLine( um:ReadString(), um:ReadString(), um:ReadString(), um:ReadString() )
 	end
 end
 usermessage.Hook( "xgui_admin", xgui_admin_RecieveAdmin )
