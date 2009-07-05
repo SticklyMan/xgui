@@ -34,8 +34,6 @@ function xgui_show()
 		ShowModule()
 	end
 	
-	RunConsoleCommand( "xgui_requestadmins" )
-	
 	if xgui_lasttab ~= nil then  
 		xgui_base:SetActiveTab( xgui_base.Items[xgui_lasttab]["Tab"] )
 	end 

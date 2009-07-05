@@ -28,8 +28,8 @@ local function xgui_tab_player()
 			local xgpl_temp_player = xgpl_player_list:GetSelected()[1]:GetColumnText(1)
 			
 			local xgui_pm = vgui.Create( "DFrame" )
-			xgui_pm:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
 			xgui_pm:SetSize( 400, 60 )
+			xgui_pm:Center()
 			xgui_pm:SetTitle( "Send a message to " .. xgpl_temp_player )
 			xgui_pm:MakePopup()
 			

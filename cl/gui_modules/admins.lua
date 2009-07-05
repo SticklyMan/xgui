@@ -52,8 +52,8 @@ function xgui_tab_admin()
 	xgad_pm.DoClick = function()
 				
 		local xgui_pm = vgui.Create( "DFrame" )
-		xgui_pm:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
 		xgui_pm:SetSize( 400, 60 )
+		xgui_pm:Center()
 		xgui_pm:SetTitle( "Send a message to online admins" )
 		xgui_pm:MakePopup()
 		
@@ -78,7 +78,8 @@ function xgui_tab_admin()
 	xgad_dm_button.DoClick = function()
 				
 		local xgad_dm = vgui.Create( "DFrame" )
-		xgad_dm:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
+		xgad_dm:SetSize( 400, 60 )
+		xgad_dm:Center()
 		xgad_dm:SetTitle( "Display a message on the screen" )
 		xgad_dm:MakePopup()
 		
@@ -102,8 +103,8 @@ function xgui_tab_admin()
 	xgad_tm_button.DoClick = function()
 				
 		local xgad_tm = vgui.Create( "DFrame" )
-		xgad_tm:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
 		xgad_tm:SetSize( 400, 60 )
+		xgad_tm:Center()
 		xgad_tm:SetTitle( "Send a text message to all users" )
 		xgad_tm:MakePopup()
 		
@@ -128,8 +129,8 @@ function xgui_tab_admin()
 		if xgad_player_list:GetSelectedLine() ~= nil or xgad_admin_list:GetSelectedLine() ~= nil then
 			
 			local xgad_add_admin = vgui.Create( "DFrame" )
-			xgad_add_admin:SetPos( ScrW()/2 - 100, ScrH()/2 - 50 )
 			xgad_add_admin:SetSize( 200, 100 )
+			xgad_add_admin:Center()
 			if xgad_player_list:GetSelectedLine() ~= nil then
 				xgad_add_admin:SetTitle( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
 			else
@@ -196,8 +197,8 @@ function xgui_tab_admin()
 	xgad_rcon_button.DoClick = function()
 				
 		local xgad_tm = vgui.Create( "DFrame" )
-		xgad_tm:SetPos( ScrW()/2 - 200, ScrH()/2 - 30 )
 		xgad_tm:SetSize( 400, 60 )
+		xgad_tm:Center()
 		xgad_tm:SetTitle( "Send a console command to the server" )
 		xgad_tm:MakePopup()
 		
@@ -221,8 +222,8 @@ function xgui_tab_admin()
 	xgad_add_button.DoClick = function()
 	
 		local xgad_add_admin = vgui.Create( "DFrame" )
-		xgad_add_admin:SetPos( ScrW()/2 - 100, ScrH()/2 - 75 )
 		xgad_add_admin:SetSize( 200, 150 )
+		xgad_add_admin:Center()
 		xgad_add_admin:SetTitle( "Add an Admin" )
 		xgad_add_admin:MakePopup()
 		xgad_add_admin.PaintOver = function()
@@ -279,6 +280,7 @@ function xgui_tab_admin()
 	end	
 ------------
 
+	RunConsoleCommand( "xgui_requestadmins" )
 	xgui_base:AddSheet( "Admins", xgui_admin, "gui/silkicons/user", false, false )
 end
 

@@ -36,3 +36,18 @@ local function getAdmins( ply )
 	end
 end
 ULib.concommand( "xgui_requestadmins", getAdmins )
+
+local function getGamemodes( ply )
+	umsg.Start( "xgui_gamemode_clr", ply)
+	umsg.End()
+
+	local dirs = file.FindDir( "../gamemodes/*" )
+		for _, dir in ipairs( dirs ) do
+			if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then
+				umsg.Start( "xgui_gamemode_rcv", ply )
+					umsg.String( dir )
+				umsg.End()
+			end
+		end
+end
+ULib.concommand( "xgui_requestgamemodes", getGamemodes )
