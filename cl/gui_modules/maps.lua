@@ -1,9 +1,14 @@
 --Maps module for ULX GUI -- by Stickly Man!
 --Lists maps on server, allows for map voting, changing levels, etc.
-local xgmp_gamemodes = {}
-local xgmp_cur_map = "No Map Selected"
+
+local xgmp_cur_map
+local xgmp_gamemodes
 
 function xgui_tab_maps()
+	xgmp_cur_map = "No Map Selected"
+	xgmp_gamemodes = {}
+	table.insert( xgmp_gamemodes, "<default>" )
+	
 	xgui_maps = vgui.Create( "DPanel" )
 -----------
 	xgui_maps.Paint = function()
@@ -35,10 +40,7 @@ function xgui_tab_maps()
 	xgmp_maps_disp:SetImage( "maps/noicon.vmt" )
 	xgmp_maps_disp:SetSize( 192, 192 )
 -----------
-	local xgmp_select_gamemode = vgui.Create( "DButton", xgui_maps ) -- having issues, will fix later
-	xgmp_select_gamemode:SetPos( 10,340 )
-	xgmp_select_gamemode:SetSize( 175,20 )
-	xgmp_select_gamemode:SetText( "<default>" )
+	local xgmp_select_gamemode = x_makebutton( "<default>", 10, 340, 175, 20, xgui_maps )
 	xgmp_select_gamemode.DoClick = function()
 		xgmp_list_gamemodes = DermaMenu()
 		xgmp_list_gamemodes:SetParent( xgui_maps )
@@ -49,20 +51,14 @@ function xgui_tab_maps()
 		xgmp_list_gamemodes:Open()
 	end
 -----------
-	local xgmp_votemap1 = vgui.Create( "DButton", xgui_maps )
-	xgmp_votemap1:SetSize( 192, 20 )
-	xgmp_votemap1:SetPos( 195, 245 )
-	xgmp_votemap1:SetText( "Vote to play this map!" )
+	local xgmp_votemap1 = x_makebutton( "Vote to play this map!", 195, 245, 192, 20, xgui_maps )
 	xgmp_votemap1.DoClick = function()
 		if xgmp_cur_map ~= "No Map Selected" then
 			RunConsoleCommand( "ulx", "votemap", xgmp_cur_map )
 		end
 	end
 ------------
-	local xgmp_votemap2 = vgui.Create( "DButton", xgui_maps )
-	xgmp_votemap2:SetSize( 192, 20 )
-	xgmp_votemap2:SetPos( 195, 270 )
-	xgmp_votemap2:SetText( "Server-wide vote of selected map(s)" )
+	local xgmp_votemap2 = x_makebutton( "Server-wide vote of selected map(s)", 195, 270, 192, 20, xgui_maps )
 	xgmp_votemap2.DoClick = function()
 		if xgmp_cur_map ~= "No Map Selected" then
 			local xgmp_temp = {}
@@ -73,10 +69,7 @@ function xgui_tab_maps()
 		end
 	end
 ------------
-	local xgmp_changemap = vgui.Create( "DButton", xgui_maps )
-	xgmp_changemap:SetSize( 192, 20 )
-	xgmp_changemap:SetPos( 195, 295 )
-	xgmp_changemap:SetText( "Force changelevel to this map" )
+	local xgmp_changemap = x_makebutton( "Force changelevel to this map", 195, 295, 192, 20, xgui_maps )
 	xgmp_changemap.DoClick = function()
 		if xgmp_cur_map ~= "No Map Selected" then
 			if xgmp_select_gamemode:GetValue() == "<default>" then
@@ -87,14 +80,25 @@ function xgui_tab_maps()
 		end
 	end
 ------------
-	local xgmp_veto = vgui.Create( "DButton", xgui_maps )
-	xgmp_veto:SetSize( 192, 20 )
-	xgmp_veto:SetPos( 195, 320 )
-	xgmp_veto:SetText( "Veto a map vote" )
+	local xgmp_veto = x_makebutton( "Veto a map vote", 195, 320, 192, 20, xgui_maps )
 	xgmp_veto.DoClick = function()
 		RunConsoleCommand( "ulx", "veto" )
 	end
 ------------
+	local xgmp_settings_votemap = x_makepanelist( 395, 30, 185, 50, 5, 5, xgui_maps )
+	
+	xgmp_settings_votemap:AddItem( x_makecheckbox( 0, 0, "Enable Player Votemaps", "ulx_votemapEnabled" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Minimum Time", 0, 300, 0, "ulx_votemapMintime", "Time in minutes after a map change before a votemap can be started" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Wait Time", 0, 60, 1, "ulx_votemapWaitTime", "Time in minutes after voting for a map before you can change your vote" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Success Ratio", 0, 1, 2, "ulx_votemapSuccessratio", "Ratio of votes needed to consider a vote successful.  Votes for map / Total players" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Minimum Votes", 0, 10, 0, "ulx_votemapMinvotes", "Minimum number of votes needed to change a level" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Veto Time", 0, 300, 0, "ulx_votemapVetotime", "Time in seconds after a map change before an admin can veto the mapchange" ) )
+	xgmp_settings_votemap:AddItem( x_makelabel( "Server-wide Votemap Settings" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Success Ratio", 0, 1, 2, "ulx_votemap2Successratio", "Ratio of votes needed to consider a vote successful.  Votes for map / Total players" ) )
+	xgmp_settings_votemap:AddItem( x_makeslider( "Minimum Votes", 0, 10, 0, "ulx_votemap2Minvotes", "Minimum number of votes needed to change a level" ) )
+	
+------------
+
 	for _, v in pairs( ulx.maps ) do
 		//Filters out any pointless levels
 		if ( !string.find( v, "background" ) && !string.find( v, "^test_" ) && !string.find( v, "^styleguide" ) && !string.find( v, "^devtest" ) && !string.find( v, "intro" ) ) then 
@@ -110,11 +114,5 @@ local function xgui_gamemode_recieve( um )
 	table.insert( xgmp_gamemodes, um:ReadString() )
 end
 usermessage.Hook( "xgui_gamemode_rcv", xgui_gamemode_recieve )
-
-local function xgui_gamemode_clear( um )
-	xgmp_gamemodes = {}
-	table.insert( xgmp_gamemodes, "<default>" )
-end
-usermessage.Hook( "xgui_gamemode_clr", xgui_gamemode_clear )
 
 xgui_modules[3]=xgui_tab_maps

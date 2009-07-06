@@ -15,6 +15,8 @@ end
 Msg( "//   GUI Modules Added!      //\n" )
 Msg( "///////////////////////////////\n" )
 
+AddCSLuaFile( "ulx/modules/cl/xgui_helpers.lua" )
+
 local function getAdmins( ply )
 	local status
 	for k, v in pairs( ULib.ucl.users ) do
@@ -38,9 +40,6 @@ end
 ULib.concommand( "xgui_requestadmins", getAdmins )
 
 local function getGamemodes( ply )
-	umsg.Start( "xgui_gamemode_clr", ply)
-	umsg.End()
-
 	local dirs = file.FindDir( "../gamemodes/*" )
 		for _, dir in ipairs( dirs ) do
 			if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then

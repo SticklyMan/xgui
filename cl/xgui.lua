@@ -21,6 +21,7 @@ end
 Msg( "//Modules Loaded!                //\n" )
 Msg( "///////////////////////////////////\n\n" )
 
+include ( "ulx/modules/cl/xgui_helpers.lua" )
 
 function xgui_show()
 	gui.EnableScreenClicker( true )

@@ -45,18 +45,10 @@ function xgui_tab_admin()
 		end
 	end
 -----------
-	local xgad_pm = vgui.Create( "DButton", xgui_admin )
-	xgad_pm:SetSize( 280,20 )
-	xgad_pm:SetPos( 10, 295 )
-	xgad_pm:SetText( "Send online admins a private message..." )
+	local xgad_pm = x_makebutton( "Send online admins a private message...", 10, 295, 280, 20, xgui_admin )
 	xgad_pm.DoClick = function()
 				
-		local xgui_pm = vgui.Create( "DFrame" )
-		xgui_pm:SetSize( 400, 60 )
-		xgui_pm:Center()
-		xgui_pm:SetTitle( "Send a message to online admins" )
-		xgui_pm:MakePopup()
-		
+		local xgui_pm = x_makeframepopup( "Send a message to online admins", 400, 60 )
 		local xgui_pm_text = vgui.Create( "DTextEntry", xgui_pm )
 		xgui_pm_text:SetPos( 10, 30 )
 		xgui_pm_text:SetTall( 20 )
@@ -71,18 +63,10 @@ function xgui_tab_admin()
 				
 	end	
 -----------
-	local xgad_dm_button = vgui.Create( "DButton", xgui_admin )
-	xgad_dm_button:SetSize( 280, 20 )
-	xgad_dm_button:SetPos( 10, 340 )
-	xgad_dm_button:SetText( "Display a message on the screen..." )
+	local xgad_dm_button = x_makebutton( "Display a message on the screen...", 10, 340, 280, 20, xgui_admin )
 	xgad_dm_button.DoClick = function()
 				
-		local xgad_dm = vgui.Create( "DFrame" )
-		xgad_dm:SetSize( 400, 60 )
-		xgad_dm:Center()
-		xgad_dm:SetTitle( "Display a message on the screen" )
-		xgad_dm:MakePopup()
-		
+		local xgad_dm = x_makeframepopup( "Display a message on the screen", 400, 60 )
 		local xgui_dm_text = vgui.Create( "DTextEntry", xgad_dm )
 		xgui_dm_text:SetPos( 10, 30 )
 		xgui_dm_text:SetTall( 20 )
@@ -96,18 +80,10 @@ function xgui_tab_admin()
 		end
 	end
 ------------
-	local xgad_tm_button = vgui.Create( "DButton", xgui_admin )
-	xgad_tm_button:SetSize( 280, 20 )
-	xgad_tm_button:SetPos( 10, 315 )
-	xgad_tm_button:SetText( "Send a text message to all users..." )
+	local xgad_tm_button = x_makebutton( "Send a text message to all users...", 10, 315, 280, 20, xgui_admin )
 	xgad_tm_button.DoClick = function()
 				
-		local xgad_tm = vgui.Create( "DFrame" )
-		xgad_tm:SetSize( 400, 60 )
-		xgad_tm:Center()
-		xgad_tm:SetTitle( "Send a text message to all users" )
-		xgad_tm:MakePopup()
-		
+		local xgad_tm = x_makeframepopup( "Send a text message to all users", 400, 60 )
 		local xgad_tm_text = vgui.Create( "DTextEntry", xgad_tm )
 		xgad_tm_text:SetPos( 10, 30 )
 		xgad_tm_text:SetTall( 20 )
@@ -121,22 +97,14 @@ function xgui_tab_admin()
 		end
 	end
 ------------
-	local xgad_lua_button = vgui.Create( "DButton", xgui_admin )
-	xgad_lua_button:SetSize( 280, 20 )
-	xgad_lua_button:SetPos( 300, 295 )
-	xgad_lua_button:SetText( "Assign selected player to group..." )
+	local xgad_lua_button = x_makebutton( "Assign selected player to group...", 300, 295, 280, 20, xgui_admin )
 	xgad_lua_button.DoClick = function()
 		if xgad_player_list:GetSelectedLine() ~= nil or xgad_admin_list:GetSelectedLine() ~= nil then
-			
-			local xgad_add_admin = vgui.Create( "DFrame" )
-			xgad_add_admin:SetSize( 200, 100 )
-			xgad_add_admin:Center()
 			if xgad_player_list:GetSelectedLine() ~= nil then
-				xgad_add_admin:SetTitle( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
+				local xgad_add_admin = x_makeframepopup( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1), 200, 100 )
 			else
-				xgad_add_admin:SetTitle( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
+				local xgad_add_admin = x_makeframepopup( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1), 200, 100 )
 			end
-			xgad_add_admin:MakePopup()
 			xgad_add_admin.PaintOver = function()
 				surface.SetTextColor( 0, 0, 0, 255 )
 				surface.SetTextPos( 10, 30 )
@@ -145,10 +113,7 @@ function xgui_tab_admin()
 				surface.DrawText( "Immunity" )
 			end
 			
-			local xgad_add_group = vgui.Create( "DButton", xgad_add_admin )
-			xgad_add_group:SetPos( 65,27 )
-			xgad_add_group:SetSize( 125,20 )
-			xgad_add_group:SetText( "Select..." )
+			local xgad_add_group = x_makebutton( "Select...", 65, 27, 125, 20, xgad_add_admin )
 			xgad_add_group.DoClick = function()
 				xgad_list_groups = DermaMenu()
 				xgad_list_groups:SetParent( xgad_add_admin )
@@ -161,10 +126,7 @@ function xgui_tab_admin()
 			local xgad_add_immunity = vgui.Create( "DCheckBox", xgad_add_admin )
 			xgad_add_immunity:SetPos( 65, 55 )
 			
-			local xgad_add_ok = vgui.Create( "DButton", xgad_add_admin )
-			xgad_add_ok:SetPos( 75, 73 )
-			xgad_add_ok:SetSize( 50, 20 )
-			xgad_add_ok:SetText( "OK" )
+			local xgad_add_ok = x_makebutton( "OK", 75, 73, 50, 20, xgad_add_admin )
 			xgad_add_ok.DoClick = function()
 			if xgad_player_list:GetSelectedLine() ~= nil then
 				if xgad_add_group:GetValue() ~= "user" then
@@ -190,18 +152,10 @@ function xgui_tab_admin()
 		end
 	end
 ------------
-	local xgad_rcon_button = vgui.Create( "DButton", xgui_admin )
-	xgad_rcon_button:SetSize( 280, 20 )
-	xgad_rcon_button:SetPos( 300, 340 )
-	xgad_rcon_button:SetText( "Send a console command to the server..." )
+	local xgad_rcon_button = x_makebutton( "Send a console command to the server...", 300, 340, 280, 20, xgui_admin )
 	xgad_rcon_button.DoClick = function()
 				
-		local xgad_tm = vgui.Create( "DFrame" )
-		xgad_tm:SetSize( 400, 60 )
-		xgad_tm:Center()
-		xgad_tm:SetTitle( "Send a console command to the server" )
-		xgad_tm:MakePopup()
-		
+		local xgad_tm = x_makeframepopup( "Send a console command to the server", 400, 60 )
 		local xgad_tm_text = vgui.Create( "DTextEntry", xgad_tm )
 		xgad_tm_text:SetPos( 10, 30 )
 		xgad_tm_text:SetTall( 20 )
@@ -215,17 +169,10 @@ function xgui_tab_admin()
 		end	
 	end	
 ------------
-	local xgad_add_button = vgui.Create( "DButton", xgui_admin )
-	xgad_add_button:SetPos( 300,315 )
-	xgad_add_button:SetSize( 280, 20 )
-	xgad_add_button:SetText( "Assign Player's Group by SteamID..." )
+	local xgad_add_button = x_makebutton( "Assign Player's Group by SteamID...", 300, 315, 280, 20, xgui_admin )
 	xgad_add_button.DoClick = function()
 	
-		local xgad_add_admin = vgui.Create( "DFrame" )
-		xgad_add_admin:SetSize( 200, 150 )
-		xgad_add_admin:Center()
-		xgad_add_admin:SetTitle( "Add an Admin" )
-		xgad_add_admin:MakePopup()
+		local xgad_add_admin = x_makeframepopup( "Add an Admin", 200, 150 )
 		xgad_add_admin.PaintOver = function()
 			surface.SetTextColor( 0, 0, 0, 255 )
 			surface.SetTextPos( 10, 30 )
@@ -238,10 +185,7 @@ function xgui_tab_admin()
 			surface.DrawText( "Immunity" )
 		end
 		
-		local xgad_add_group = vgui.Create( "DButton", xgad_add_admin )
-		xgad_add_group:SetPos( 65,73 )
-		xgad_add_group:SetSize( 125,20 )
-		xgad_add_group:SetText( "Select..." )
+		local xgad_add_group = x_makebutton( "Select...", 65, 73, 125, 20, xgad_add_admin )
 		xgad_add_group.DoClick = function()
 			xgad_list_groups = DermaMenu()
 			xgad_list_groups:SetParent( xgad_add_admin )
@@ -264,10 +208,7 @@ function xgui_tab_admin()
 		local xgad_add_immunity = vgui.Create( "DCheckBox", xgad_add_admin )
 		xgad_add_immunity:SetPos( 65, 100 )
 		
-		local xgad_add_ok = vgui.Create( "DButton", xgad_add_admin )
-		xgad_add_ok:SetPos( 75, 123 )
-		xgad_add_ok:SetSize( 50, 20 )
-		xgad_add_ok:SetText( "OK" )
+		local xgad_add_ok = x_makebutton( "OK", 75, 123, 50, 20, xgad_add_admin )
 		xgad_add_ok.DoClick = function()
 			if xgad_add_group:GetValue() ~= "user" then
 				RunConsoleCommand( "ulx", "adduserid", xgad_add_name:GetValue(), xgad_add_group:GetValue(), xgad_add_userID:GetValue(), xgad_add_immunity:GetValue() )
