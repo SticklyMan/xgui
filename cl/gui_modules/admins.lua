@@ -70,7 +70,7 @@ function xgui_tab_admin()
 	xgad_tm_button.DoClick = function()
 				
 		local xgad_tm = x_makeframepopup( "Send a text message to all users", 400, 60 )
-		local xgad_tm_text = x_maketextbox( 10, 30, 380, 20, xgui_tm )
+		local xgad_tm_text = x_maketextbox( 10, 30, 380, 20, xgad_tm )
 		xgad_tm_text.OnEnter = function()
 			
 			RunConsoleCommand( "ulx", "tsay", unpack( string.Explode(" ", xgad_tm_text:GetValue() ) ) )
@@ -82,10 +82,11 @@ function xgui_tab_admin()
 	local xgad_lua_button = x_makebutton( "Assign selected player to group...", 300, 295, 280, 20, xgui_admin )
 	xgad_lua_button.DoClick = function()
 		if xgad_player_list:GetSelectedLine() ~= nil or xgad_admin_list:GetSelectedLine() ~= nil then
+			local xgad_add_admin = x_makeframepopup( "_", 200, 100 )
 			if xgad_player_list:GetSelectedLine() ~= nil then
-				local xgad_add_admin = x_makeframepopup( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1), 200, 100 )
+				xgad_add_admin:SetTitle( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
 			else
-				local xgad_add_admin = x_makeframepopup( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1), 200, 100 )
+				xgad_add_admin:SetTitle( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
 			end
 			xgad_add_admin.PaintOver = function()
 				surface.SetTextColor( 0, 0, 0, 255 )
@@ -174,7 +175,7 @@ function xgui_tab_admin()
 		end
 
 		local xgad_add_name = x_maketextbox( 65, 27, 125, 20, xgad_add_admin )
-		local xgad_add_userID = x_maketextbox( 65, 50, 125, 20, xgui_add_admin )
+		local xgad_add_userID = x_maketextbox( 65, 50, 125, 20, xgad_add_admin )
 		local xgad_add_immunity = vgui.Create( "DCheckBox", xgad_add_admin )
 		xgad_add_immunity:SetPos( 65, 100 )
 		

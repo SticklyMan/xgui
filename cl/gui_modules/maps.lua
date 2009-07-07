@@ -19,9 +19,11 @@ function xgui_tab_maps()
 		surface.DrawText( "Server Maps" )
 		surface.SetTextPos( 195, 225 )
 		surface.DrawText( xgmp_cur_map )
+		surface.SetTextPos( 10, 343 )
+		surface.DrawText( "Gamemode:" )
 	end
 -----------
-	xgmp_maps_list = x_makelistview( 10, 30, 175, 310, false, xgui_maps ) --Remember to enable/disable multiselect based on admin status?
+	xgmp_maps_list = x_makelistview( 10, 30, 175, 310, true, xgui_maps ) --Remember to enable/disable multiselect based on admin status?
 	xgmp_maps_list:AddColumn( "Map Name" )
 	xgmp_maps_list.OnRowSelected = function()
 	 	if ( file.Exists( "../materials/maps/" .. xgmp_maps_list:GetSelected()[1]:GetColumnText(1) .. ".vmt" ) ) then 
@@ -37,7 +39,7 @@ function xgui_tab_maps()
 	xgmp_maps_disp:SetImage( "maps/noicon.vmt" )
 	xgmp_maps_disp:SetSize( 192, 192 )
 -----------
-	local xgmp_select_gamemode = x_makebutton( "<default>", 10, 340, 175, 20, xgui_maps )
+	local xgmp_select_gamemode = x_makebutton( "<default>", 70, 340, 115, 20, xgui_maps )
 	xgmp_select_gamemode.DoClick = function()
 		xgmp_list_gamemodes = DermaMenu()
 		xgmp_list_gamemodes:SetParent( xgui_maps )
