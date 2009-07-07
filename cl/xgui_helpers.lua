@@ -52,9 +52,26 @@ end
 
 function x_makeframepopup( label, w, h )
 	local xgui_temp = vgui.Create( "DFrame" )
-	xgui_pm:SetSize( w, h )
-	xgui_pm:Center()
-	xgui_pm:SetTitle( label )
-	xgui_pm:MakePopup()
+	xgui_temp:SetSize( w, h )
+	xgui_temp:Center()
+	xgui_temp:SetTitle( label )
+	xgui_temp:MakePopup()
+	return xgui_temp
+end
+
+function x_maketextbox( x, y, w, h, parent )
+	local xgui_temp = vgui.Create( "DTextEntry", parent )
+	xgui_temp:SetPos( x, y )
+	xgui_temp:SetWide( w )
+	xgui_temp:SetTall( h )
+	xgui_temp:SetEnterAllowed( true )
+	return xgui_temp
+end
+
+function x_makelistview( x, y, w, h, multiselect, parent )
+	local xgui_temp = vgui.Create( "DListView", parent )
+	xgui_temp:SetPos( x, y )
+	xgui_temp:SetSize( w, h )
+	xgui_temp:SetMultiSelect( multiselect )
 	return xgui_temp
 end

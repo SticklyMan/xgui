@@ -21,10 +21,7 @@ function xgui_tab_maps()
 		surface.DrawText( xgmp_cur_map )
 	end
 -----------
-	xgmp_maps_list = vgui.Create( "DListView", xgui_maps )
-	xgmp_maps_list:SetPos( 10,30 )
-	xgmp_maps_list:SetSize( 175,310 )
-	--xgmp_maps_list:SetMultiSelect( false )  --Remember to enable/disable multiselect based on admin status..
+	xgmp_maps_list = x_makelistview( 10, 30, 175, 310, false, xgui_maps ) --Remember to enable/disable multiselect based on admin status?
 	xgmp_maps_list:AddColumn( "Map Name" )
 	xgmp_maps_list.OnRowSelected = function()
 	 	if ( file.Exists( "../materials/maps/" .. xgmp_maps_list:GetSelected()[1]:GetColumnText(1) .. ".vmt" ) ) then 
