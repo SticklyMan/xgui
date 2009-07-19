@@ -9,18 +9,18 @@ local function xgui_tab_player()
 		surface.DrawRect( 0, 0, 590, 390 )
 	end
 -----------
-	xgpl_player_list = x_makelistview( 10, 30, 200, 300, false, xgui_player )
+	xgpl_player_list = x_makelistview{ x=10, y=30, w=200, h=300, multiselect=false, parent=xgui_player }
 	xgpl_player_list:AddColumn( "Name" )
 	xgpl_player_list:AddColumn( "Groups" )
 -----------
-	local xgpl_pm = x_makebutton( "Send player a private message...", 10, 330, 200, 20, xgui_player )
+	local xgpl_pm = x_makebutton{ x=10, y=330, w=200, h=20, label="Send player a private message...", parent=xgui_player }
 	xgpl_pm.DoClick = function()
 		
 		if xgpl_player_list:GetSelectedLine() ~= nil then
 		
-			local xgpl_temp_player = xgpl_player_list:GetSelected()[1]:GetColumnText(1)
-			local xgui_pm = x_makeframepopup( "Send a message to " .. xgpl_temp_player, 400, 60 )
-			local xgui_pm_text = x_maketextbox( 10, 30, 380, 20, xgui_pm )
+			local xgpl_temp_player = xgpl_player_list:GetSelected():GetColumnText( 1 )
+			local xgui_pm = x_makeframepopup{ label="Send a message to " .. xgpl_temp_player, w=400, h=60 }
+			local xgui_pm_text = x_maketextbox{ x=10, y=30, w=380, h=20, parent=xgui_pm }
 			xgui_pm_text.OnEnter = function()
 					
 				RunConsoleCommand( "ulx", "psay", xgpl_temp_player, unpack( string.Explode( " ", xgui_pm_text:GetValue() ) ) )

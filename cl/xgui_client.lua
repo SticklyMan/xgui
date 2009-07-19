@@ -6,20 +6,20 @@ xgui_modules={}
 --Creates instance to avoid returning nil problems later
 xgui_base = vgui.Create( "DPropertySheet" )
 xgui_base:Remove()
-Msg( "\n///////////////////////////////////\n" )
-Msg( "//ULX GUI -- Made by Stickly Man!//\n" )
-Msg( "///////////////////////////////////\n" )
-Msg( "//Loading/Initializing modules...//\n" )
+Msg( "\n///////////////////////////////////////\n" )
+Msg( "//  ULX GUI -- Made by Stickly Man!  //\n" )
+Msg( "///////////////////////////////////////\n" )
+Msg( "//  Loading/Initializing modules...  //\n" )
 
 local xgui_module_files = file.FindInLua( "ulx/modules/cl/gui_modules/*.lua" )
 
 for _, file in ipairs( xgui_module_files ) do
 	include( "ulx/modules/cl/gui_modules/" .. file )
-	Msg( "//Added module: " .. file .. string.rep( " ", 17 - file:len() ) .. "//\n" )
+	Msg( "//  Added module: " .. file .. string.rep( " ", 19 - file:len() ) .. "//\n" )
 end
 
-Msg( "//Modules Loaded!                //\n" )
-Msg( "///////////////////////////////////\n\n" )
+Msg( "//  Modules Loaded!                  //\n" )
+Msg( "///////////////////////////////////////\n\n" )
 
 include ( "ulx/modules/cl/xgui_helpers.lua" )
 
