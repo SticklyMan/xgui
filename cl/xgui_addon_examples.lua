@@ -10,7 +10,7 @@ local function function2()
 	--This is the main function to send your function containing GUI controls to XGUI, along with some other relavent information.
 	xgui_add_addon{ func=function1, name="Addon_Name", author="Author", version="Version", description="Description" }
 end
-hook.Add( "xgui_addon", "xgui_addon_test", function2() )
+hook.Add( "xgui_addon", "xgui_addon_test", function2 )
 
 
 --Here is another example:
@@ -26,4 +26,4 @@ end
 local function my_cool_addon_XGUI()
 	xgui_add_addon{ func=my_cool_addon, name="My Cool Addon!", author="Stickly Man!", version="0.9", description="A whole lotta nothing, really..." }
 end
-hook.Add( "xgui_addon", "my_cool_addon_show", my_cool_addon_XGUI() )
+hook.Add( "xgui_addon", "my_cool_addon_show", my_cool_addon_XGUI )
