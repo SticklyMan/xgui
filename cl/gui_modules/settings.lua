@@ -53,7 +53,7 @@ function xgui_tab_settings()
 					local xgset_wm_text = x_maketextbox{ x=10, y=30, w=380, h=20, parent=xgset_wm }
 					xgset_wm_text:SetText( GetConVar( "ulx_welcomemessage" ):GetString() )
 					xgset_wm_text.OnEnter = function()
-						RunConsoleCommand( "ulx", "rcon", "ulx_welcomemessage", unpack( string.Explode(" ", xgset_wm_text:GetValue() ) ) )
+						RunConsoleCommand( "ulx", "rcon", "ulx_welcomemessage", unpack( string.Explode( " ", xgset_wm_text:GetValue() ) ) )
 						xgset_wm:Remove()
 					end
 				end
@@ -67,7 +67,7 @@ function xgui_tab_settings()
 						local xgset_gimp_add = x_makeframepopup{ label="Add a gimp saying", w=400, h=60 }
 						local xgset_gimp_textbox = x_maketextbox{ x=10, y=30, w=380, h=20, parent=xgset_gimp_add }
 						xgset_gimp_textbox.OnEnter = function()
-							if xgset_gimp_textbox:GetValue() ~= nil then
+							if xgset_gimp_textbox:GetValue()then
 								RunConsoleCommand( "ulx", "addGimpSay", unpack( string.Explode(" ", xgset_gimp_textbox:GetValue() ) ) )
 								xgset_gimp_list:AddLine( xgset_gimp_textbox:GetValue() )
 								xgset_gimp_add:Remove()
@@ -75,7 +75,7 @@ function xgui_tab_settings()
 						end
 					end
 					x_makebutton{ x=125, y=170, w=115, h=20, label="Remove", parent=xgset_gimp }.DoClick = function()
-						if xgset_gimp_list:GetSelectedLine() ~= nil then
+						if xgset_gimp_list:GetSelectedLine()then
 							RunConsoleCommand( "xgui_removeGimp", xgset_gimp_list:GetSelected()[1]:GetColumnText( 1 ) )
 							xgset_gimp_list:RemoveLine( xgset_gimp_list:GetSelectedLine() )
 						end
@@ -93,7 +93,7 @@ function xgui_tab_settings()
 					local xgset_advert_color = Color( 0, 0, 0, 255 )
 					xgset_advert_colorbox.Paint = function()
 						surface.SetDrawColor( Color( 0, 0, 0, 255 ) )
-						if xgset_advert_list:GetSelectedLine() ~= nil then
+						if xgset_advert_list:GetSelectedLine()then
 							if xgset_advert_list:GetSelected()[1]:GetColumnText( 6 ) ~= "" then
 								surface.SetDrawColor( xgset_advert_list:GetSelected()[1]:GetColumnText( 6 ) )
 							end
@@ -128,7 +128,7 @@ function xgui_tab_settings()
 						xgset_add_csay = x_makepanelist{ autosize=true }
 						local xgset_display = x_makeslider{ label="Display Time", value=0.1, min=0.1, max=60, decimal=1, tooltip="The time in seconds the CSay advert is displayed", xgset_add_advert }
 							xgset_add_csay:AddItem( xgset_display )
-						xgset_add_csay:AddItem( x_makecolorpicker{ t } )	
+						xgset_add_csay:AddItem( x_makecolorpicker{ } )	
 						
 						local xgset_make_advert = x_makebutton{ label="Create Advert" }
 						xgset_make_advert.DoClick = function()
@@ -144,8 +144,8 @@ function xgui_tab_settings()
 						xgset_add_list:AddItem( x_makecat{ label="CSay Settings", contents=xgset_add_csay } )
 					end
 					x_makebutton{ x=130, y=190, w=120, h=20, label="Remove", parent=xgset_advert }.DoClick = function()
-						if xgset_advert_list:GetSelectedLine() ~= nil then
-							local xgui_temp = string.Explode( ":",  xgset_advert_list:GetSelected()[1]:GetColumnText( 1 ) )
+						if xgset_advert_list:GetSelectedLine()then
+							local xgui_temp = string.Explode( ":",xgset_advert_list:GetSelected()[1]:GetColumnText( 1 ) )
 							RunConsoleCommand( "xgui_removeadvert", xgui_temp[1], xgui_temp[2] )
 							xgset_advert_list:Clear()
 							RunConsoleCommand( "xgui_requestadverts" )
@@ -159,9 +159,9 @@ function xgui_tab_settings()
 		xgset_ULX:AddItem( x_makecat{ label="ULX Settings", contents=xgset_ULX_cat1 } )
 		
 		local xgset_ULX_cat2 = x_makepanelist{ autosize=true }
-			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Success Ratio", min=0, max=1, decimal=2, convar="ulx_votekickSuccessratio", tooltip="Ratio of votes needed to consider a votekick successful.  Votes for kick / Total players" } )
+			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Success Ratio", min=0, max=1, decimal=2, convar="ulx_votekickSuccessratio", tooltip="Ratio of votes needed to consider a votekick successful.Votes for kick / Total players" } )
 			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Minimum Votes", min=0, max=10, convar="ulx_votekickMinvotes", tooltip="Minimum number of votes needed to kick someone using votekick" } )
-			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Success Ratio", min=0, max=1, decimal=2, convar="ulx_votebanSuccessratio", tooltip="Ratio of votes needed to consider a voteban successful.  Votes for ban / Total players" } )
+			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Success Ratio", min=0, max=1, decimal=2, convar="ulx_votebanSuccessratio", tooltip="Ratio of votes needed to consider a voteban successful.Votes for ban / Total players" } )
 			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Minimum Votes", min=0, max=10, convar="ulx_votebanMinvotes", tooltip="Minimum number of votes needed to ban someone using votekick" } )
 			xgset_ULX_cat2:AddItem( x_makecheckbox{ label="Echo Votes", convar="ulx_voteEcho", tooltip="Display players choices on votes" } )
 		xgset_ULX:AddItem( x_makecat{ label="Vote Settings", contents=xgset_ULX_cat2 } )
@@ -204,7 +204,7 @@ local function xgset_advert_rcv( um )
 	if xgset_advert_list:IsVisible() then
 		local advert = ULib.umsgRcv( um )
 		local isCsay = "No"
-		if advert.color ~= nil then
+		if advert.color then
 			isCsay = "Yes"
 		end
 		xgset_advert_list:AddLine( ULib.umsgRcv( um ) .. ":" .. ULib.umsgRcv( um ), advert.rpt, advert.len, isCsay, advert.message, advert.color )

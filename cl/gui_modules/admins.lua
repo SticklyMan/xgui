@@ -77,9 +77,9 @@ function xgui_tab_admin()
 ------------
 	local xgad_lua_button = x_makebutton{ x=300, y=295, w=280, h=20, label="Assign selected player to group...", parent=xgui_admin }
 	xgad_lua_button.DoClick = function()
-		if xgad_player_list:GetSelectedLine() ~= nil or xgad_admin_list:GetSelectedLine() ~= nil then
+		if xgad_player_list:GetSelectedLine()or xgad_admin_list:GetSelectedLine()then
 			local xgad_add_admin = x_makeframepopup{ label="_", w=200, h=100 }
-			if xgad_player_list:GetSelectedLine() ~= nil then
+			if xgad_player_list:GetSelectedLine()then
 				xgad_add_admin:SetTitle( "Assign " .. xgad_player_list:GetSelected()[1]:GetColumnText(1) )
 			else
 				xgad_add_admin:SetTitle( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
@@ -92,39 +92,35 @@ function xgui_tab_admin()
 				surface.DrawText( "Immunity" )
 			end
 			
-			local xgad_add_group = x_makebutton{ x=65, y=27, w=125, h=20, label="Select...", parent=xgad_add_admin }
-			xgad_add_group.DoClick = function()
-				xgad_list_groups = DermaMenu()
-				xgad_list_groups:SetParent( xgad_add_admin )
-				for k, v in pairs( ULib.ucl.groups ) do
-					xgad_list_groups:AddOption( k, function() xgad_add_group:SetText(k) end )
-				end
-				xgad_list_groups:Open()
+			local xgad_add_group = x_makemultichoice{ x=65, y=28, w=125, h=20, text="Select...", parent=xgad_add_admin }
+			for k, v in pairs( ULib.ucl.groups ) do
+				xgad_add_group:AddChoice( k )
 			end
 
 			local xgad_add_immunity = x_makecheckbox{ x=65, y=55, parent=xgad_add_admin }			
 			local xgad_add_ok = x_makebutton{ x=75, y=73, w=50, h=20, label="OK", parent=xgad_add_admin }
 			xgad_add_ok.DoClick = function()
-			if xgad_player_list:GetSelectedLine() ~= nil then
-				if xgad_add_group:GetValue() ~= "user" then
-					RunConsoleCommand( "ulx", "adduser", xgad_player_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_add_immunity:GetValue() )
-				else
-					RunConsoleCommand( "ulx", "removeuser", xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
-				end
-			else
-				if xgad_add_group:GetValue() ~= "user" then
-					if xgad_admin_list:GetSelected()[1]:GetColumnText(3) == "Online" then
-						RunConsoleCommand( "ulx", "adduser", xgad_admin_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_add_immunity:GetValue() )
+				print( xgad_add_group:GetText() )
+				if xgad_player_list:GetSelectedLine()then
+					if xgad_add_group:GetText() ~= "user" then
+						RunConsoleCommand( "ulx", "adduser", xgad_player_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetText(), xgad_add_immunity:GetValue() )
 					else
-						RunConsoleCommand( "ulx", "adduserid", xgad_admin_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetValue(), xgad_admin_list:GetSelected()[1]:GetColumnText(4), xgad_add_immunity:GetValue() )
+						RunConsoleCommand( "ulx", "removeuser", xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
 					end
 				else
-				
-					RunConsoleCommand( "ulx", "removeuser", xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
+					if xgad_add_group:GetText() ~= "user" then
+						if xgad_admin_list:GetSelected()[1]:GetColumnText(3) == "Online" then
+							RunConsoleCommand( "ulx", "adduser", xgad_admin_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetText(), xgad_add_immunity:GetValue() )
+						else
+							RunConsoleCommand( "ulx", "adduserid", xgad_admin_list:GetSelected()[1]:GetColumnText(1), xgad_add_group:GetText(), xgad_admin_list:GetSelected()[1]:GetColumnText(4), xgad_add_immunity:GetValue() )
+						end
+					else
+					
+						RunConsoleCommand( "ulx", "removeuser", xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
+					end
 				end
-			end
-			xgad_add_admin:Remove()
-			xgui_refresh()
+				xgad_add_admin:Remove()
+				xgui_refresh()
 			end
 		end
 	end
@@ -158,14 +154,9 @@ function xgui_tab_admin()
 			surface.DrawText( "Immunity" )
 		end
 		
-		local xgad_add_group = x_makebutton{ x=65, y=73, w=125, h=20, label="Select...", parent=xgad_add_admin }
-		xgad_add_group.DoClick = function()
-			xgad_list_groups = DermaMenu()
-			xgad_list_groups:SetParent( xgad_add_admin )
-			for k, v in pairs( ULib.ucl.groups ) do
-				xgad_list_groups:AddOption( k, function() xgad_add_group:SetText(k) end )
-			end
-			xgad_list_groups:Open()
+		local xgad_add_group = x_makemultichoice{ x=65, y=73, w=125, h=20, text="Select...", parent=xgad_add_admin }
+		for k, v in pairs( ULib.ucl.groups ) do
+			xgad_add_group:AddChoice( k )
 		end
 
 		local xgad_add_name = x_maketextbox{ x=65, y=27, w=125, h=20, parent=xgad_add_admin }

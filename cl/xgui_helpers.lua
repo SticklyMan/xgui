@@ -17,25 +17,25 @@ value = sets the value of a slider/numberwang
 OTHER:
 parent - the panel on which the control will be affixed
 contents - for a category, this will be the panellist of controls in the category
-color - sets a color (only used with colorpicker for now)
+textcolor - sets the text color
 
 BOOL:
 multiselect - Allow multiple selects
 autosize - Used with the panel list, it will size the panel based on its contents
-enableinput - Used with textbox, will enable/disable input
+enableinput - Used with textbox/multichoice, will enable/disable input
 --]]
 
 function x_makeslider( t )
 	local xgui_temp = vgui.Create( "DNumSlider", t.parent )
 	xgui_temp:SetText( t.label or "" )
-	xgui_temp:SetMinMax( t.min, t.max )
+	xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
 	xgui_temp:SetDecimals( t.decimal or 0 )
 	xgui_temp:SetConVar( t.convar )
 	xgui_temp:SetTooltip( t.tooltip )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetWidth( t.w )
 	xgui_temp:SizeToContents()
-	if t.value ~= nil then xgui_temp:SetValue( t.value ) end
+	if t.value then xgui_temp:SetValue( t.value ) end
 	return xgui_temp
 end
 
@@ -44,8 +44,8 @@ function x_makecheckbox( t )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetText( t.label or "" )
 	xgui_temp:SizeToContents()
-	if t.convar ~= nil then xgui_temp:SetConVar( t.convar ) end
-	if t.tooltip ~= nil then xgui_temp:SetTooltip( t.tooltip ) end
+	if t.convar then xgui_temp:SetConVar( t.convar ) end
+	if t.tooltip then xgui_temp:SetTooltip( t.tooltip ) end
 	return xgui_temp
 end
 
@@ -54,6 +54,7 @@ function x_makelabel( t )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetText( t.label or "" )
 	xgui_temp:SizeToContents()
+	if t.textcolor then xgui_temp:SetTextColor( t.textcolor ) end
 	return xgui_temp
 end
 
@@ -92,8 +93,8 @@ function x_maketextbox( t )
 	if t.h == nil then t.h = 20 end
 	xgui_temp:SetTall( t.h )
 	xgui_temp:SetEnterAllowed( true )
-	if t.text ~= nil then xgui_temp:SetText( t.text ) end
-	if t.enableinput ~= nil then xgui_temp:SetEnabled( t.enableinput ) end
+	if t.text then xgui_temp:SetText( t.text ) end
+	if t.enableinput then xgui_temp:SetEnabled( t.enableinput ) end
 	xgui_temp:SetToolTip( t.tooltip )
 	return xgui_temp
 end
@@ -133,9 +134,18 @@ function x_makenumber( t )
 	return xgui_temp
 end
 
+function x_makemultichoice( t )
+	local xgui_temp = vgui.Create( "DMultiChoice", t.parent )
+	xgui_temp:SetText( t.text or "" )
+	xgui_temp:SetPos( t.x, t.y )
+	xgui_temp:SetSize( t.w, t.h )
+	xgui_temp:SetEditable( t.enableinput )
+	return xgui_temp
+end
+
 --A simple color picker
 function x_makecolorpicker( t )
-	local xgui_temp = vgui.Create( "CtrlColor", parent )
+	local xgui_temp = vgui.Create( "CtrlColor", t.parent )
 		xgui_temp:SetConVarR( "colour_r" )
 		xgui_temp:SetConVarG( "colour_g" )
 		xgui_temp:SetConVarB( "colour_b" )
@@ -144,3 +154,9 @@ function x_makecolorpicker( t )
 		xgui_temp:SetSize( t.w, t.h )
 	return xgui_temp
 end
+
+--A function for DMultiChoice that will get the text of the currently selected option.. Why this isn't included in the current derma, I have no freakin clue!
+function DMultiChoice:GetText()
+	return self.TextEntry:GetValue()
+end
+

@@ -6,6 +6,10 @@ xgui_modules={}
 --Creates instance to avoid returning nil problems later
 xgui_base = vgui.Create( "DPropertySheet" )
 xgui_base:Remove()
+
+--Includes the helpful Derma functions!
+include ( "ulx/modules/cl/xgui_helpers.lua" )
+
 Msg( "\n///////////////////////////////////////\n" )
 Msg( "//  ULX GUI -- Made by Stickly Man!  //\n" )
 Msg( "///////////////////////////////////////\n" )
@@ -21,8 +25,6 @@ end
 Msg( "//  Modules Loaded!                  //\n" )
 Msg( "///////////////////////////////////////\n\n" )
 
-include ( "ulx/modules/cl/xgui_helpers.lua" )
-
 function xgui_show()
 	gui.EnableScreenClicker( true )
 	RestoreCursorPosition( )
@@ -35,7 +37,7 @@ function xgui_show()
 		ShowModule()
 	end
 	
-	if xgui_lasttab ~= nil then  
+	if xgui_lasttab then
 		xgui_base:SetActiveTab( xgui_base.Items[xgui_lasttab]["Tab"] )
 	end 
 end
@@ -43,11 +45,11 @@ end
 
 function xgui_hide()
 		--Easiest way to find the index of the active tab, since just using GetActiveTab causes strange problems
-		for x,obj in ipairs(xgui_base.Items) do  
-			if obj.Tab == xgui_base:GetActiveTab() then  
+		for x,obj in ipairs(xgui_base.Items) do
+			if obj.Tab == xgui_base:GetActiveTab() then
 				xgui_lasttab = x
-			end  
-		end  
+			end
+		end
 		
 		RememberCursorPosition()
 		gui.EnableScreenClicker( false )

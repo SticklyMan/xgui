@@ -2,7 +2,6 @@
 --Lists maps on server, allows for map voting, changing levels, etc.
 
 local xgmp_cur_map
-local xgmp_gamemodes
 
 function xgui_tab_maps()
 	xgmp_cur_map = "No Map Selected"
@@ -39,16 +38,8 @@ function xgui_tab_maps()
 	xgmp_maps_disp:SetImage( "maps/noicon.vmt" )
 	xgmp_maps_disp:SetSize( 192, 192 )
 -----------
-	local xgmp_select_gamemode = x_makebutton{ x=70, y=340, w=115, h=20, label="<default>", parent=xgui_maps }
-	xgmp_select_gamemode.DoClick = function()
-		xgmp_list_gamemodes = DermaMenu()
-		xgmp_list_gamemodes:SetParent( xgui_maps )
-		table.sort( xgmp_gamemodes )
-		for _, v in ipairs( xgmp_gamemodes ) do
-			xgmp_list_gamemodes:AddOption( v, function() xgmp_select_gamemode:SetText( v ) end )
-		end
-		xgmp_list_gamemodes:Open()
-	end
+	xgmp_select_gamemode = x_makemultichoice{ x=70, y=340, w=115, h=20, text="<default>", parent=xgui_maps }
+	xgmp_select_gamemode:AddChoice( "<default>" )
 -----------
 	local xgmp_votemap1 = x_makebutton{ x=195, y=245, w=192, h=20, label="Vote to play this map!", parent=xgui_maps }
 	xgmp_votemap1.DoClick = function()
@@ -87,13 +78,13 @@ function xgui_tab_maps()
 	local xgmp_settings_votemap = x_makepanelist{ x=395, y=30, w=185, h=50, parent=xgui_maps, autosize=true }
 	
 	xgmp_settings_votemap:AddItem( x_makecheckbox{ label="Enable Player Votemaps", convar="ulx_votemapEnabled" } )
-	xgmp_settings_votemap:AddItem( x_makeslider{ label="Minimum Time", 	min=0, max=300,  convar="ulx_votemapMintime", tooltip="Time in minutes after a map change before a votemap can be started" } )
+	xgmp_settings_votemap:AddItem( x_makeslider{ label="Minimum Time", 	min=0, max=300,convar="ulx_votemapMintime", tooltip="Time in minutes after a map change before a votemap can be started" } )
 	xgmp_settings_votemap:AddItem( x_makeslider{ label="Wait Time", 	min=0, max=60, 	decimal=1, convar="ulx_votemapWaitTime", tooltip="Time in minutes after voting for a map before you can change your vote" } )
-	xgmp_settings_votemap:AddItem( x_makeslider{ label="Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_votemapSuccessratio", tooltip="Ratio of votes needed to consider a vote successful.  Votes for map / Total players" } )
+	xgmp_settings_votemap:AddItem( x_makeslider{ label="Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_votemapSuccessratio", tooltip="Ratio of votes needed to consider a vote successful.Votes for map / Total players" } )
 	xgmp_settings_votemap:AddItem( x_makeslider{ label="Minimum Votes", min=0, max=10, convar="ulx_votemapMinvotes", tooltip="Minimum number of votes needed to change a level" } )
 	xgmp_settings_votemap:AddItem( x_makeslider{ label="Veto Time",		min=0, max=300, convar="ulx_votemapVetotime", tooltip="Time in seconds after a map change before an admin can veto the mapchange" } )
 	xgmp_settings_votemap:AddItem( x_makelabel{ label="Server-wide Votemap Settings" } )
-	xgmp_settings_votemap:AddItem( x_makeslider{ label="Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_votemap2Successratio", tooltip="Ratio of votes needed to consider a vote successful.  Votes for map / Total players" } )
+	xgmp_settings_votemap:AddItem( x_makeslider{ label="Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_votemap2Successratio", tooltip="Ratio of votes needed to consider a vote successful.Votes for map / Total players" } )
 	xgmp_settings_votemap:AddItem( x_makeslider{ label="Minimum Votes", min=0, max=10, convar="ulx_votemap2Minvotes", tooltip="Minimum number of votes needed to change a level" } )
 	
 ------------
@@ -110,7 +101,7 @@ function xgui_tab_maps()
 end
 
 local function xgui_gamemode_recieve( um )
-	table.insert( xgmp_gamemodes, um:ReadString() )
+	xgmp_select_gamemode:AddChoice( um:ReadString() )
 end
 usermessage.Hook( "xgui_gamemode_rcv", xgui_gamemode_recieve )
 

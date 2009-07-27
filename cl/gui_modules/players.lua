@@ -16,7 +16,7 @@ local function xgui_tab_player()
 	local xgpl_pm = x_makebutton{ x=10, y=330, w=200, h=20, label="Send player a private message...", parent=xgui_player }
 	xgpl_pm.DoClick = function()
 		
-		if xgpl_player_list:GetSelectedLine() ~= nil then
+		if xgpl_player_list:GetSelectedLine()then
 		
 			local xgpl_temp_player = xgpl_player_list:GetSelected():GetColumnText( 1 )
 			local xgui_pm = x_makeframepopup{ label="Send a message to " .. xgpl_temp_player, w=400, h=60 }
