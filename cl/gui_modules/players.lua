@@ -16,9 +16,9 @@ local function xgui_tab_player()
 	local xgpl_pm = x_makebutton{ x=10, y=330, w=200, h=20, label="Send player a private message...", parent=xgui_player }
 	xgpl_pm.DoClick = function()
 		
-		if xgpl_player_list:GetSelectedLine()then
+		if xgpl_player_list:GetSelectedLine()  then
 		
-			local xgpl_temp_player = xgpl_player_list:GetSelected():GetColumnText( 1 )
+			local xgpl_temp_player = xgpl_player_list:GetSelected()[1]:GetColumnText( 1 )
 			local xgui_pm = x_makeframepopup{ label="Send a message to " .. xgpl_temp_player, w=400, h=60 }
 			local xgui_pm_text = x_maketextbox{ x=10, y=30, w=380, h=20, parent=xgui_pm }
 			xgui_pm_text.OnEnter = function()
@@ -29,6 +29,8 @@ local function xgui_tab_player()
 		end
 	end
 -----------
+	xgpl_commands = x_makepanelist{ x=215, y=30, w=175, h=320, parent=xgui_player }
+------------
 	xgpl_player_list:Clear()
 	for k, v in pairs( player.GetAll() ) do	
 		xgpl_player_list:AddLine( v:Nick(), table.concat( v:GetGroups() ) )

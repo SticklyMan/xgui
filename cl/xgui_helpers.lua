@@ -143,6 +143,12 @@ function x_makemultichoice( t )
 	return xgui_temp
 end
 
+function x_makecombobox( t )
+	local xgui_temp = vgui.Create( "DComboBox", t.parent )
+	xgui_temp:SetPos( t.x, t.y )
+	xgui_temp:SetSize( t.w, t.h )
+end
+
 --A simple color picker
 function x_makecolorpicker( t )
 	local xgui_temp = vgui.Create( "CtrlColor", t.parent )
