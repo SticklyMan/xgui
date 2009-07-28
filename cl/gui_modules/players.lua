@@ -13,7 +13,8 @@ local function xgui_tab_player()
 	xgpl_player_list:AddColumn( "Name" )
 	xgpl_player_list:AddColumn( "Groups" )
 -----------
-	local xgpl_pm = x_makebutton{ x=10, y=330, w=200, h=20, label="Send player a private message...", parent=xgui_player }
+
+	local xgpl_pm = x_makebutton{ label="Send player a private message..." }
 	xgpl_pm.DoClick = function()
 		
 		if xgpl_player_list:GetSelectedLine() then
@@ -30,7 +31,7 @@ local function xgui_tab_player()
 	end
 -----------
 	xgpl_commands = x_makepanelist{ x=400, y=30, w=180, h=320, parent=xgui_player }
-	//xgpl_commands_cat1 = 
+	xgpl_commands:AddItem( xgpl_pm )
 ------------
 	xgpl_player_list:Clear()
 	for k, v in pairs( player.GetAll() ) do	
@@ -40,3 +41,6 @@ local function xgui_tab_player()
 end
 
 xgui_modules[1]=xgui_tab_player
+
+--NOTES:
+--TELL MEGIDDO! ulx.maps is only accessible when you have permissions! fix or make my own maps thing?

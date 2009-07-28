@@ -19,21 +19,23 @@ AddCSLuaFile( "ulx/modules/cl/xgui_helpers.lua" )
 
 local function getAdmins( ply )
 	local status
+	local name
 	for k, v in pairs( ULib.ucl.users ) do
-		umsg.Start( "xgui_admin", ply )
+		status = "Unavailable"
+		name = k
 		for a, b in pairs( player.GetAll() ) do
 			if b:SteamID() == v.id then
 				status = "Online"
-				umsg.String( b:Nick() )
+				name = b:Nick()
 				break
-			else
-				status = "Unavailable"
-				umsg.String( k )
 			end
 		end
-		umsg.String( table.concat( v.groups ) )
-		umsg.String( status )
-		umsg.String( v.id )
+			
+		umsg.Start( "xgui_admin", ply )
+			umsg.String( name )
+			umsg.String( table.concat( v.groups ) )
+			umsg.String( status )
+			umsg.String( v.id )
 		umsg.End()
 	end
 end
