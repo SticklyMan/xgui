@@ -9,14 +9,14 @@ local function xgui_tab_player()
 		surface.DrawRect( 0, 0, 590, 390 )
 	end
 -----------
-	xgpl_player_list = x_makelistview{ x=10, y=30, w=200, h=300, multiselect=false, parent=xgui_player }
+	xgpl_player_list = x_makelistview{ x=10, y=30, w=380, h=320, multiselect=false, parent=xgui_player }
 	xgpl_player_list:AddColumn( "Name" )
 	xgpl_player_list:AddColumn( "Groups" )
 -----------
 	local xgpl_pm = x_makebutton{ x=10, y=330, w=200, h=20, label="Send player a private message...", parent=xgui_player }
 	xgpl_pm.DoClick = function()
 		
-		if xgpl_player_list:GetSelectedLine()  then
+		if xgpl_player_list:GetSelectedLine() then
 		
 			local xgpl_temp_player = xgpl_player_list:GetSelected()[1]:GetColumnText( 1 )
 			local xgui_pm = x_makeframepopup{ label="Send a message to " .. xgpl_temp_player, w=400, h=60 }
@@ -29,7 +29,8 @@ local function xgui_tab_player()
 		end
 	end
 -----------
-	xgpl_commands = x_makepanelist{ x=215, y=30, w=175, h=320, parent=xgui_player }
+	xgpl_commands = x_makepanelist{ x=400, y=30, w=180, h=320, parent=xgui_player }
+	//xgpl_commands_cat1 = 
 ------------
 	xgpl_player_list:Clear()
 	for k, v in pairs( player.GetAll() ) do	

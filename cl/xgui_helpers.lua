@@ -165,4 +165,3 @@ end
 function DMultiChoice:GetText()
 	return self.TextEntry:GetValue()
 end
-
