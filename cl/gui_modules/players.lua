@@ -32,6 +32,16 @@ local function xgui_tab_player()
 -----------
 	xgpl_commands = x_makepanelist{ x=400, y=30, w=180, h=320, parent=xgui_player }
 	xgpl_commands:AddItem( xgpl_pm )
+	
+	xgpl_commands_group1 = x_makecombobox{ autosize=true }
+		xgpl_commands_group1:AddItem( "Slap" )
+		xgpl_commands_group1:AddItem( "Maul" )
+	xgpl_commands:AddItem( x_makecat{ label="Fun Commands", contents=xgpl_commands_group1 } )
+	
+	xgpl_commands_group2 = x_makecombobox{ autosize=true }
+		xgpl_commands_group2:AddItem( "Kick" )
+		xgpl_commands_group2:AddItem( "Ban" )
+	xgpl_commands:AddItem( x_makecat{ label="Kick/Ban Commands", contents=xgpl_commands_group2 } )
 ------------
 	xgpl_player_list:Clear()
 	for k, v in pairs( player.GetAll() ) do	

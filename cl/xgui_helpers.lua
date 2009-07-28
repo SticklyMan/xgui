@@ -147,6 +147,8 @@ function x_makecombobox( t )
 	local xgui_temp = vgui.Create( "DComboBox", t.parent )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetSize( t.w, t.h )
+	xgui_temp:SetAutoSize( t.autosize )
+	return xgui_temp
 end
 
 --A simple color picker
