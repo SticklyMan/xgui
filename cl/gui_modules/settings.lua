@@ -45,8 +45,8 @@ function xgui_tab_settings()
 ------------
 	local xgset_ULX = x_makepanelist{ x=200, y=30, w=190, h=330, spacing=1, padding=0, parent=xgui_settings, autosize=false }
 		local xgset_ULX_cat1 = x_makepanelist{ autosize=true }
-			xgset_ULX_cat1:AddItem( x_makecheckbox{ label="Show MOTD", convar="ulx_showMotd", tooltip="Shows the Message of the Day when players join" } )
-			xgset_ULX_cat1:AddItem( x_makeslider{ label="Chat Spam Time", min=0, max=5, decimal=1, convar="ulx_chattime", tooltip="Amount of time in seconds before a player can send another message. Prevents Spam. Default is 1.5" } )
+			xgset_ULX_cat1:AddItem( x_makecheckbox{ label="Show MOTD", convar="ulx_cl_showMotd", tooltip="Shows the Message of the Day when players join" } )
+			xgset_ULX_cat1:AddItem( x_makeslider{ label="Chat Spam Time", min=0, max=5, decimal=1, convar="ulx_cl_chattime", tooltip="Amount of time in seconds before a player can send another message. Prevents Spam. Default is 1.5" } )
 				local xgset_welcomemessage_button = x_makebutton{ height=20, label="Set Welcome Message..." }
 				xgset_welcomemessage_button.DoClick = function()
 					local xgset_wm = x_makeframepopup{ label="Set Welcome Message", w=400, h=60 }
@@ -159,26 +159,26 @@ function xgui_tab_settings()
 		xgset_ULX:AddItem( x_makecat{ label="ULX Settings", contents=xgset_ULX_cat1 } )
 		
 		local xgset_ULX_cat2 = x_makepanelist{ autosize=true }
-			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Success Ratio", min=0, max=1, decimal=2, convar="ulx_votekickSuccessratio", tooltip="Ratio of votes needed to consider a votekick successful.Votes for kick / Total players" } )
-			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Minimum Votes", min=0, max=10, convar="ulx_votekickMinvotes", tooltip="Minimum number of votes needed to kick someone using votekick" } )
-			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Success Ratio", min=0, max=1, decimal=2, convar="ulx_votebanSuccessratio", tooltip="Ratio of votes needed to consider a voteban successful.Votes for ban / Total players" } )
-			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Minimum Votes", min=0, max=10, convar="ulx_votebanMinvotes", tooltip="Minimum number of votes needed to ban someone using votekick" } )
-			xgset_ULX_cat2:AddItem( x_makecheckbox{ label="Echo Votes", convar="ulx_voteEcho", tooltip="Display players choices on votes" } )
+			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Success Ratio", min=0, max=1, decimal=2, convar="ulx_cl_votekickSuccessratio", tooltip="Ratio of votes needed to consider a votekick successful.Votes for kick / Total players" } )
+			xgset_ULX_cat2:AddItem( x_makeslider{ label="Votekick Minimum Votes", min=0, max=10, convar="ulx_cl_votekickMinvotes", tooltip="Minimum number of votes needed to kick someone using votekick" } )
+			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Success Ratio", min=0, max=1, decimal=2, convar="ulx_cl_votebanSuccessratio", tooltip="Ratio of votes needed to consider a voteban successful.Votes for ban / Total players" } )
+			xgset_ULX_cat2:AddItem( x_makeslider{ label="Voteban Minimum Votes", min=0, max=10, convar="ulx_cl_votebanMinvotes", tooltip="Minimum number of votes needed to ban someone using votekick" } )
+			xgset_ULX_cat2:AddItem( x_makecheckbox{ label="Echo Votes", convar="ulx_cl_voteEcho", tooltip="Display players choices on votes" } )
 		xgset_ULX:AddItem( x_makecat{ label="Vote Settings", contents=xgset_ULX_cat2 } )
 
 		local xgset_ULX_cat3 = x_makepanelist{ autosize=true }
-			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Enable Logging", convar="ulx_logFile", tooltip="Enable logging of ULX actions to a file" } )
-			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Log Chat", convar="ulx_logChat", tooltip="Enable logging of Chat" } )
-			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Log Player Events", convar="ulx_logEvents", tooltip="Enable logging of player connects, disconnects, deaths, etc" } )
-			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Log Spawns", convar="ulx_logSpawns", tooltip="Enable logging of spawns of props, effects, etc" } )
-			xgset_ULX_cat3:AddItem( x_makeslider{ label="Echo Events", min=0, max=2, convar="ulx_logEcho", tooltip="Display a message to all players when an admin command is used. The privacy of the admin is based on the value. 0 - Off, 1 - Anonymous, 2 - Full" } )
-			xgset_ULX_cat3:AddItem( x_makeslider{ label="Echo Spawns", min=0, max=2, convar="ulx_logSpawnsEcho", tooltip="Display a console message when an object is spawned. 0 - Off, 1 - Admins Only, 2 - Everyone" } )
+			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Enable Logging", convar="ulx_cl_logFile", tooltip="Enable logging of ULX actions to a file" } )
+			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Log Chat", convar="ulx_cl_logChat", tooltip="Enable logging of Chat" } )
+			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Log Player Events", convar="ulx_cl_logEvents", tooltip="Enable logging of player connects, disconnects, deaths, etc" } )
+			xgset_ULX_cat3:AddItem( x_makecheckbox{ label="Log Spawns", convar="ulx_cl_logSpawns", tooltip="Enable logging of spawns of props, effects, etc" } )
+			xgset_ULX_cat3:AddItem( x_makeslider{ label="Echo Events", min=0, max=2, convar="ulx_cl_logEcho", tooltip="Display a message to all players when an admin command is used. The privacy of the admin is based on the value. 0 - Off, 1 - Anonymous, 2 - Full" } )
+			xgset_ULX_cat3:AddItem( x_makeslider{ label="Echo Spawns", min=0, max=2, convar="ulx_cl_logSpawnsEcho", tooltip="Display a console message when an object is spawned. 0 - Off, 1 - Admins Only, 2 - Everyone" } )
 		xgset_ULX:AddItem( x_makecat{ label="Logging Settings", contents=xgset_ULX_cat3 } )
 		
 		local xgset_ULX_cat4 = x_makepanelist{ autosize=true }
-			xgset_ULX_cat4:AddItem( x_makeslider{ label = "Number of Reserved Slots", min=0, max=GetConVarNumber( "sv_maxplayers" ), convar="ulx_rslots" } )
-			xgset_ULX_cat4:AddItem( x_makeslider{ label = "Reserved Slots Mode", min=0, max=3, convar="ulx_rslotsMode", tooltip="0 - Off\n1 - Keep # of slots reserved for admins, admins fill slots\n2 - Keep # of slots reserved for admins, admins don't fill slots, they'll be freed when a player leaves\n3 - Always keep 1 slot open for admins, kick the user with the shortest connection time if an admin joins\nFor more information on reserved slots, check out the ulx server.ini file" } )
-			xgset_ULX_cat4:AddItem( x_makecheckbox{ label= "Reserved Slots Visible", convar="ulx_rslotsVisible", tooltip="When enabled, if there are no regular player slots available in your server, it will appear that the server is full.\nThe major downside to this is that admins can't connect to the server using the 'find server' dialog.\nInstead, they have to go to console and use the command 'connect <ip>'" } )
+			xgset_ULX_cat4:AddItem( x_makeslider{ label = "Number of Reserved Slots", min=0, max=GetConVarNumber( "sv_maxplayers" ), convar="ulx_cl_rslots" } )
+			xgset_ULX_cat4:AddItem( x_makeslider{ label = "Reserved Slots Mode", min=0, max=3, convar="ulx_cl_rslotsMode", tooltip="0 - Off\n1 - Keep # of slots reserved for admins, admins fill slots\n2 - Keep # of slots reserved for admins, admins don't fill slots, they'll be freed when a player leaves\n3 - Always keep 1 slot open for admins, kick the user with the shortest connection time if an admin joins\nFor more information on reserved slots, check out the ulx server.ini file" } )
+			xgset_ULX_cat4:AddItem( x_makecheckbox{ label= "Reserved Slots Visible", convar="ulx_cl_rslotsVisible", tooltip="When enabled, if there are no regular player slots available in your server, it will appear that the server is full.\nThe major downside to this is that admins can't connect to the server using the 'find server' dialog.\nInstead, they have to go to console and use the command 'connect <ip>'" } )
 		xgset_ULX:AddItem( x_makecat{ label="Reserved Slots", contents=xgset_ULX_cat4 } )
 
 ------------

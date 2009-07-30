@@ -54,16 +54,7 @@ end
 ULib.concommand( "xgui_requestgamemodes", getGamemodes )
 
 local function getGimps( ply )
-	local gimps = {}
-	--Special thanks to Megiddo for this bit of code
-	local gi = debug.getinfo( ulx.cc_addGimpSay )
-	for i=1, gi.nups do
-		local k, v = debug.getupvalue( ulx.cc_addGimpSay, i )
-		if k == "gimpSays" then
-			gimps = v
-		end
-	end
-	for _, v in ipairs( gimps ) do
+	for _, v in ipairs( ulx.gimpSays ) do
 		umsg.Start( "xgui_gimp", ply )
 		umsg.String( v )
 		umsg.End()
@@ -88,41 +79,29 @@ end
 ULib.concommand( "xgui_removegimp", removeGimp )
 
 local function getAdverts( ply )
-	local gi = debug.getinfo( ulx.addAdvert )
-	for i=1, gi.nups do
-		local tablename, adverts = debug.getupvalue( ulx.addAdvert, i )
-		if tablename == "adverts" then
-			for groupname, advertgroup in pairs( adverts ) do 
-				for num, advert in pairs( advertgroup ) do
-					umsg.Start( "xgui_advert" , ply )
-						ULib.umsgSend( advert )
-						ULib.umsgSend( groupname )
-						ULib.umsgSend( num )
-					umsg.End()
-				end
-			end
+	for groupname, advertgroup in pairs( ulx.adverts ) do 
+		for num, advert in pairs( advertgroup ) do
+			umsg.Start( "xgui_advert" , ply )
+				ULib.umsgSend( advert )
+				ULib.umsgSend( groupname )
+				ULib.umsgSend( num )
+			umsg.End()
 		end
-	end	
+	end
 end
 ULib.concommand( "xgui_requestadverts", getAdverts )
 
 local function removeAdvert( ply, func, args )
-	local gi = debug.getinfo( ulx.addAdvert )
-	for i=1, gi.nups do
-		local tablename, adverts = debug.getupvalue( ulx.addAdvert, i )
-		if tablename == "adverts" then
-			for groupname, advertgroup in pairs( adverts ) do
-				for num, _ in pairs( advertgroup ) do
-					if tostring( groupname ) == args[1] and tostring( num ) == args[2] then
-						table.remove( advertgroup, num )
-						if next( advertgroup ) == nil then
-							print( "ULXAdvert" .. type( groupname ) .. groupname )
-							adverts.groupname = nil
-							timer.Remove( "ULXAdvert" .. type( groupname ) .. groupname )
-						end
-						return nil
-					end
+	for groupname, advertgroup in pairs( ulx.adverts ) do
+		for num, _ in pairs( advertgroup ) do
+			if tostring( groupname ) == args[1] and tostring( num ) == args[2] then
+				table.remove( advertgroup, num )
+				if next( advertgroup ) == nil then
+					print( "ULXAdvert" .. type( groupname ) .. groupname )
+					adverts.groupname = nil
+					timer.Remove( "ULXAdvert" .. type( groupname ) .. groupname )
 				end
+				return nil
 			end
 		end
 	end

@@ -23,7 +23,7 @@ BOOL:
 multiselect - Allow multiple selects
 autosize - Used with the panel list, it will size the panel based on its contents
 enableinput - Used with textbox/multichoice, will enable/disable input
---]]
+]]--
 
 function x_makeslider( t )
 	local xgui_temp = vgui.Create( "DNumSlider", t.parent )
@@ -44,7 +44,7 @@ function x_makecheckbox( t )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetText( t.label or "" )
 	xgui_temp:SizeToContents()
-	if t.convar then xgui_temp:SetConVar( t.convar ) end
+	xgui_temp:SetConVar( t.convar )
 	if t.tooltip then xgui_temp:SetTooltip( t.tooltip ) end
 	return xgui_temp
 end
@@ -90,7 +90,7 @@ function x_maketextbox( t )
 	local xgui_temp = vgui.Create( "DTextEntry", t.parent )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetWide( t.w )
-	if t.h == nil then t.h = 20 end
+	if !t.h then t.h = 20 end
 	xgui_temp:SetTall( t.h )
 	xgui_temp:SetEnterAllowed( true )
 	if t.text then xgui_temp:SetText( t.text ) end

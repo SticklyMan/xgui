@@ -17,7 +17,7 @@ hook.Add( "xgui_addon", "xgui_addon_test", function2 )
 local function my_cool_addon( parent )
 	--You may make your Derma and VGUI controls as you wish, you don't have to use the xgui_helper functions (so you don't have to recode your entire GUI)
 	local mca_blah = x_makepanelist{ x=10, y=10, w=200, h=100, parent=parent }
-	mca_blah:AddItem( x_makeslider{ max=100, label="The slider of DOOM!", decimal=2 } )
+	mca_blah:AddItem( x_makeslider{ max=666, label="The slider of DOOM!", decimal=2 } )
 	mca_blah:AddItem( x_makecheckbox{ label="Save the whales?" } )
 	x_makecolorpicker{ x=250, y=20, w=200, h=200, parent=parent }
 	x_makebutton{ x=170, y=150, w=100, h=20, label="Recieve Bacon", parent=parent }
