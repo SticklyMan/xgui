@@ -1,28 +1,17 @@
 --Maps module for ULX GUI -- by Stickly Man!
 --Lists maps on server, allows for map voting, changing levels, etc.
 
-local xgmp_cur_map
-
 function xgui_tab_maps()
-	xgmp_cur_map = "No Map Selected"
 	xgmp_gamemodes = {}
 	table.insert( xgmp_gamemodes, "<default>" )
 	
 	xgui_maps = vgui.Create( "DPanel" )
 -----------
-	xgui_maps.Paint = function()
-		surface.SetDrawColor( 191, 191, 191, 255 )
-		surface.DrawRect( 0, 0, 590, 390 )
-		surface.SetTextColor( 0, 0, 0, 255 )
-		surface.SetTextPos( 10, 10 )
-		surface.DrawText( "Server Maps" )
-		surface.SetTextPos( 195, 225 )
-		surface.DrawText( xgmp_cur_map )
-		surface.SetTextPos( 10, 343 )
-		surface.DrawText( "Gamemode:" )
-	end
+	x_makelabel{ x=10, y=10, label="Server Maps", parent=xgui_maps, textcolor=Color( 0, 0, 0, 255 ) }
+	x_makelabel{ x=10, y=348, label="Gamemode:", parent=xgui_maps, textcolor=Color( 0, 0, 0, 255 ) }
+	xgmp_cur_map = x_makelabel{ x=195, y=225, label="No Map Selected", parent=xgui_maps, textcolor=Color( 0, 0, 0, 255 ) }
 -----------
-	xgmp_maps_list = x_makelistview{ x=10, y=30, w=175, h=310, multiselect=true, parent=xgui_maps } --Remember to enable/disable multiselect based on admin status?
+	xgmp_maps_list = x_makelistview{ x=5, y=30, w=175, h=315, multiselect=true, parent=xgui_maps } --Remember to enable/disable multiselect based on admin status?
 	xgmp_maps_list:AddColumn( "Map Name" )
 	xgmp_maps_list.OnRowSelected = function()
 	 	if ( file.Exists( "../materials/maps/" .. xgmp_maps_list:GetSelected()[1]:GetColumnText(1) .. ".vmt" ) ) then 
@@ -30,7 +19,7 @@ function xgui_tab_maps()
  		else 
  			xgmp_maps_disp:SetImage( "maps/noicon.vmt" )
  		end
-		xgmp_cur_map = xgmp_maps_list:GetSelected()[1]:GetColumnText(1)
+		xgmp_cur_map:SetText( xgmp_maps_list:GetSelected()[1]:GetColumnText(1) )
 	end
 -----------
 	xgmp_maps_disp = vgui.Create( "DImage", xgui_maps )
@@ -38,19 +27,19 @@ function xgui_tab_maps()
 	xgmp_maps_disp:SetImage( "maps/noicon.vmt" )
 	xgmp_maps_disp:SetSize( 192, 192 )
 -----------
-	xgmp_select_gamemode = x_makemultichoice{ x=70, y=340, w=115, h=20, text="<default>", parent=xgui_maps }
+	xgmp_select_gamemode = x_makemultichoice{ x=70, y=345, w=110, h=20, text="<default>", parent=xgui_maps }
 	xgmp_select_gamemode:AddChoice( "<default>" )
 -----------
 	local xgmp_votemap1 = x_makebutton{ x=195, y=245, w=192, h=20, label="Vote to play this map!", parent=xgui_maps }
 	xgmp_votemap1.DoClick = function()
-		if xgmp_cur_map ~= "No Map Selected" then
+		if xgmp_cur_map:GetValue() ~= "No Map Selected" then
 			RunConsoleCommand( "ulx", "votemap", xgmp_cur_map )
 		end
 	end
 ------------
 	local xgmp_votemap2 = x_makebutton{ x=195, y=270, w=192, h=20, label="Server-wide vote of selected map(s)", parent=xgui_maps }
 	xgmp_votemap2.DoClick = function()
-		if xgmp_cur_map ~= "No Map Selected" then
+		if xgmp_cur_map:GetValue() ~= "No Map Selected" then
 			local xgmp_temp = {}
 			for k, v in ipairs( xgmp_maps_list:GetSelected() ) do
 				table.insert( xgmp_temp, xgmp_maps_list:GetSelected()[k]:GetColumnText(1))
@@ -61,11 +50,11 @@ function xgui_tab_maps()
 ------------
 	local xgmp_changemap = x_makebutton{ x=195, y=295, w=192, h=20, label="Force changelevel to this map", parent=xgui_maps }
 	xgmp_changemap.DoClick = function()
-		if xgmp_cur_map ~= "No Map Selected" then
+		if xgmp_cur_map:GetValue() ~= "No Map Selected" then
 			if xgmp_select_gamemode:GetValue() == "<default>" then
-				RunConsoleCommand( "ulx", "map", xgmp_cur_map )
+				RunConsoleCommand( "ulx", "map", xgmp_cur_map:GetValue() )
 			else
-				RunConsoleCommand( "ulx", "map", xgmp_cur_map, xgmp_select_gamemode:GetValue() )
+				RunConsoleCommand( "ulx", "map", xgmp_cur_map:GetValue(), xgmp_select_gamemode:GetValue() )
 			end
 		end
 	end
@@ -75,7 +64,7 @@ function xgui_tab_maps()
 		RunConsoleCommand( "ulx", "veto" )
 	end
 ------------
-	local xgmp_settings_votemap = x_makepanelist{ x=395, y=30, w=185, h=50, parent=xgui_maps, autosize=true }
+	local xgmp_settings_votemap = x_makepanelist{ x=400, y=30, w=185, h=335, parent=xgui_maps }
 	
 	xgmp_settings_votemap:AddItem( x_makecheckbox{ label="Enable Player Votemaps", convar="ulx_cl_votemapEnabled" } )
 	xgmp_settings_votemap:AddItem( x_makeslider{ label="Minimum Time", 	min=0, max=300,convar="ulx_cl_votemapMintime", tooltip="Time in minutes after a map change before a votemap can be started" } )
@@ -106,3 +95,7 @@ end
 usermessage.Hook( "xgui_gamemode_rcv", xgui_gamemode_recieve )
 
 xgui_modules[3]=xgui_tab_maps
+
+
+--TODO: Map Icon isnt square..
+--TELL MEGIDDO! ulx.maps is only accessible when you have permissions! fix or make my own maps thing?

@@ -13,6 +13,7 @@ x, y, w, h - x,y position, width, and height of control
 min, max, decimal - used with a slider, sets the minimum and maximum value, and the number of decimal places to use.
 spacing, padding - used with panellist, determines how much spacing there is between controls, and their distance from the edge of the panel
 value = sets the value of a slider/numberwang
+headerheight = sets height of a DListView header
 
 OTHER:
 parent - the panel on which the control will be affixed
@@ -23,6 +24,7 @@ BOOL:
 multiselect - Allow multiple selects
 autosize - Used with the panel list, it will size the panel based on its contents
 enableinput - Used with textbox/multichoice, will enable/disable input
+vscroll, hscroll - Enables/disabels vertical and horizontal scrollbars
 ]]--
 
 function x_makeslider( t )
@@ -64,7 +66,8 @@ function x_makepanelist( t )
 	xgui_temp:SetSize( t.w, t.h )
 	xgui_temp:SetSpacing( t.spacing or 5 )
 	xgui_temp:SetPadding( t.padding or 5 )
-	xgui_temp:EnableVerticalScrollbar( true )
+	xgui_temp:EnableVerticalScrollbar( t.vscroll or true )
+	xgui_temp:EnableHorizontal( t.hscroll or false )
 	xgui_temp:SetAutoSize( t.autosize )
 	return xgui_temp
 end
@@ -104,12 +107,13 @@ function x_makelistview( t )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetSize( t.w, t.h )
 	xgui_temp:SetMultiSelect( t.multiselect )
+	xgui_temp:SetHeaderHeight( t.headerheight or 20 )
 	return xgui_temp
 end
 
 function x_makecat( t )
 	local xgui_temp = vgui.Create( "DCollapsibleCategory", t.parent )
-	xgui_temp:SetSize( 200, 50 )
+	xgui_temp:SetSize( t.w, t.h )
 	xgui_temp:SetLabel( t.label or "" )
 	xgui_temp:SetContents( t.contents )
 	return xgui_temp
@@ -167,3 +171,17 @@ end
 function DMultiChoice:GetText()
 	return self.TextEntry:GetValue()
 end
+
+--Megiddo and I are sick of Number sliders and their spam of updating convars. Lets make our own NumSlider that only sets the convar when the mouse is released!
+local PANEL = {}
+local xgui_temp_x
+function PANEL:Init()
+	self = vgui.Create( "DNumSlider", self )
+end
+
+function PANEL:TranslateValues( x, y )
+		xgui_temp_x = x
+		return x, y
+end
+
+derma.DefineControl( "DNumSlider_XGUI", "", PANEL, "Panel" )

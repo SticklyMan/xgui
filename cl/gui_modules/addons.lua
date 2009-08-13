@@ -22,7 +22,7 @@ function xgui_tab_addons()
 		xgui_addon_select:AddChoice( k )
 	end
 	
-	xgui_base:AddSheet( "Addons", xgui_addons, "gui/silkicons/plugin", false, false )
+	xgui_base:AddSheet( "Modules", xgui_addons, "gui/silkicons/plugin", false, false )
 end
 
 xgui_modules[5]=xgui_tab_addons

@@ -4,15 +4,8 @@
 function xgui_tab_admin()
 	xgui_admin = vgui.Create( "DPanel" )
 -----------
-	xgui_admin.Paint = function()
-		surface.SetDrawColor( 191, 191, 191, 255 )
-		surface.DrawRect( 0, 0, 590, 390 )
-		surface.SetTextColor( 0, 0, 0, 255 )
-		surface.SetTextPos( 10, 10 )
-		surface.DrawText( "Server Admins" )
-		surface.SetTextPos( 300, 10 )
-		surface.DrawText( "Non-Admin Players" )
-	end
+	x_makelabel{ x=300, y=10, label="Non-Admin Players", parent=xgui_admin, textcolor=Color( 0, 0, 0, 255 ) }
+	x_makelabel{ x=10, y=10, label="Server Admins", parent=xgui_admin, textcolor=Color( 0, 0, 0, 255 ) }
 -----------
 	xgad_admin_list = x_makelistview{ x=10, y=30, w=280, h=265, multiselect=false, parent=xgui_admin }
 	xgad_admin_list:AddColumn( "Name" )
@@ -84,13 +77,8 @@ function xgui_tab_admin()
 			else
 				xgad_add_admin:SetTitle( "Assign " .. xgad_admin_list:GetSelected()[1]:GetColumnText(1) )
 			end
-			xgad_add_admin.PaintOver = function()
-				surface.SetTextColor( 0, 0, 0, 255 )
-				surface.SetTextPos( 10, 30 )
-				surface.DrawText( "Group" )
-				surface.SetTextPos( 10, 53 )
-				surface.DrawText( "Immunity" )
-			end
+			x_makelabel{ x=10, y=30, label="Group", parent=xgad_add_admin }
+			x_makelabel{ x=10, y=53, label="Immunity", parent=xgad_add_admin }
 			
 			local xgad_add_group = x_makemultichoice{ x=65, y=28, w=125, h=20, text="Select...", parent=xgad_add_admin }
 			for k, v in pairs( ULib.ucl.groups ) do
@@ -142,17 +130,10 @@ function xgui_tab_admin()
 	xgad_add_button.DoClick = function()
 	
 		local xgad_add_admin = x_makeframepopup{ label="Add an Admin", w=200, h=150 }
-		xgad_add_admin.PaintOver = function()
-			surface.SetTextColor( 0, 0, 0, 255 )
-			surface.SetTextPos( 10, 30 )
-			surface.DrawText( "Name" )
-			surface.SetTextPos( 10, 53 )
-			surface.DrawText( "SteamID" )
-			surface.SetTextPos( 10, 76 )
-			surface.DrawText( "Group" )
-			surface.SetTextPos( 10, 99 )
-			surface.DrawText( "Immunity" )
-		end
+		x_makelabel{ x=10, y=30, label="Name", parent=xgad_add_admin }
+		x_makelabel{ x=10, y=53, label="SteamID", parent=xgad_add_admin }
+		x_makelabel{ x=10, y=76, label="Group", parent=xgad_add_admin }
+		x_makelabel{ x=10, y=99, label="Immunity", parent=xgad_add_admin }
 		
 		local xgad_add_group = x_makemultichoice{ x=65, y=73, w=125, h=20, text="Select...", parent=xgad_add_admin }
 		for k, v in pairs( ULib.ucl.groups ) do

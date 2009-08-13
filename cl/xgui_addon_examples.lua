@@ -1,5 +1,7 @@
 --Here is the base for the code needed to integrate your gui with ULX
---Function 1 is the function in which all your gui controls are created. Please note that your GUI controls must be parented to 'parent'
+--Function 1 is the function in which all your gui controls are created. 
+--NOTE: YOUR GUI CONTROLS MUST BE PARENTED TO 'PARENT'!
+
 local function function1( parent )
 	--Using xgui_helpers, this will make a simple label parented to the xgui menu.
 	--Also note that you have a 570x330 area to work with
