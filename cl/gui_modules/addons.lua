@@ -4,7 +4,7 @@
 xgui_addon_list = {}
 
 function xgui_tab_addons()
-	xgui_addons = vgui.Create( "DPanel" )
+	xgui_addons = x_makeXpanel( t )
 ------------
 	xgui_addon_panel = x_makepanel{ x=10, y=30, w=570, h=330, parent=xgui_addons }
 	xgui_addon_select = x_makemultichoice{ x=10, y=10, w=150, h=20, parent=xgui_addons, text="Select an Addon..." }

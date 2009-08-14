@@ -7,6 +7,8 @@ label - used for text near a control
 tooltip - used to show info when a mouse is hovering over a control
 convar - used to link a control to a convar
 text - set the text in a textbox
+access - ULX access string used to determine whether the control is enabled or disabled
+saccess - ULX access string used to determine if the control is visible
 
 NUMBERS:
 x, y, w, h - x,y position, width, and height of control
@@ -25,6 +27,7 @@ multiselect - Allow multiple selects
 autosize - Used with the panel list, it will size the panel based on its contents
 enableinput - Used with textbox/multichoice, will enable/disable input
 vscroll, hscroll - Enables/disabels vertical and horizontal scrollbars
+focuscontrol - Determines whether to specify special functions for xgui_base's keyboard focus handling stuff
 ]]--
 
 function x_makeslider( t )
@@ -99,6 +102,20 @@ function x_maketextbox( t )
 	if t.text then xgui_temp:SetText( t.text ) end
 	if t.enableinput then xgui_temp:SetEnabled( t.enableinput ) end
 	xgui_temp:SetToolTip( t.tooltip )
+	
+	--For XGUI keyboard focus handling
+	if ( t.focuscontrol == true ) then
+		print("Stage1")
+		xgui_temp.OnGetFocus = function( self )
+			print("Calling SetKeyboard")
+			xgui_SetKeyboard()
+		end
+		xgui_temp.OnLoseFocus = function( self )
+			print("Calling ReleaseKeyboard")
+			xgui_ReleaseKeyboard()
+			self:UpdateConvarValue()
+		end
+	end
 	return xgui_temp
 end
 
@@ -123,6 +140,14 @@ function x_makepanel( t )
 	local xgui_temp = vgui.Create( "DPanel", t.parent )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetSize( t.w, t.h )
+	return xgui_temp
+end
+
+function x_makeXpanel( t )
+	xgui_temp = vgui.Create( "DPanel_XGUI" )
+	xgui_temp:MakePopup()
+	xgui_temp:SetKeyboardInputEnabled( false )
+    xgui_temp:SetMouseInputEnabled( true )
 	return xgui_temp
 end
 
@@ -185,3 +210,15 @@ function PANEL:TranslateValues( x, y )
 end
 
 derma.DefineControl( "DNumSlider_XGUI", "", PANEL, "Panel" )
+
+--A stripped-down customized DFrame allowing for textbox input!
+local PANEL = {}
+AccessorFunc( PANEL, "m_bPaintBackground", "PaintBackground" )
+Derma_Hook( PANEL, "Paint", "Paint", "Panel" )
+Derma_Hook( PANEL, "ApplySchemeSettings", "Scheme", "Panel" )
+
+function PANEL:Init()
+        self:SetPaintBackground( true )
+end
+
+derma.DefineControl( "DPanel_XGUI", "", PANEL, "EditablePanel" )

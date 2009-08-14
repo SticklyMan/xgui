@@ -2,7 +2,7 @@
 --Shows all admins in server and their online/offline status, allows adding/removing admins
 
 function xgui_tab_admin()
-	xgui_admin = vgui.Create( "DPanel" )
+	xgui_admin = x_makeXpanel( t )
 -----------
 	x_makelabel{ x=300, y=10, label="Non-Admin Players", parent=xgui_admin, textcolor=Color( 0, 0, 0, 255 ) }
 	x_makelabel{ x=10, y=10, label="Server Admins", parent=xgui_admin, textcolor=Color( 0, 0, 0, 255 ) }

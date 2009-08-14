@@ -2,7 +2,7 @@
 --Allows changing of various settings
 
 function xgui_tab_settings()
-	xgui_settings = vgui.Create( "DPanel" )
+	xgui_settings = x_makeXpanel( t )
 ------------
 	local xgset_general = x_makepanelist{ x=5, y=30, w=190, h=335, spacing=1, padding=0, parent=xgui_settings, autosize=false }
 		local xgset_general_cat1 = x_makepanelist{ autosize=true }

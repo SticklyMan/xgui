@@ -26,9 +26,9 @@ Msg( "//  Modules Loaded!                  //\n" )
 Msg( "///////////////////////////////////////\n\n" )
 
 function xgui_show()
+
 	gui.EnableScreenClicker( true )
 	RestoreCursorPosition( )
-	
 	xgui_base = vgui.Create( "DPropertySheet" )
 	xgui_base:SetPos( ScrW()/2 - 300, ScrH()/2 - 200 )
 	xgui_base:SetSize( 600, 400 )
@@ -37,14 +37,33 @@ function xgui_show()
 		ShowModule()
 	end
 	
+	--Overrides the tabs click command to realign the panel onto the window when clicked.. DPanels DO NOT like being MakePopup()'d
+	for _, v in pairs( xgui_base.Items ) do
+		v.Tab.OnMousePressed = function( self, mcode )
+			self:GetPropertySheet():SetActiveTab( self )
+			for _, v in pairs( xgui_base.Items ) do
+				if ( v.Tab == self ) then
+					ULib.queueFunctionCall( v.Panel.SetPos, v.Panel, ScrW()/2 - 295, ScrH()/2 - 173 )
+				end
+			end
+		end
+	end	
+		
 	if xgui_lasttab then
 		xgui_base:SetActiveTab( xgui_base.Items[xgui_lasttab]["Tab"] )
-	end 
+	end
+	
+	for _,obj in ipairs(xgui_base.Items) do
+		if obj.Tab == xgui_base:GetActiveTab() then
+			ULib.queueFunctionCall( obj.Panel.SetPos, obj.Panel, ScrW()/2 - 295, ScrH()/2 - 173 )
+		end
+	end
+
 end
 
 
 function xgui_hide()
-		--Easiest way to find the index of the active tab, since just using GetActiveTab causes strange problems
+		--Easiest way to find the index of the active tab
 		for x,obj in ipairs(xgui_base.Items) do
 			if obj.Tab == xgui_base:GetActiveTab() then
 				xgui_lasttab = x
@@ -67,6 +86,22 @@ end
 function xgui_refresh()
 	xgui_hide()
 	xgui_show()
+end
+
+function xgui_SetKeyboard()
+	for _,obj in ipairs(xgui_base.Items) do
+		if ( obj.Tab == xgui_base:GetActiveTab() ) then
+			obj.Panel:SetKeyboardInputEnabled( true )
+		end
+	end
+end
+
+function xgui_ReleaseKeyboard()
+	for _,obj in ipairs(xgui_base.Items) do
+		if ( obj.Tab == xgui_base:GetActiveTab() ) then
+			obj.Panel:SetKeyboardInputEnabled( false )
+		end
+	end
 end
 
 concommand.Add( "xgui_show", xgui_show )

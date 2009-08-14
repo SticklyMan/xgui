@@ -5,7 +5,7 @@ function xgui_tab_maps()
 	xgmp_gamemodes = {}
 	table.insert( xgmp_gamemodes, "<default>" )
 	
-	xgui_maps = vgui.Create( "DPanel" )
+	xgui_maps = x_makeXpanel( t )
 -----------
 	x_makelabel{ x=10, y=10, label="Server Maps", parent=xgui_maps, textcolor=Color( 0, 0, 0, 255 ) }
 	x_makelabel{ x=10, y=348, label="Gamemode:", parent=xgui_maps, textcolor=Color( 0, 0, 0, 255 ) }
