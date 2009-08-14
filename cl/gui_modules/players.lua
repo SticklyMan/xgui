@@ -4,7 +4,15 @@
 function xgui_tab_player()
 	xgui_player = x_makeXpanel( t )
 ------------
-	x_maketextbox{ x=10, y=340, w=335, parent=xgui_player, text="Enter a console command...", focuscontrol=true, enableinput=true }
+	xgpl_rcon = x_maketextbox{ x=10, y=340, w=335, parent=xgui_player, text="Enter a console command...", focuscontrol=true, enableinput=true }
+	xgpl_rcon.OnGetFocus = function( self )
+		xgpl_rcon:SelectAllText()
+		xgui_SetKeyboard()
+	end
+	xgpl_rcon.OnEnter = function()
+		RunConsoleCommand( "ulx", "rcon", unpack( string.Explode(" ", xgpl_rcon:GetValue() ) ) )
+		xgpl_rcon:SetText( "Enter a console command..." )
+	end
 -----------
 	xgpl_player_list = x_makelistview{ x=10, y=30, w=335, h=310, multiselect=false, parent=xgui_player }
 	xgpl_player_list:AddColumn( "Name" )
@@ -43,7 +51,6 @@ function xgui_tab_player()
 		xgpl_commands_group1:AddLine( "Commands" )
 		xgpl_commands_group1:AddLine( "Kick" )
 		xgpl_commands_group1:AddLine( "Spectate" )
-		xgpl_commands_group1:AddLine( "Tools" )
 		xgpl_commands_group1:AddLine( "Voteban" )
 		xgpl_commands_group1:AddLine( "Votekick" )
 		xgpl_commands_group1:SetHeight( 17*#xgpl_commands_group1:GetLines() )
@@ -98,7 +105,7 @@ function xgui_tab_player()
 ------------
 	xgpl_player_list:Clear()
 	for k, v in pairs( player.GetAll() ) do	
-		xgpl_player_list:AddLine( v:Nick(), table.concat( v:GetGroups() ) )
+		xgpl_player_list:AddLine( v:Nick(), v:GetUserGroup() )
 	end
 	xgui_base:AddSheet( "Players", xgui_player, "gui/silkicons/group", false, false )
 end

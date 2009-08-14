@@ -24,7 +24,7 @@ function xgui_tab_admin()
 	
 	for k, v in pairs( player.GetAll() ) do
 		if not v:IsAdmin() then
-				xgad_player_list:AddLine( v:Nick(), table.concat( v:GetGroups() ) )
+				xgad_player_list:AddLine( v:Nick(), v:GetUserGroup() )
 		end
 	end
 -----------

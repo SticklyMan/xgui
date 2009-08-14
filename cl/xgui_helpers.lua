@@ -30,20 +30,6 @@ vscroll, hscroll - Enables/disabels vertical and horizontal scrollbars
 focuscontrol - Determines whether to specify special functions for xgui_base's keyboard focus handling stuff
 ]]--
 
-function x_makeslider( t )
-	local xgui_temp = vgui.Create( "DNumSlider", t.parent )
-	xgui_temp:SetText( t.label or "" )
-	xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
-	xgui_temp:SetDecimals( t.decimal or 0 )
-	xgui_temp:SetConVar( t.convar )
-	xgui_temp:SetTooltip( t.tooltip )
-	xgui_temp:SetPos( t.x, t.y )
-	xgui_temp:SetWidth( t.w )
-	xgui_temp:SizeToContents()
-	if t.value then xgui_temp:SetValue( t.value ) end
-	return xgui_temp
-end
-
 function x_makecheckbox( t )
 	local xgui_temp = vgui.Create( "DCheckBoxLabel", t.parent )
 	xgui_temp:SetPos( t.x, t.y )
@@ -105,13 +91,10 @@ function x_maketextbox( t )
 	
 	--For XGUI keyboard focus handling
 	if ( t.focuscontrol == true ) then
-		print("Stage1")
 		xgui_temp.OnGetFocus = function( self )
-			print("Calling SetKeyboard")
 			xgui_SetKeyboard()
 		end
 		xgui_temp.OnLoseFocus = function( self )
-			print("Calling ReleaseKeyboard")
 			xgui_ReleaseKeyboard()
 			self:UpdateConvarValue()
 		end
@@ -192,26 +175,95 @@ function x_makecolorpicker( t )
 	return xgui_temp
 end
 
---A function for DMultiChoice that will get the text of the currently selected option.. Why this isn't included in the current derma, I have no freakin clue!
+--A function for DMultiChoice that will get the text of the currently selected option.. 
 function DMultiChoice:GetText()
 	return self.TextEntry:GetValue()
 end
 
---Megiddo and I are sick of Number sliders and their spam of updating convars. Lets make our own NumSlider that only sets the convar when the mouse is released!
-local PANEL = {}
-local xgui_temp_x
-function PANEL:Init()
-	self = vgui.Create( "DNumSlider", self )
-end
-
-function PANEL:TranslateValues( x, y )
+--------------------------------------------------
+--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the convar when the mouse is released! (And allows for textbox input)
+--------------------------------------------------
+function x_makeslider( t )
+	local xgui_temp = vgui.Create( "DNumSlider", t.parent )
+	xgui_temp:SetText( t.label or "" )
+	xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
+	xgui_temp:SetDecimals( t.decimal or 0 )
+	xgui_temp:SetConVar( t.convar )
+	xgui_temp:SetTooltip( t.tooltip )
+	xgui_temp:SetPos( t.x, t.y )
+	xgui_temp:SetWidth( t.w )
+	xgui_temp:SizeToContents()
+	if t.value then xgui_temp:SetValue( t.value ) end
+	
+	--Keyboard focus stuff
+	xgui_temp.Wang.TextEntry.OnGetFocus = function()
+		xgui_SetKeyboard()
+	end
+	xgui_temp.Wang.TextEntry.OnLoseFocus = function()
+		xgui_ReleaseKeyboard()
+	end	
+	
+	--Slider update stuff (Most of this code is copied from the default DNumSlider)
+	xgui_temp.Slider.TranslateValues = function( self, x, y )
+		--Store the value and update the textbox to the new value
 		xgui_temp_x = x
+		xgui_temp.Wang.TextEntry:SetText( xgui_temp.Wang.m_numMin + ( ( xgui_temp.Wang.m_numMax - xgui_temp.Wang.m_numMin ) * x ) )
 		return x, y
+	end
+	xgui_temp.Slider.OnMouseReleased = function( self, mcode )
+		xgui_temp.Slider:SetDragging( false )
+		xgui_temp.Slider:MouseCapture( false )
+		--Update the actual value to the value we stored earlier
+		xgui_temp.Wang:SetFraction( xgui_temp_x )
+	end
+	
+	--This makes it so the value doesnt change while you're typing in the textbox
+	xgui_temp.Wang.TextEntry.OnTextChanged = function() end
+	
+	--NumberWang update stuff(Most of this code is copied from the default DNumSlider)
+	xgui_temp.Wang.OnCursorMoved = function( self, x, y )
+		if ( !self.Dragging ) then return end
+		local fVal = self:GetFloatValue()
+		local y = gui.MouseY()
+		local Diff = y - self.HoldPos
+		local Sensitivity = math.abs(Diff) * 0.025
+		Sensitivity = Sensitivity / ( self:GetDecimals() + 1 )
+		fVal = math.Clamp( fVal + Diff * Sensitivity, self.m_numMin, self.m_numMax )
+		self:SetFloatValue( fVal )
+		local x, y = self.Wanger:LocalToScreen( self.Wanger:GetWide() * 0.5, 0 )
+		input.SetCursorPos( x, self.HoldPos )
+		--Instead of updating the value, we're going to store it for later
+		xgui_temp_fVal = fVal
+		
+		if ( ValidPanel( self.IndicatorT ) ) then self.IndicatorT:InvalidateLayout() end
+		if ( ValidPanel( self.IndicatorB ) ) then self.IndicatorB:InvalidateLayout() end
+		
+		--Since we arent updating the value, we need to manually set the value of the textbox. YAY!!
+		val = tonumber( fVal )
+		val = val or 0
+		if ( self.m_iDecimals == 0 ) then
+			val = Format( "%i", val )
+		elseif ( val != 0 ) then
+			val = Format( "%."..self.m_iDecimals.."f", val )
+			val = string.TrimRight( val, "0" )		
+			val = string.TrimRight( val, "." )
+		end
+		self.TextEntry:SetText( val )
+	end
+	
+	xgui_temp.Wang.OnMouseReleased = function( self, mousecode )
+		if ( self.Dragging ) then
+			self:EndWang()
+			self:SetValue( xgui_temp_fVal )
+		return end
+	end
+	
+	return xgui_temp
 end
 
-derma.DefineControl( "DNumSlider_XGUI", "", PANEL, "Panel" )
-
---A stripped-down customized DFrame allowing for textbox input!
+-----------------------------------------
+--A stripped-down customized DPanel allowing for textbox input!
+-----------------------------------------
 local PANEL = {}
 AccessorFunc( PANEL, "m_bPaintBackground", "PaintBackground" )
 Derma_Hook( PANEL, "Paint", "Paint", "Panel" )
