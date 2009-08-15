@@ -16,7 +16,7 @@ function xgui_tab_player()
 -----------
 	xgpl_player_list = x_makelistview{ x=10, y=30, w=335, h=310, multiselect=false, parent=xgui_player }
 	xgpl_player_list:AddColumn( "Name" )
-	xgpl_player_list:AddColumn( "Groups" )
+	xgpl_player_list:AddColumn( "Group" )
 -----------
 
 	local xgpl_pm = x_makebutton{ label="Send player a private message..." }

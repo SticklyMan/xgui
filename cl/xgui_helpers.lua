@@ -207,7 +207,16 @@ function x_makeslider( t )
 	xgui_temp.Slider.TranslateValues = function( self, x, y )
 		--Store the value and update the textbox to the new value
 		xgui_temp_x = x
-		xgui_temp.Wang.TextEntry:SetText( xgui_temp.Wang.m_numMin + ( ( xgui_temp.Wang.m_numMax - xgui_temp.Wang.m_numMin ) * x ) )
+		local val = xgui_temp.Wang.m_numMin + ( ( xgui_temp.Wang.m_numMax - xgui_temp.Wang.m_numMin ) * x )
+		if xgui_temp.Wang.m_iDecimals == 0 then
+			val = Format( "%i", val )
+		else
+			val = Format( "%." .. xgui_temp.Wang.m_iDecimals .. "f", val )
+			-- Trim trailing 0's and .'s 0 this gets rid of .00 etc
+			val = string.TrimRight( val, "0" )
+			val = string.TrimRight( val, "." )
+		end
+		xgui_temp.Wang.TextEntry:SetText( val )
 		return x, y
 	end
 	xgui_temp.Slider.OnMouseReleased = function( self, mcode )

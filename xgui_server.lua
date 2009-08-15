@@ -33,7 +33,7 @@ local function getAdmins( ply )
 			
 		umsg.Start( "xgui_admin", ply )
 			umsg.String( name )
-			umsg.String( table.concat( v.groups ) )
+			umsg.String( v:GetUserGroup() )
 			umsg.String( status )
 			umsg.String( v.id )
 		umsg.End()

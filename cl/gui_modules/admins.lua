@@ -9,7 +9,7 @@ function xgui_tab_admin()
 -----------
 	xgad_admin_list = x_makelistview{ x=10, y=30, w=280, h=265, multiselect=false, parent=xgui_admin }
 	xgad_admin_list:AddColumn( "Name" )
-	xgad_admin_list:AddColumn( "Groups" )
+	xgad_admin_list:AddColumn( "Group" )
 	xgad_admin_list:AddColumn( "Status" )
 	xgad_admin_list.OnRowSelected = function()
 		xgad_player_list:ClearSelection()
@@ -17,7 +17,7 @@ function xgui_tab_admin()
 -----------
 	xgad_player_list = x_makelistview{ x=300, y=30, w=280, h=265, multiselect=false, parent=xgui_admin }
 	xgad_player_list:AddColumn( "Name" )
-	xgad_player_list:AddColumn( "Groups" )
+	xgad_player_list:AddColumn( "Group" )
 	xgad_player_list.OnRowSelected = function()
 		xgad_admin_list:ClearSelection()
 	end
