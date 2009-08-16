@@ -14,8 +14,8 @@ NUMBERS:
 x, y, w, h - x,y position, width, and height of control
 min, max, decimal - used with a slider, sets the minimum and maximum value, and the number of decimal places to use.
 spacing, padding - used with panellist, determines how much spacing there is between controls, and their distance from the edge of the panel
-value = sets the value of a slider/numberwang
-headerheight = sets height of a DListView header
+value - sets the value of a slider/numberwang
+headerheight - sets height of a DListView header
 
 OTHER:
 parent - the panel on which the control will be affixed
@@ -92,7 +92,8 @@ function x_maketextbox( t )
 	--For XGUI keyboard focus handling
 	if ( t.focuscontrol == true ) then
 		xgui_temp.OnGetFocus = function( self )
-			xgui_SetKeyboard()
+			self:SelectAllText()
+			xgui_SetKeyboard( self )
 		end
 		xgui_temp.OnLoseFocus = function( self )
 			xgui_ReleaseKeyboard()
@@ -130,7 +131,6 @@ function x_makeXpanel( t )
 	xgui_temp = vgui.Create( "DPanel_XGUI" )
 	xgui_temp:MakePopup()
 	xgui_temp:SetKeyboardInputEnabled( false )
-    xgui_temp:SetMouseInputEnabled( true )
 	return xgui_temp
 end
 
@@ -199,7 +199,8 @@ function x_makeslider( t )
 	xgui_temp.Wang.TextEntry.OnGetFocus = function()
 		xgui_SetKeyboard()
 	end
-	xgui_temp.Wang.TextEntry.OnLoseFocus = function()
+	xgui_temp.Wang.TextEntry.OnLoseFocus = function( self )
+		self:UpdateConvarValue()
 		xgui_ReleaseKeyboard()
 	end	
 	

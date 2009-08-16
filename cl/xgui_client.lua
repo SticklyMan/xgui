@@ -3,6 +3,9 @@
 --Table storing the functions to show modules
 xgui_modules={}
 
+--Used to set which panel has the keyboard focus
+xgui_textpanel=nil
+
 --Creates instance to avoid returning nil problems later
 xgui_base = vgui.Create( "DPropertySheet" )
 xgui_base:Remove()
@@ -32,7 +35,7 @@ function xgui_show()
 	xgui_base = vgui.Create( "DPropertySheet" )
 	xgui_base:SetPos( ScrW()/2 - 300, ScrH()/2 - 200 )
 	xgui_base:SetSize( 600, 400 )
-	
+	xgui_base:SetMouseInputEnabled( true )
 	for k, ShowModule in pairs( xgui_modules ) do
 		ShowModule()
 	end
@@ -88,10 +91,20 @@ function xgui_refresh()
 	xgui_show()
 end
 
-function xgui_SetKeyboard()
-	for _,obj in ipairs(xgui_base.Items) do
+function xgui_SetKeyboard( panel )
+	for _,obj in ipairs( xgui_base.Items ) do
 		if ( obj.Tab == xgui_base:GetActiveTab() ) then
+			xgui_textpanel = panel
 			obj.Panel:SetKeyboardInputEnabled( true )
+			hook.Add( "VGUIMousePressed", "XGUI_Checkmouse", xgui_CheckMousePos )
+		end
+	end
+end
+
+function xgui_CheckMousePos( panel, mcode )
+	if mcode == MOUSE_LEFT then
+		if ( panel ~= xgui_textpanel ) then
+			xgui_ReleaseKeyboard()
 		end
 	end
 end
@@ -100,6 +113,7 @@ function xgui_ReleaseKeyboard()
 	for _,obj in ipairs(xgui_base.Items) do
 		if ( obj.Tab == xgui_base:GetActiveTab() ) then
 			obj.Panel:SetKeyboardInputEnabled( false )
+			hook.Remove( "VGUIMousePressed", "XGUI_Checkmouse" )
 		end
 	end
 end
