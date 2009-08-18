@@ -9,49 +9,13 @@ local xgui_module_files = file.FindInLua( "ulx/modules/cl/gui_modules/*.lua" )
 
 for _, file in ipairs( xgui_module_files ) do
 	AddCSLuaFile( "ulx/modules/cl/gui_modules/" .. file )
-	Msg( "//  MODULE: " .. file .. string.rep( " ", 17 - file:len() ) .. "//\n" )
+	Msg( "//  " .. file .. string.rep( " ", 25 - file:len() ) .. "//\n" )
 end
 
 Msg( "// GUI Modules Added!        //\n" )
 Msg( "///////////////////////////////\n" )
 
 AddCSLuaFile( "ulx/modules/cl/xgui_helpers.lua" )
-
-local function getAdmins( ply )
-	local status
-	local name
-	for k, v in pairs( ULib.ucl.users ) do
-		status = "Unavailable"
-		name = k
-		for a, b in pairs( player.GetAll() ) do
-			if b:SteamID() == v.id then
-				status = "Online"
-				name = b:Nick()
-				break
-			end
-		end
-			
-		umsg.Start( "xgui_admin", ply )
-			umsg.String( name )
-			umsg.String( v:GetUserGroup() )
-			umsg.String( status )
-			umsg.String( v.id )
-		umsg.End()
-	end
-end
-ULib.concommand( "xgui_requestadmins", getAdmins )
-
-local function getGamemodes( ply )
-	local dirs = file.FindDir( "../gamemodes/*" )
-		for _, dir in ipairs( dirs ) do
-			if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then
-				umsg.Start( "xgui_gamemode_rcv", ply )
-					umsg.String( dir )
-				umsg.End()
-			end
-		end
-end
-ULib.concommand( "xgui_requestgamemodes", getGamemodes )
 
 local function getGimps( ply )
 	for _, v in ipairs( ulx.gimpSays ) do
@@ -107,3 +71,38 @@ local function removeAdvert( ply, func, args )
 	end
 end
 ULib.concommand( "xgui_removeadvert", removeAdvert )
+
+
+--New functions! The older ones above may and probably will be removed.
+local function SendData( ply, func, args )
+	local xgui_data = {}
+	
+	--Gamemodes
+	xgui_data.gamemodes = {}
+	local dirs = file.FindDir( "../gamemodes/*" )
+	for _, dir in pairs( dirs ) do
+		if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then
+			table.insert( xgui_data.gamemodes, dir )
+		end
+	end
+	
+	--Votemaps
+	xgui_data.votemaps = {}
+	for _, v in pairs( ulx.votemaps ) do
+		table.insert( xgui_data.votemaps, v )
+	end
+	
+	--All maps (requires access to change level, or enable/disable votemaps)
+	if ply:query( "ulx map" ) or ply:query( "ulx_cl_votemapEnabled" ) then
+		xgui_data.maps = ulx.maps
+	end
+	
+	--ULIb will send the data to the client, quickly and easily!
+	ULib.clientRPC( ply, "xgui_RecieveData", xgui_data )
+end
+ULib.concommand( "xgui_getdata", SendData )
+
+local function blargh( ply, func, args )
+	ULib.ucl.setGroupInheritance( args[1], args[2] )
+end
+ULib.concommand( "xgui_setinh", blargh )

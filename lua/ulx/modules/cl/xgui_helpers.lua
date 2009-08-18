@@ -28,6 +28,7 @@ autosize - Used with the panel list, it will size the panel based on its content
 enableinput - Used with textbox/multichoice, will enable/disable input
 vscroll, hscroll - Enables/disabels vertical and horizontal scrollbars
 focuscontrol - Determines whether to specify special functions for xgui_base's keyboard focus handling stuff
+expanded - Determines whether or not a category is expanded when it is created
 ]]--
 
 function x_makecheckbox( t )
@@ -82,11 +83,10 @@ function x_maketextbox( t )
 	local xgui_temp = vgui.Create( "DTextEntry", t.parent )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetWide( t.w )
-	if !t.h then t.h = 20 end
-	xgui_temp:SetTall( t.h )
+	xgui_temp:SetTall( t.h or 20 )
 	xgui_temp:SetEnterAllowed( true )
 	if t.text then xgui_temp:SetText( t.text ) end
-	if t.enableinput then xgui_temp:SetEnabled( t.enableinput ) end
+	if t.enableinput ~= nil then xgui_temp:SetEnabled( t.enableinput ) end
 	xgui_temp:SetToolTip( t.tooltip )
 	
 	--For XGUI keyboard focus handling
@@ -117,6 +117,7 @@ function x_makecat( t )
 	xgui_temp:SetSize( t.w, t.h )
 	xgui_temp:SetLabel( t.label or "" )
 	xgui_temp:SetContents( t.contents )
+	if t.expanded ~= nil then xgui_temp:SetExpanded( t.expanded ) end
 	return xgui_temp
 end
 
@@ -150,7 +151,7 @@ function x_makemultichoice( t )
 	local xgui_temp = vgui.Create( "DMultiChoice", t.parent )
 	xgui_temp:SetText( t.text or "" )
 	xgui_temp:SetPos( t.x, t.y )
-	xgui_temp:SetSize( t.w, t.h )
+	xgui_temp:SetSize( t.w, t.h or 20 )
 	xgui_temp:SetEditable( t.enableinput )
 	return xgui_temp
 end
@@ -175,7 +176,7 @@ function x_makecolorpicker( t )
 	return xgui_temp
 end
 
---A function for DMultiChoice that will get the text of the currently selected option.. 
+--A function for DMultiChoice that will get the text of the currently selected option
 function DMultiChoice:GetText()
 	return self.TextEntry:GetValue()
 end
@@ -201,6 +202,7 @@ function x_makeslider( t )
 	end
 	xgui_temp.Wang.TextEntry.OnLoseFocus = function( self )
 		self:UpdateConvarValue()
+		xgui_temp.Wang:SetValue( xgui_temp.Wang.TextEntry:GetValue() )
 		xgui_ReleaseKeyboard()
 	end	
 	
@@ -230,9 +232,9 @@ function x_makeslider( t )
 	--This makes it so the value doesnt change while you're typing in the textbox
 	xgui_temp.Wang.TextEntry.OnTextChanged = function() end
 	
-	--NumberWang update stuff(Most of this code is copied from the default DNumSlider)
+	--NumberWang update stuff(Most of this code is copied from the default DNumberWang)
 	xgui_temp.Wang.OnCursorMoved = function( self, x, y )
-		if ( !self.Dragging ) then return end
+		if ( not self.Dragging ) then return end
 		local fVal = self:GetFloatValue()
 		local y = gui.MouseY()
 		local Diff = y - self.HoldPos
@@ -253,7 +255,7 @@ function x_makeslider( t )
 		val = val or 0
 		if ( self.m_iDecimals == 0 ) then
 			val = Format( "%i", val )
-		elseif ( val != 0 ) then
+		elseif ( val ~= 0 ) then
 			val = Format( "%."..self.m_iDecimals.."f", val )
 			val = string.TrimRight( val, "0" )		
 			val = string.TrimRight( val, "." )
