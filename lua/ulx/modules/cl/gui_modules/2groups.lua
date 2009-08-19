@@ -18,7 +18,7 @@ end
 
 x_makebutton{ x=5, y=155, w=20, h=20, label="+", parent=xgui_group }.DoClick = function()
 	RunConsoleCommand( "ulx", "addgroup", "new group" )
-	xgui_group.XGUI_Refresh()
+	hook.Call( "xgui_OnAddGroup", GAMEMODE, "new group" ) 
 end
 
 x_makebutton{ x=25, y=155, w=20, h=20, label="-", parent=xgui_group }.DoClick = function()
@@ -26,12 +26,16 @@ x_makebutton{ x=25, y=155, w=20, h=20, label="-", parent=xgui_group }.DoClick = 
 		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
 			if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "superadmin" then
 				Derma_Query( "Are you sure you would like to remove the \"" .. xgui_group_list:GetSelected()[1]:GetColumnText(1) .. "\" group?", "XGUI WARNING", 
-					   "Remove", function() RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) xgui_group.XGUI_Refresh() end,
-					   "Cancel", function() end )
+						"Remove", function() 
+							RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) 
+							hook.Call( "xgui_OnRemoveGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
+						"Cancel", function() end )
 			else
 				Derma_Query( "Removng superadmin is generally a bad idea. Are you sure you would like to remove it?", "XGUI WARNING", 
-					   "Remove", function() RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) xgui_group.XGUI_Refresh() end,
-					   "Cancel", function() end )
+						"Remove", function() 
+							RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) 
+							hook.Call( "xgui_OnRemoveGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
+						"Cancel", function() end )
 			end
 		else
 			Derma_Message( "You are not allowed to remove the group \"user\"!", "XGUI NOTICE" )
@@ -48,8 +52,10 @@ xgui_group_name.OnEnter = function()
 					RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_name:GetValue() ) xgui_group.XGUI_Refresh()
 				else
 					Derma_Query( "Renaming superadmin is generally a bad idea. Are you sure you would like to rename it?", "XGUI WARNING", 
-						   "Rename", function() RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_name:GetValue() ) xgui_group.XGUI_Refresh() end,
-						   "Cancel", function() xgui_group_name:SetText( "superadmin" ) end )
+							"Rename", function() 
+								RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_name:GetValue() )
+								hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_name:GetValue() ) end,
+							"Cancel", function() xgui_group_name:SetText( "superadmin" ) end )
 				end
 			else
 				Derma_Message( "Group name cannot be blank!", "XGUI NOTICE" )
@@ -71,7 +77,6 @@ xgui_group_inherit.OnSelect = function()
 			else
 				RunConsoleCommand( "xgui_setinh", xgui_group_list:GetSelected()[1]:GetColumnText(1) )
 			end
-			xgui_group.XGUI_Refresh()
 		else
 			Derma_Message( "You are not allowed to change inheritance of the group \"user\"!", "XGUI NOTICE" )
 		end
@@ -81,14 +86,31 @@ end
 xgui_base:AddSheet( "Groups", xgui_group, "gui/silkicons/group", false, false )
 
 xgui_group.XGUI_Refresh = function()
-	timer.Simple( 0.05, function()
-		xgui_group_list:Clear()
-		xgui_group_inherit:Clear()
-		xgui_group_inherit:SetText( "<none>" )
-		xgui_group_inherit:AddChoice( "<none>" )
-		for k, _ in pairs( ULib.ucl.groups ) do
-			xgui_group_list:AddLine( k )
-			xgui_group_inherit:AddChoice( k )
-		end
-	end )
+	xgui_group_list:Clear()
+	xgui_group_name:SetText( "" )
+	xgui_group_inherit:Clear()
+	xgui_group_inherit:SetText( "<none>" )
+	xgui_group_inherit:AddChoice( "<none>" )
+	for k, _ in pairs( ULib.ucl.groups ) do
+		xgui_group_list:AddLine( k )
+		xgui_group_inherit:AddChoice( k )
+	end
 end
+
+----------------
+--Update Hooks--
+----------------
+function xgui_group.OnAddGroup( groupname )
+	xgui_group_list:AddLine( groupname )
+end
+hook.Add( "xgui_OnAddGroup", "xgui_group_OnAddGroup", xgui_group.OnAddGroup )
+
+function xgui_group.OnRemoveGroup( groupname )
+	xgui_group_list:RemoveLine( xgui_group_list:GetLineByColumnText( groupname, 1, true ) )
+end
+hook.Add( "xgui_OnRemoveGroup", "xgui_group_OnRemoveGroup", xgui_group.OnRemoveGroup )
+
+function xgui_group.OnRenameGroup( oldgroupname, newgroupname )
+	xgui_group_list:GetLineByColumnText( oldgroupname, 1, false):SetColumnText( 1, newgroupname )
+end
+hook.Add( "xgui_OnRenameGroup", "xgui_group_OnRenameGroup", xgui_group.OnRenameGroup )

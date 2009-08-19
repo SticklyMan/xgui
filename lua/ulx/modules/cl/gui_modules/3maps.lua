@@ -67,12 +67,12 @@ xgui_maps.XGUI_Refresh = function()
 	xgui_select_gamemode:Clear()
 	xgui_select_gamemode:AddChoice( "<default>" )
 	xgui_select_gamemode:SetText( "<default>" )
-	for _, v in pairs( xgui_data.gamemodes ) do
+	for _, v in ipairs( xgui_data.gamemodes ) do
 		xgui_select_gamemode:AddChoice( v )
 	end
 	
 	xgui_maps_list:Clear()
-	for _,v in pairs( xgui_data.votemaps ) do
+	for _,v in ipairs( xgui_data.votemaps ) do
 		xgui_maps_list:AddLine( v )
 	end
 end

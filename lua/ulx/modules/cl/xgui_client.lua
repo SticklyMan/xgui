@@ -5,7 +5,9 @@ include ( "ulx/modules/cl/xgui_helpers.lua" )
 
 --Data storing relevant information retrieved from server.
 xgui_data = {}
+xgui_hasLoaded = false
 RunConsoleCommand( "xgui_getdata" )
+print( "ran concommand" )
 
 --Used to set which panel has the keyboard focus
 xgui_textpanel=nil
@@ -42,18 +44,27 @@ for _, v in pairs( xgui_base.Items ) do
 end
 
 function xgui_show()
-	--Positions the initial panel back onto the frame (Curse you MakePopup()!!!)
-	--Also calls the refresh function on each module.
-	for _,obj in ipairs(xgui_base.Items) do
-		obj.Panel:XGUI_Refresh()
-		if obj.Tab == xgui_base:GetActiveTab() then
-			ULib.queueFunctionCall( obj.Panel.SetPos, obj.Panel, ScrW()/2 - 295, ScrH()/2 - 173 )
+	--Makes sure XGUI is initialized fully...
+	if xgui_hasLoaded == true then
+		--Positions the initial panel back onto the frame (Curse you MakePopup()!!!)
+		--Also calls the refresh function on each module.
+		for _,obj in ipairs(xgui_base.Items) do
+			obj.Panel:XGUI_Refresh()
+			if obj.Tab == xgui_base:GetActiveTab() then
+				ULib.queueFunctionCall( obj.Panel.SetPos, obj.Panel, ScrW()/2 - 295, ScrH()/2 - 173 )
+			end
+		end
+		
+		gui.EnableScreenClicker( true )
+		RestoreCursorPosition( )
+		xgui_base:SetVisible( true )
+	else
+		--...Otherwise show a nice little messagebox telling the user to wait a bit.
+		if not xgui_waitbox then
+			xgui_waitbox = x_makeframepopup{ label="XGUI is not yet initialized!", w=200, h=60, nopopup=true }
+			x_makelabel{ label="Please wait a moment...", x=10, y=30, parent=xgui_waitbox }
 		end
 	end
-	
-	gui.EnableScreenClicker( true )
-	RestoreCursorPosition( )
-	xgui_base:SetVisible( true )
 end
 
 function xgui_hide()	
@@ -99,7 +110,16 @@ end
 
 --Function called when data is recieved from server
 function xgui_RecieveData( data_in )
+	print( "RPC done" )
 	xgui_data = data_in
+	xgui_hasLoaded = true
+	if xgui_waitbox then
+		if xgui_waitbox:IsVisible() then
+			xgui_show()
+		end
+		xgui_waitbox:Remove()
+		xgui_waitbox = nil
+	end
 end
 
 concommand.Add( "xgui_show", xgui_show )

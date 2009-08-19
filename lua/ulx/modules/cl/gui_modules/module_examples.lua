@@ -41,6 +41,21 @@ end
 --Step 4: Add a tab on the XGUI base and set the Title, Panel with your controls, Icon, and optional Tooltip
 xgui_base:AddSheet( "Test Module", module_tab, "gui/silkicons/group", false, false )
 
------------------------------------
---More modular stuff coming soon!--
------------------------------------
+-------------------------------
+--Useful Hooks and references--
+-------------------------------
+--[[
+You can look up the following ULX data (If the user has permission)
+
+xgui_data.gamemodes  	- A list of gamemodes installed on the server
+xgui_data.votemaps	- A list of votemaps (also the only maps visible to non-admins via maps menu)
+xgui_data.maps		- A list of every map on the server (Must have access to ulx map or access to enable/disable votemaps (ulx_cl_votemapEnabled))
+
+These hooks are useful for providing instant up-to-date information on your module
+
+HOOK NAME:			ARGUMENTS:
+xgui_OnAddGroup 		str groupname
+xgui_OnRemoveGroup	str groupname
+xgui_OnRenameGroup	str oldgroupname, str newgroupname
+
+]]--

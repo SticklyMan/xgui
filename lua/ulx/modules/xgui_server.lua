@@ -76,33 +76,54 @@ ULib.concommand( "xgui_removeadvert", removeAdvert )
 --New functions! The older ones above may and probably will be removed.
 local function SendData( ply, func, args )
 	local xgui_data = {}
+	print("Got concommand!" )
+	--If no args are specified, then update everything!
+	if #args == 0 then args = { "gamemodes", "votemaps", "maps" } end
 	
-	--Gamemodes
-	xgui_data.gamemodes = {}
-	local dirs = file.FindDir( "../gamemodes/*" )
-	for _, dir in pairs( dirs ) do
-		if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then
-			table.insert( xgui_data.gamemodes, dir )
+	for _, u in ipairs( args ) do
+		if u == "gamemodes" then
+			xgui_data.gamemodes = {}
+			local dirs = file.FindDir( "../gamemodes/*" )
+			for _, dir in pairs( dirs ) do
+				if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then
+					table.insert( xgui_data.gamemodes, dir )
+				end
+			end
+		end
+		
+		if u == "votemaps" then
+			xgui_data.votemaps = {}
+			for _, v in pairs( ulx.votemaps ) do
+				table.insert( xgui_data.votemaps, v )
+			end
+		end
+		
+		if u == "maps" then
+			if ply:query( "ulx map" ) or ply:query( "ulx_cl_votemapEnabled" ) then
+				xgui_data.maps = ulx.maps
+			end
 		end
 	end
-	
-	--Votemaps
-	xgui_data.votemaps = {}
-	for _, v in pairs( ulx.votemaps ) do
-		table.insert( xgui_data.votemaps, v )
-	end
-	
-	--All maps (requires access to change level, or enable/disable votemaps)
-	if ply:query( "ulx map" ) or ply:query( "ulx_cl_votemapEnabled" ) then
-		xgui_data.maps = ulx.maps
-	end
-	
-	--ULIb will send the data to the client, quickly and easily!
+	--ULIb will easily send the data to the client!
 	ULib.clientRPC( ply, "xgui_RecieveData", xgui_data )
+	print("Sending RPC")
 end
 ULib.concommand( "xgui_getdata", SendData )
 
-local function blargh( ply, func, args )
-	ULib.ucl.setGroupInheritance( args[1], args[2] )
+local function setInheritance( ply, func, args )
+	if ply:query( "ulx addgroup" ) then
+		--Check for cycles
+		
+		local group = ULib.ucl.groupInheritsFrom( args[2] )
+		while group do
+			if group == args[1] or args[1] == args[2] then
+				ply:SendLua( "Derma_Message( \"Cyclical inheritance detected! You cannot inherit from something you're inheriting to!\", \"XGUI NOTICE\" )" )
+				ply:SendLua( "xgui_group_inherit:SetText(\"<none>\")" )
+				return
+			end
+			group = ULib.ucl.groupInheritsFrom( group )
+		end
+		ULib.ucl.setGroupInheritance( args[1], args[2] )
+	end
 end
-ULib.concommand( "xgui_setinh", blargh )
+ULib.concommand( "xgui_setinh", setInheritance )
