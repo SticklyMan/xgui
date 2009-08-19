@@ -76,7 +76,6 @@ ULib.concommand( "xgui_removeadvert", removeAdvert )
 --New functions! The older ones above may and probably will be removed.
 local function SendData( ply, func, args )
 	local xgui_data = {}
-	print("Got concommand!" )
 	--If no args are specified, then update everything!
 	if #args == 0 then args = { "gamemodes", "votemaps", "maps" } end
 	
@@ -106,7 +105,6 @@ local function SendData( ply, func, args )
 	end
 	--ULIb will easily send the data to the client!
 	ULib.clientRPC( ply, "xgui_RecieveData", xgui_data )
-	print("Sending RPC")
 end
 ULib.concommand( "xgui_getdata", SendData )
 

@@ -75,9 +75,8 @@ function x_makeframepopup( t )
 	xgui_temp:SetSize( t.w, t.h )
 	xgui_temp:Center()
 	xgui_temp:SetTitle( t.label or "" )
-	if t.nopopup != true then
-		xgui_temp:MakePopup()
-	end
+	if t.nopopup ~= true then xgui_temp:MakePopup() end
+	if t.showclose ~= nil then xgui_temp:ShowCloseButton( t.showclose ) end
 	return xgui_temp
 end
 
@@ -183,6 +182,19 @@ function DMultiChoice:GetText()
 	return self.TextEntry:GetValue()
 end
 
+function DMultiChoice:RemoveChoice( choice )
+	table.remove( self.Choices, choice )
+end
+
+function DMultiChoice:RenameChoice( old, new )
+	for i, v in ipairs( self.Choices ) do
+		if v == old then 
+			table.remove( self.Choices, i )
+			table.insert( self.Choices, i, new )
+		end
+	end
+end
+
 --A function for DMultiChoice that will remove a given option
 function DMultiChoice:RemoveChoice( choice )
 	for i, v in ipairs( self.Choices ) do
@@ -194,10 +206,10 @@ function DMultiChoice:RemoveChoice( choice )
 end
 
 --Get a line in a DListView by searching for a column value ( ID determines whether to return the line object, or the ID )
-function DListView:GetLineByColumnText( search, column, ID )
+function DListView:GetLineByColumnText( search, column, outID )
 	for ID, line in pairs( self.Lines ) do
 		if line:GetColumnText( column ) == search then
-			if ID == true then
+			if outID == true then
 				return ID
 			else
 				return line
