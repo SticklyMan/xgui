@@ -7,7 +7,7 @@ include ( "ulx/modules/cl/xgui_helpers.lua" )
 xgui_data = {}
 xgui_hasLoaded = false
 
-timer.Simple( 3, RunConsoleCommand, "xgui_getdata" )
+timer.Simple( 3, RunConsoleCommand, "xgui", "getdata" )
 
 --Used to set which panel has the keyboard focus
 xgui_textpanel=nil
@@ -61,7 +61,7 @@ function xgui_show()
 	else
 		--...Otherwise show a nice little messagebox telling the user to wait a bit.
 		if not xgui_waitbox then
-			xgui_waitbox = x_makeframepopup{ label="XGUI is not yet initialized!", w=200, h=60, nopopup=true, showclose=false }
+			xgui_waitbox = x_makeframepopup{ label="XGUI is receiving data!", w=200, h=60, nopopup=true, showclose=false }
 			x_makelabel{ label="Please wait a moment...", x=10, y=30, parent=xgui_waitbox }
 		end
 	end
@@ -110,7 +110,9 @@ end
 
 --Function called when data is recieved from server
 function xgui_RecieveData( data_in )
-	xgui_data = data_in
+	for k, v in pairs( data_in ) do
+		xgui_data[k] = v
+	end
 	xgui_hasLoaded = true
 	if xgui_waitbox then
 		xgui_show()

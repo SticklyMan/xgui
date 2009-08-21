@@ -11,7 +11,7 @@ access - ULX access string used to determine whether the control is enabled or d
 saccess - ULX access string used to determine if the control is visible
 
 NUMBERS:
-x, y, w, h - x,y position, width, and height of control
+x, y, w, h - position, width, and height of control
 min, max, decimal - used with a slider, sets the minimum and maximum value, and the number of decimal places to use.
 spacing, padding - used with panellist, determines how much spacing there is between controls, and their distance from the edge of the panel
 value - sets the value of a slider/numberwang
@@ -21,6 +21,7 @@ OTHER:
 parent - the panel on which the control will be affixed
 contents - for a category, this will be the panellist of controls in the category
 textcolor - sets the text color
+convarcontents - table storing additional information used with convars ( e.g, multichoice contents and functions )
 
 BOOL:
 multiselect - Allow multiple selects
@@ -29,6 +30,8 @@ enableinput - Used with textbox/multichoice, will enable/disable input
 vscroll, hscroll - Enables/disabels vertical and horizontal scrollbars
 focuscontrol - Determines whether to specify special functions for xgui_base's keyboard focus handling stuff
 expanded - Determines whether or not a category is expanded when it is created
+nopopup - Used only with makeframepopup, will set whether the frame pops up or not
+showclose - Determines whether to show X button on makeframepopup
 ]]--
 
 function x_makecheckbox( t )
@@ -46,11 +49,12 @@ function x_makelabel( t )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetText( t.label or "" )
 	xgui_temp:SizeToContents()
+	xgui_temp:SetToolTip( t.tooltip )
 	if t.textcolor then xgui_temp:SetTextColor( t.textcolor ) end
 	return xgui_temp
 end
 
-function x_makepanelist( t )
+function x_makepanellist( t )
 	local xgui_temp = vgui.Create( "DPanelList", t.parent )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetSize( t.w, t.h )
@@ -133,6 +137,7 @@ function x_makeXpanel( t )
 	xgui_temp = vgui.Create( "DPanel_XGUI" )
 	xgui_temp:MakePopup()
 	xgui_temp:SetKeyboardInputEnabled( false )
+	xgui_temp:SetMouseInputEnabled( true )
 	return xgui_temp
 end
 
@@ -154,6 +159,17 @@ function x_makemultichoice( t )
 	xgui_temp:SetPos( t.x, t.y )
 	xgui_temp:SetSize( t.w, t.h or 20 )
 	xgui_temp:SetEditable( t.enableinput )
+	if t.convar then
+		--Special code for setting convars
+		for i, v in ipairs( t.convardata ) do
+			xgui_temp:AddChoice( v )
+		end
+		xgui_temp.OnSelect = function( self )
+			RunConsoleCommand( t.convar, tonumber(string.sub( self:GetText(), 1, 2 ) ) )
+		end
+		xgui_temp:SetText( t.convardata[ GetConVarNumber( t.convar )+1 ] )
+	
+	end
 	return xgui_temp
 end
 

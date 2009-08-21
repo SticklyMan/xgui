@@ -27,6 +27,16 @@ xgui_maps_disp:SetPos( 185, 30 )
 xgui_maps_disp:SetImage( "maps/noicon.vmt" )
 xgui_maps_disp:SetSize( 192, 192 )
 
+xgui_maps_thumb = vgui.Create( "DImage", xgui_maps )
+xgui_maps_thumb:SetDrawOnTop( true )
+xgui_maps_thumb:SetSize( 96, 96 )
+xgui_maps_thumb.Think = function( self )
+	local x, y = gui.MousePos()
+	x = math.Clamp( x - 345, 0, 640 )
+	y = math.Clamp( y - 400, 0, 480 )
+	self:SetPos( x , y )
+end
+
 xgui_select_gamemode = x_makemultichoice{ x=70, y=345, w=110, h=20, parent=xgui_maps }
 
 local xgui_votemap1 = x_makebutton{ x=185, y=245, w=192, h=20, label="Vote to play this map!", parent=xgui_maps }
@@ -74,6 +84,20 @@ xgui_maps.XGUI_Refresh = function()
 	xgui_maps_list:Clear()
 	for _,v in ipairs( xgui_data.votemaps ) do
 		xgui_maps_list:AddLine( v )
+	end
+	
+	for k, v in pairs( xgui_maps_list.Lines ) do
+		function v:OnCursorEntered()
+			if ( file.Exists( "../materials/maps/" .. self:GetColumnText( 1 ) .. ".vmt" ) ) then
+				xgui_maps_thumb:SetVisible( true )
+				xgui_maps_thumb:SetImage( "../materials/maps/" .. self:GetColumnText( 1 ) .. ".vmt" )
+			else
+				xgui_maps_thumb:SetVisible( false )
+			end
+		end
+		function v:OnCursorExited()
+			xgui_maps_thumb:SetVisible( false )
+		end
 	end
 end
 

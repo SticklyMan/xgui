@@ -13,7 +13,7 @@ xgui_player_list = x_makelistview{ x=5, y=30, w=335, h=315, multiselect=false, p
 xgui_player_list:AddColumn( "Name" )
 xgui_player_list:AddColumn( "Group" )
 
-xgui_commands = x_makepanelist{ x=345, y=30, w=90, h=335, parent=xgui_player, padding=1, spacing=1 }
+xgui_commands = x_makepanellist{ x=345, y=30, w=90, h=335, parent=xgui_player, padding=1, spacing=1 }
 
 xgui_commands_group1 = x_makelistview{ headerheight=0, multiselect=false, h=136 }
 xgui_commands_group1.OnRowSelected = function() xgui_setcontrols( xgui_commands_group1:GetSelected()[1]:GetColumnText(1), 1 ) end

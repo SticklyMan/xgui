@@ -13,7 +13,7 @@ module_tab = x_makeXpanel{}
 
 --Step 2: Create your controls, functions, and Derma stuff, making sure to parent it to your panel  
 --You don't have to use the x_makestuff from the xgui_helpers if you don't want to.. They're just a lot easier and cleaner!
-local addon_listostuff = x_makepanelist{ x=10, y=10, w=200, h=100, parent=module_tab }
+local addon_listostuff = x_makepanellist{ x=10, y=10, w=200, h=100, parent=module_tab }
 addon_listostuff:AddItem( x_makeslider{ max=666, label="The slider of DOOM!", decimal=2 } )
 addon_listostuff:AddItem( x_makecheckbox{ label="Save the whales?" } )
 x_makecolorpicker{ x=250, y=20, w=200, h=200, parent=module_tab }
@@ -50,6 +50,11 @@ You can look up the following ULX data (If the user has permission)
 xgui_data.gamemodes  	- A list of gamemodes installed on the server
 xgui_data.votemaps	- A list of votemaps (also the only maps visible to non-admins via maps menu)
 xgui_data.maps		- A list of every map on the server (Must have access to ulx map or access to enable/disable votemaps (ulx_cl_votemapEnabled))
+xgui_data.gimps		- A list of gimpsays
+xgui_data.adverts		- A list of adverts and data
+
+If needed, you can resend server data to the client by RunConsoleCommand( "xgui", "getdata", ... ) where ... is the categories you would like to update (leaving it blank updates everything)
+e.g: RunConsoleCommand( "xgui", "getdata", "votemaps", "gamemodes" )
 
 These hooks are useful for providing instant up-to-date information on your module
 

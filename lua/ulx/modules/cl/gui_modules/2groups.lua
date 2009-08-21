@@ -13,10 +13,11 @@ xgui_group_list.OnRowSelected = function()
 		if ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from ~= nil then
 			xgui_group_inherit:SetText( ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from )
 		else
-			xgui_group_inherit:SetText( "<none>" )
+			xgui_group_inherit:SetText( "user" )
 		end
 	else
-		xgui_group_inherit:SetText( "<Error>" )
+		--For some reason, the selected group wasn't in UCL, probably because it hasn't been updated. Setting it to user for generalness
+		xgui_group_inherit:SetText( "user" )
 	end
 end
 
@@ -78,9 +79,9 @@ xgui_group_inherit.OnSelect = function()
 	if xgui_group_list:GetSelectedLine() then
 		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
 			if xgui_group_inherit:GetText() ~= "<none>" then
-				RunConsoleCommand( "xgui_setinh", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
+				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
 			else
-				RunConsoleCommand( "xgui_setinh", xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
+				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
 			end
 		else
 			Derma_Message( "You are not allowed to change inheritance of the group \"user\"!", "XGUI NOTICE" )
@@ -94,9 +95,16 @@ xgui_group.XGUI_Refresh = function()
 	xgui_group_list:Clear()
 	xgui_group_name:SetText( "" )
 	xgui_group_inherit:Clear()
-	xgui_group_inherit:SetText( "<none>" )
-	xgui_group_inherit:AddChoice( "<none>" )
-	for k, _ in pairs( ULib.ucl.groups ) do
+	xgui_group_inherit:SetText( "user" )
+	
+	AddGroups( ULib.ucl.getInheritanceTree() )
+end
+
+function AddGroups( t )
+	for k, v in pairs( t ) do
+		AddGroups( v )
+	end
+	for k, v in pairs( t ) do
 		xgui_group_list:AddLine( k )
 		xgui_group_inherit:AddChoice( k )
 	end
