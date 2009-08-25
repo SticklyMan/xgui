@@ -22,8 +22,21 @@ xgui_group_list.OnRowSelected = function()
 end
 
 x_makebutton{ x=5, y=155, w=20, h=20, label="+", parent=xgui_group }.DoClick = function()
-	RunConsoleCommand( "ulx", "addgroup", "new group" )
-	hook.Call( "xgui_OnAddGroup", GAMEMODE, "new group" ) 
+	local function newgroup( count )
+		local checkname
+		if count == 0 then
+			checkname = "new group"
+		else 
+			checkname = "new group" .. count
+		end
+		if xgui_group_list:GetLineByColumnText( checkname, 1 ) == nil then
+				RunConsoleCommand( "ulx", "addgroup", checkname )
+				hook.Call( "xgui_OnAddGroup", GAMEMODE, checkname ) 
+		else
+			newgroup( count+1 )
+		end
+	end
+	newgroup( 0 )
 end
 
 x_makebutton{ x=25, y=155, w=20, h=20, label="-", parent=xgui_group }.DoClick = function()
@@ -54,13 +67,22 @@ xgui_group_name.OnEnter = function()
 		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
 			if xgui_group_name:GetValue() ~= "" then
 				if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "superadmin" then
-					RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
-					hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
+					if xgui_group_list:GetLineByColumnText( xgui_group_name:GetValue(), 1 ) == nil then
+						RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
+						hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
+					else
+						Derma_Message( "A group by that name already exists!", "XGUI NOTICE" )
+					end
 				else
 					Derma_Query( "Renaming superadmin is generally a bad idea. Are you sure you would like to rename it?", "XGUI WARNING", 
 							"Rename", function() 
-								RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
-								hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) ) end,
+								if xgui_group_list:GetLineByColumnText( xgui_group_name:GetValue(), 1 ) == nil then
+									RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
+									hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
+								else
+									Derma_Message( "A group by that name already exists!", "XGUI NOTICE" )
+								end
+							end, 
 							"Cancel", function() xgui_group_name:SetText( "superadmin" ) end )
 				end
 			else
@@ -80,8 +102,10 @@ xgui_group_inherit.OnSelect = function()
 		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
 			if xgui_group_inherit:GetText() ~= "<none>" then
 				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
+				hook.Call( "xgui_OnInheritanceChange", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
 			else
 				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
+				hook.Call( "xgui_OnInheritanceChange", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
 			end
 		else
 			Derma_Message( "You are not allowed to change inheritance of the group \"user\"!", "XGUI NOTICE" )
@@ -97,12 +121,12 @@ xgui_group.XGUI_Refresh = function()
 	xgui_group_inherit:Clear()
 	xgui_group_inherit:SetText( "user" )
 	
-	AddGroups( ULib.ucl.getInheritanceTree() )
+	SortGroups( ULib.ucl.getInheritanceTree() )
 end
 
-function AddGroups( t )
+function SortGroups( t )
 	for k, v in pairs( t ) do
-		AddGroups( v )
+		SortGroups( v )
 	end
 	for k, v in pairs( t ) do
 		xgui_group_list:AddLine( k )
@@ -130,3 +154,35 @@ function xgui_group.OnRenameGroup( oldgroupname, newgroupname )
 	xgui_group_inherit:RenameChoice( oldgroupname, newgroupname )
 end
 hook.Add( "xgui_OnRenameGroup", "xgui_group_OnRenameGroup", xgui_group.OnRenameGroup )
+
+function xgui_group.OnInheritanceChange( groupname, newinheritance )
+	xgui_group_inherit:Clear()
+	xgui_group_list:Clear()
+	local inhtree = ULib.ucl.getInheritanceTree()
+	local data = {}
+	function traverse( t )
+		for k, v in pairs( t ) do
+			if k == groupname then
+				data = v
+				t[k] = nil
+			else
+				traverse( v )
+			end
+		end
+	end
+	traverse( inhtree )
+	function traverse2( t )
+		for k, v in pairs( t ) do
+			if k == newinheritance then
+				v[groupname] = data
+			else
+				traverse2( v )
+			end
+		end
+	end
+	traverse2( inhtree )
+	SortGroups( inhtree )
+	xgui_group_list:SelectItem( xgui_group_list:GetLineByColumnText( groupname, 1, false ) )
+	xgui_group_inherit:SetText( newinheritance )
+end
+hook.Add( "xgui_OnInheritanceChange", "xgui_group_OnInheritanceChange", xgui_group.OnInheritanceChange )

@@ -232,6 +232,7 @@ function DListView:GetLineByColumnText( search, column, outID )
 			end
 		end
 	end
+	return nil
 end
 
 --------------------------------------------------

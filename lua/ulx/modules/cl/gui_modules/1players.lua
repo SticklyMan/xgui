@@ -5,7 +5,7 @@ xgui_player = x_makeXpanel( )
 
 xgui_rcon = x_maketextbox{ x=5, y=345, w=335, parent=xgui_player, text="Enter an RCON command...", focuscontrol=true }
 xgui_rcon.OnEnter = function()
-	RunConsoleCommand( "ulx", "rcon", unpack( string.Explode(" ", xgui_rcon:GetValue() ) ) )
+	RunConsoleCommand( "ulx", "rcon", unpack( string.Explode( " ", xgui_rcon:GetValue() ) ) )
 	xgui_rcon:SetText( "Enter an RCON command..." )
 end
 

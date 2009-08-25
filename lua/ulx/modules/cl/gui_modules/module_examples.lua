@@ -59,8 +59,9 @@ e.g: RunConsoleCommand( "xgui", "getdata", "votemaps", "gamemodes" )
 These hooks are useful for providing instant up-to-date information on your module
 
 HOOK NAME:			ARGUMENTS:
-xgui_OnAddGroup 		str groupname
-xgui_OnRemoveGroup	str groupname
-xgui_OnRenameGroup	str oldgroupname, str newgroupname
+xgui_OnAddGroup 		  str groupname
+xgui_OnRemoveGroup	  str groupname
+xgui_OnRenameGroup       str oldgroupname, str newgroupname
+xgui_OnInheritanceChange str groupname,    str newinheritance
 
 ]]--

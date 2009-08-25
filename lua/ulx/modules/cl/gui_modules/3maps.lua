@@ -32,8 +32,11 @@ xgui_maps_thumb:SetDrawOnTop( true )
 xgui_maps_thumb:SetSize( 96, 96 )
 xgui_maps_thumb.Think = function( self )
 	local x, y = gui.MousePos()
-	x = math.Clamp( x - 345, 0, 640 )
-	y = math.Clamp( y - 400, 0, 480 )
+	local px, py = xgui_maps:GetPos()
+	x = x - px
+	y = y - py - 96
+	x = math.Clamp( x, 0, 640 )
+	y = math.Clamp( y, 0, 480 )
 	self:SetPos( x , y )
 end
 

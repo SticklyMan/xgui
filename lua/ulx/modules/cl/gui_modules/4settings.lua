@@ -131,7 +131,7 @@ local xgui_ULX = x_makepanellist{ x=200, y=30, w=190, h=335, spacing=1, padding=
 				xgui_add_list:AddItem( xgui_message )
 			xgui_repeat = x_makeslider{ label="Repeat Time", value=60, min=0.1, max=1000, decimal=1, tooltip="Time in seconds till the advert is shown again" }
 				xgui_add_list:AddItem( xgui_repeat )
-			xgui_add_list:AddItem( x_makelabel{ label="Group:" } )
+			xgui_add_list:AddItem( x_makelabel{ label="Group: (optional)" } )
 			xgui_group = x_maketextbox{ tooltip="Optional - Specify a group name to link multiple adverts so they display one after the other" }
 				xgui_add_list:AddItem( xgui_group )
 			xgui_is_csay = x_makecheckbox{ label="CSay Advert", tooltip="A CSay advert will appear in the center of the screen, and can have a color. Otherwise it will show in the chat window" }
