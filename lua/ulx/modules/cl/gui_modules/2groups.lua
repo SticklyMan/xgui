@@ -9,14 +9,9 @@ xgui_group_list = x_makelistview{ x=5, y=30, w=125, h=125, multiselect=false, pa
 xgui_group_list:AddColumn( "" )
 xgui_group_list.OnRowSelected = function()
 	xgui_group_name:SetText( xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-	if ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)] ~= nil then --Check that ULX has updated info
-		if ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from ~= nil then
-			xgui_group_inherit:SetText( ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from )
-		else
-			xgui_group_inherit:SetText( "user" )
-		end
+	if ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from ~= nil then
+		xgui_group_inherit:SetText( ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from )
 	else
-		--For some reason, the selected group wasn't in UCL, probably because it hasn't been updated. Setting it to user for generalness
 		xgui_group_inherit:SetText( "user" )
 	end
 end
@@ -31,7 +26,6 @@ x_makebutton{ x=5, y=155, w=20, h=20, label="+", parent=xgui_group }.DoClick = f
 		end
 		if xgui_group_list:GetLineByColumnText( checkname, 1 ) == nil then
 				RunConsoleCommand( "ulx", "addgroup", checkname )
-				hook.Call( "xgui_OnAddGroup", GAMEMODE, checkname ) 
 		else
 			newgroup( count+1 )
 		end
@@ -45,14 +39,12 @@ x_makebutton{ x=25, y=155, w=20, h=20, label="-", parent=xgui_group }.DoClick = 
 			if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "superadmin" then
 				Derma_Query( "Are you sure you would like to remove the \"" .. xgui_group_list:GetSelected()[1]:GetColumnText(1) .. "\" group?", "XGUI WARNING", 
 						"Remove", function() 
-							RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) 
-							hook.Call( "xgui_OnRemoveGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
+							RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
 						"Cancel", function() end )
 			else
 				Derma_Query( "Removng superadmin is generally a bad idea. Are you sure you would like to remove it?", "XGUI WARNING", 
 						"Remove", function() 
-							RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) 
-							hook.Call( "xgui_OnRemoveGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
+							RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
 						"Cancel", function() end )
 			end
 		else
@@ -78,7 +70,6 @@ xgui_group_name.OnEnter = function()
 							"Rename", function() 
 								if xgui_group_list:GetLineByColumnText( xgui_group_name:GetValue(), 1 ) == nil then
 									RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
-									hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
 								else
 									Derma_Message( "A group by that name already exists!", "XGUI NOTICE" )
 								end
@@ -102,10 +93,8 @@ xgui_group_inherit.OnSelect = function()
 		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
 			if xgui_group_inherit:GetText() ~= "<none>" then
 				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
-				hook.Call( "xgui_OnInheritanceChange", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
 			else
 				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
-				hook.Call( "xgui_OnInheritanceChange", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
 			end
 		else
 			Derma_Message( "You are not allowed to change inheritance of the group \"user\"!", "XGUI NOTICE" )
@@ -120,9 +109,9 @@ xgui_group.XGUI_Refresh = function()
 	xgui_group_name:SetText( "" )
 	xgui_group_inherit:Clear()
 	xgui_group_inherit:SetText( "user" )
-	
 	SortGroups( ULib.ucl.getInheritanceTree() )
 end
+hook.Add( ULib.HOOK_UCLCHANGED, "XGUI_updategroups", xgui_group.XGUI_Refresh )
 
 function SortGroups( t )
 	for k, v in pairs( t ) do
@@ -133,56 +122,3 @@ function SortGroups( t )
 		xgui_group_inherit:AddChoice( k )
 	end
 end
-
-----------------
---Update Hooks--
-----------------
-function xgui_group.OnAddGroup( groupname )
-	xgui_group_list:AddLine( groupname )
-	xgui_group_inherit:AddChoice( groupname )
-end
-hook.Add( "xgui_OnAddGroup", "xgui_group_OnAddGroup", xgui_group.OnAddGroup )
-
-function xgui_group.OnRemoveGroup( groupname )
-	xgui_group_list:RemoveLine( xgui_group_list:GetLineByColumnText( groupname, 1, true ) )
-	xgui_group_inherit:RemoveChoice( groupname )
-end
-hook.Add( "xgui_OnRemoveGroup", "xgui_group_OnRemoveGroup", xgui_group.OnRemoveGroup )
-
-function xgui_group.OnRenameGroup( oldgroupname, newgroupname )
-	xgui_group_list:GetLineByColumnText( oldgroupname, 1, false ):SetColumnText( 1, newgroupname )
-	xgui_group_inherit:RenameChoice( oldgroupname, newgroupname )
-end
-hook.Add( "xgui_OnRenameGroup", "xgui_group_OnRenameGroup", xgui_group.OnRenameGroup )
-
-function xgui_group.OnInheritanceChange( groupname, newinheritance )
-	xgui_group_inherit:Clear()
-	xgui_group_list:Clear()
-	local inhtree = ULib.ucl.getInheritanceTree()
-	local data = {}
-	function traverse( t )
-		for k, v in pairs( t ) do
-			if k == groupname then
-				data = v
-				t[k] = nil
-			else
-				traverse( v )
-			end
-		end
-	end
-	traverse( inhtree )
-	function traverse2( t )
-		for k, v in pairs( t ) do
-			if k == newinheritance then
-				v[groupname] = data
-			else
-				traverse2( v )
-			end
-		end
-	end
-	traverse2( inhtree )
-	SortGroups( inhtree )
-	xgui_group_list:SelectItem( xgui_group_list:GetLineByColumnText( groupname, 1, false ) )
-	xgui_group_inherit:SetText( newinheritance )
-end
-hook.Add( "xgui_OnInheritanceChange", "xgui_group_OnInheritanceChange", xgui_group.OnInheritanceChange )

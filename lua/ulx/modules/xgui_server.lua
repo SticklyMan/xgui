@@ -1,4 +1,9 @@
 --Server stuff for the GUI for ULX --by Stickly Man!
+require("datastream") 
+function XGUI_Streams( pl, handler, id )
+     return( handler == "XGUI" )
+end
+hook.Add( "AcceptStream", "StreamXGUI", XGUI_Streams );
 
 Msg( "///////////////////////////////\n" )
 Msg( "// ULX GUI -- by Stickly Man //\n" )
@@ -15,8 +20,6 @@ end
 Msg( "// GUI Modules Added!        //\n" )
 Msg( "///////////////////////////////\n" )
 
-AddCSLuaFile( "ulx/modules/cl/xgui_helpers.lua" )
-
 --Here we will use ULib to replicate the server settins so that anyone with access can change them (not just listen server host or rcon!)
 ULib.ucl.registerAccess( "xgui_changeserversettings", "superadmin", "Allows changing of gamemode and server-specific settings on the settings tab." )
 ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_changeserversettings" )
@@ -31,17 +34,20 @@ ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv
 ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_changeserversettings" )
 
 --Function hub! All server functions can be called via concommand xgui!
-local function Main( ply, func, args )
+local function xgui_cmd( ply, handler, id, encoded, decoded )
+	args = decoded
 	local branch=args[1]
 	table.remove( args, 1 )
-	if branch == "getdata" then SendData( ply, func, args ) end
-	if branch == "setinheritance" then setInheritance( ply, func, args ) end
-	if branch == "removeGimp" then removeGimp( ply, func, args ) end
-	if branch == "removeAdvert" then removeAdvert( ply, func, args ) end
+	if branch == "getdata" then sendData( ply, args ) else
+	if branch == "callhook" then callHook( ply, args ) else
+	if branch == "setinheritance" then setInheritance( ply, args ) else
+	if branch == "removeGimp" then removeGimp( ply, args ) else
+	if branch == "removeAdvert" then removeAdvert( ply, args )	
+	end end end end end --Yay ends!
 end
-ULib.concommand( "xgui", Main )
+datastream.Hook( "XGUI", xgui_cmd )
 
-function SendData( ply, func, args )
+function sendData( ply, args )
 	local xgui_data = {}
 	
 	--Prevents opening menu while data is being sent!
@@ -49,7 +55,6 @@ function SendData( ply, func, args )
 	
 	--If no args are specified, then update everything!
 	if #args == 0 then args = { "gamemodes", "votemaps", "maps", "gimps", "adverts" } end
-	
 	for _, u in ipairs( args ) do
 		if u == "gamemodes" then
 			xgui_data.gamemodes = {}
@@ -62,13 +67,9 @@ function SendData( ply, func, args )
 		end
 		
 		if u == "votemaps" then
-			if ulx.votemaps ~= {} then
-				xgui_data.votemaps = {}
-				for _, v in pairs( ulx.votemaps ) do
-					table.insert( xgui_data.votemaps, v )
-				end
-			else
-				hook.add( "ulx.HOOK_ULXLOADED", "xgui_resendmaps", SendData( ply, func, "votemaps" ) )
+			xgui_data.votemaps = {}
+			for _, v in pairs( ulx.votemaps ) do
+				table.insert( xgui_data.votemaps, v )
 			end
 		end
 		
@@ -98,7 +99,7 @@ function SendData( ply, func, args )
 	ULib.clientRPC( ply, "xgui_RecieveData", xgui_data )
 end
 
-function setInheritance( ply, func, args )
+function setInheritance( ply, args )
 	if ply:query( "ulx addgroup" ) then
 		--Check for cycles
 		local group = ULib.ucl.groupInheritsFrom( args[2] )
@@ -114,7 +115,7 @@ function setInheritance( ply, func, args )
 	end
 end
 
-function removeGimp( ply, func, args )
+function removeGimp( ply, args )
 	local gi = debug.getinfo( ulx.cc_addGimpSay )
 	for i=1, gi.nups do
 		local k, v = debug.getupvalue( ulx.cc_addGimpSay, i )
@@ -129,13 +130,12 @@ function removeGimp( ply, func, args )
 	end
 end
 
-local function removeAdvert( ply, func, args )
+function removeAdvert( ply, args )
 	for groupname, advertgroup in pairs( ulx.adverts ) do
 		for num, _ in pairs( advertgroup ) do
 			if tostring( groupname ) == args[1] and tostring( num ) == args[2] then
 				table.remove( advertgroup, num )
 				if next( advertgroup ) == nil then
-					print( "ULXAdvert" .. type( groupname ) .. groupname )
 					adverts.groupname = nil
 					timer.Remove( "ULXAdvert" .. type( groupname ) .. groupname )
 				end

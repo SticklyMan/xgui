@@ -55,13 +55,4 @@ xgui_data.adverts		- A list of adverts and data
 
 If needed, you can resend server data to the client by RunConsoleCommand( "xgui", "getdata", ... ) where ... is the categories you would like to update (leaving it blank updates everything)
 e.g: RunConsoleCommand( "xgui", "getdata", "votemaps", "gamemodes" )
-
-These hooks are useful for providing instant up-to-date information on your module
-
-HOOK NAME:			ARGUMENTS:
-xgui_OnAddGroup 		  str groupname
-xgui_OnRemoveGroup	  str groupname
-xgui_OnRenameGroup       str oldgroupname, str newgroupname
-xgui_OnInheritanceChange str groupname,    str newinheritance
-
 ]]--

@@ -110,7 +110,7 @@ local xgui_ULX = x_makepanellist{ x=200, y=30, w=190, h=335, spacing=1, padding=
 			end
 			x_makebutton{ x=5, y=310, w=75, label="Remove", parent=xgui_advert }.DoClick = function()
 				if xgui_advert_list:GetSelectedLine() then
-					local xgui_temp = string.Explode( ":",xgui_advert_list:GetSelected()[1]:GetColumnText( 1 ) )
+					local xgui_temp = string.Explode( ":", xgui_advert_list:GetSelected()[1]:GetColumnText( 1 ) )
 					RunConsoleCommand( "xgui", "removeadvert", xgui_temp[1], xgui_temp[2] )
 					xgui_advert_list:Clear()
 				end

@@ -14,79 +14,47 @@ xgui_player_list:AddColumn( "Name" )
 xgui_player_list:AddColumn( "Group" )
 
 xgui_commands = x_makepanellist{ x=345, y=30, w=90, h=335, parent=xgui_player, padding=1, spacing=1 }
+xgui_argspot = x_makepanellist{ x=440, y=30, w=145, h=335, parent=xgui_player }
 
-xgui_commands_group1 = x_makelistview{ headerheight=0, multiselect=false, h=136 }
-xgui_commands_group1.OnRowSelected = function() xgui_setcontrols( xgui_commands_group1:GetSelected()[1]:GetColumnText(1), 1 ) end
-	xgui_commands_group1:AddColumn( "" )
-	xgui_commands_group1:AddLine( "Assign Group" )
-	xgui_commands_group1:AddLine( "Ban" )
-	xgui_commands_group1:AddLine( "Cexec" )
-	xgui_commands_group1:AddLine( "Commands" )
-	xgui_commands_group1:AddLine( "Kick" )
-	xgui_commands_group1:AddLine( "Spectate" )
-	xgui_commands_group1:AddLine( "Voteban" )
-	xgui_commands_group1:AddLine( "Votekick" )
-	xgui_commands_group1:SetHeight( 17*#xgui_commands_group1:GetLines() )
-xgui_commands:AddItem( x_makecat{ label="Utilities", contents=xgui_commands_group1 } )
-
-xgui_commands_group2 = x_makelistview{ headerheight=0, multiselect=false }
-xgui_commands_group2.OnRowSelected = function() xgui_setcontrols( xgui_commands_group2:GetSelected()[1]:GetColumnText(1), 2 ) end
-	xgui_commands_group2:AddColumn( "" )
-	xgui_commands_group2:AddLine( "Armor" )
-	xgui_commands_group2:AddLine( "Blind" )
-	xgui_commands_group2:AddLine( "Cloak" )
-	xgui_commands_group2:AddLine( "Freeze" )
-	xgui_commands_group2:AddLine( "Ghost" )
-	xgui_commands_group2:AddLine( "God" )
-	xgui_commands_group2:AddLine( "HP" )
-	xgui_commands_group2:AddLine( "Ignite" )
-	xgui_commands_group2:AddLine( "Jail" )
-	xgui_commands_group2:AddLine( "Maul" )
-	xgui_commands_group2:AddLine( "Ragdoll" )
-	xgui_commands_group2:AddLine( "Slap" )
-	xgui_commands_group2:AddLine( "Slay" )
-	xgui_commands_group2:AddLine( "SSlay" )
-	xgui_commands_group2:AddLine( "Strip" )
-	xgui_commands_group2:AddLine( "Whip" )
-	xgui_commands_group2:SetHeight( 17*#xgui_commands_group2:GetLines() )
-xgui_commands:AddItem( x_makecat{ label="Fun", contents=xgui_commands_group2 } )
-
-xgui_commands_group3 = x_makelistview{ headerheight=0, multiselect=false, h=85 }
-xgui_commands_group3.OnRowSelected = function() xgui_setcontrols( xgui_commands_group3:GetSelected()[1]:GetColumnText(1), 3 ) end
-	xgui_commands_group3:AddColumn( "" )
-	xgui_commands_group3:AddLine( "Admin Msg" )
-	xgui_commands_group3:AddLine( "Gag" )
-	xgui_commands_group3:AddLine( "Gimp" )
-	xgui_commands_group3:AddLine( "Mute" )
-	xgui_commands_group3:AddLine( "Private Msg" )
-	xgui_commands_group3:AddLine( "Screen Msg" )
-	xgui_commands_group3:AddLine( "Text Msg" )
-	xgui_commands_group3:AddLine( "Vote" )
-	xgui_commands_group3:SetHeight( 17*#xgui_commands_group3:GetLines() )
-xgui_commands:AddItem( x_makecat{ label="Chat", contents=xgui_commands_group3 } )
-
-xgui_commands_group4 = x_makelistview{ headerheight=0, multiselect=false, h=85 }
-xgui_commands_group4.OnRowSelected = function() xgui_setcontrols( xgui_commands_group4:GetSelected()[1]:GetColumnText(1), 4 ) end
-	xgui_commands_group4:AddColumn( "" )
-	xgui_commands_group4:AddLine( "Bring" )
-	xgui_commands_group4:AddLine( "Goto" )
-	xgui_commands_group4:AddLine( "Noclip" )
-	xgui_commands_group4:AddLine( "Send" )
-	xgui_commands_group4:AddLine( "Teleport" )
-	xgui_commands_group4:SetHeight( 17*#xgui_commands_group4:GetLines() )
-xgui_commands:AddItem( x_makecat{ label="Movement", contents=xgui_commands_group4 } )
+local xgui_command_cats = {}
 
 xgui_player.XGUI_Refresh = function()
 	xgui_player_list:Clear()
 	for k, v in pairs( player.GetAll() ) do	
 		xgui_player_list:AddLine( v:Nick(), v:GetUserGroup() )
 	end
+	
+	for _, cat in pairs( xgui_command_cats ) do
+		cat:Clear()
+	end
+	for cmd, data in pairs( translatedCmds ) do
+		local catname = data.catagory
+		if catname == nil or catname == "" then catname = "Uncategorized" end
+		if !xgui_command_cats[catname] then
+			--Make a new category
+			xgui_command_cats[catname] = x_makelistview{ headerheight=0, multiselect=false, h=136 }
+			xgui_command_cats[catname].OnRowSelected = function( self ) xgui_setselected( self ) end
+			xgui_command_cats[catname]:AddColumn( "" )
+			xgui_commands:AddItem( x_makecat{ label=catname, contents=xgui_command_cats[catname] } )
+		end
+		xgui_command_cats[catname]:AddLine( cmd )
+	end
+	for _, cat in pairs( xgui_command_cats ) do
+		cat:SetHeight( 17*#cat:GetLines() )
+	end
 end
-xgui_base:AddSheet( "Players", xgui_player, "gui/silkicons/user", false, false )
 
-function xgui_setcontrols( command, group )
-	if group ~= 1 then xgui_commands_group1:ClearSelection() end
-	if group ~= 2 then xgui_commands_group2:ClearSelection() end
-	if group ~= 3 then xgui_commands_group3:ClearSelection() end
-	if group ~= 4 then xgui_commands_group4:ClearSelection() end
+function xgui_setselected( selcat )
+	for _, cat in pairs( xgui_command_cats ) do
+		if cat ~= selcat then
+			cat:ClearSelection()
+		end
+	end
+	xgui_argspot:Remove()
+	xgui_argspot = x_makepanellist{ x=440, y=30, w=145, h=335, parent=xgui_player }
+	for _, v in ipairs(	translatedCmds[selcat:GetSelected()[1]:GetColumnText(1)].args ) do
+		xgui_argspot:AddItem( v.type.x_getcontrol() )
+	end
 end
+
+xgui_base:AddSheet( "Players", xgui_player, "gui/silkicons/user", false, false )
