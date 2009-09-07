@@ -27,7 +27,7 @@ xgui_player.XGUI_Refresh = function()
 	for _, cat in pairs( xgui_command_cats ) do
 		cat:Clear()
 	end
-	for cmd, data in pairs( translatedCmds ) do
+	for cmd, data in pairs( ULib.cmds.translatedCmds ) do
 		local catname = data.catagory
 		if catname == nil or catname == "" then catname = "Uncategorized" end
 		if !xgui_command_cats[catname] then
@@ -52,7 +52,7 @@ function xgui_setselected( selcat )
 	end
 	xgui_argspot:Remove()
 	xgui_argspot = x_makepanellist{ x=440, y=30, w=145, h=335, parent=xgui_player }
-	for _, v in ipairs(	translatedCmds[selcat:GetSelected()[1]:GetColumnText(1)].args ) do
+	for _, v in ipairs(	ULib.cmds.translatedCmds[selcat:GetSelected()[1]:GetColumnText(1)].args ) do
 		xgui_argspot:AddItem( v.type.x_getcontrol() )
 	end
 end
