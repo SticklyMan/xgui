@@ -1,6 +1,6 @@
+require("datastream") 
 --GUI for ULX -- by Stickly Man!
 ULib.queueFunctionCall( function()
-	require("datastream") 
 	 
 	--Data storing relevant information retrieved from server.
 	xgui_data = {}
@@ -43,20 +43,20 @@ ULib.queueFunctionCall( function()
 		end
 	end
 	--Load control interpretations for Ulib argument types
-	function BaseArg:x_getcontrol()
-		return x_makelabel{ label="Not Supported", color=Color(255,255,255,255) }
+	function ULib.cmds.BaseArg:x_getcontrol()
+		return x_makelabel{ label="Not Supported", color=Color( 255,255,255,255 ) }
 	end
 	
-	function NumArg:x_getcontrol()
+	function ULib.cmds.NumArg:x_getcontrol()
 		//return x_makeslider{ min=self.min, max=self.max, label="Number" }
 		return x_makeslider{ label="NumArg" }
 	end
 
-	function StringArg:x_getcontrol()
+	function ULib.cmds.StringArg:x_getcontrol()
 		return x_maketextbox{ text="StringArg", focuscontrol=true }
 	end
 
-	function PlayerArg:x_getcontrol()
+	function ULib.cmds.PlayerArg:x_getcontrol()
 		return x_makelabel{ label="PlayerArg", color=Color(255,255,255,255) }
 	end
 
@@ -150,7 +150,7 @@ function xgui_cmd( ply, func, args )
 	if branch == "hide" or branch == "close" then xgui_hide() else
 	if branch == nil or branch == "toggle" then xgui_toggle() else
 		--Since the command arg passed isn't for a clientside function, we'll use this to send it to the server
-		datastream.StreamToServer( "XGUI", args )
+		datastream.StreamToServer( "XGUI", args ) 
 	end end end -- Yay ends!
 end
 

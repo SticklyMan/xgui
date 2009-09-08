@@ -1,9 +1,16 @@
 --Server stuff for the GUI for ULX --by Stickly Man!
-require("datastream") 
+
+ULib.queueFunctionCall( function()
+require("datastream")
+
 function XGUI_Streams( pl, handler, id )
-     return( handler == "XGUI" )
+	print( "Accepting XGUI stream" )
+    return( handler == "XGUI" )
 end
-hook.Add( "AcceptStream", "StreamXGUI", XGUI_Streams );
+print( "Hooking XGUI accept stream" )
+hook.Add( "AcceptStream", "StreamXGUI", XGUI_Streams )
+
+end )
 
 Msg( "///////////////////////////////\n" )
 Msg( "// ULX GUI -- by Stickly Man //\n" )
@@ -34,20 +41,21 @@ ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv
 ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_changeserversettings" )
 
 --Function hub! All server functions can be called via concommand xgui!
-local function xgui_cmd( ply, handler, id, encoded, decoded )
+function xgui_cmd( ply, handler, id, encoded, decoded )
+	print( "Hook accepted, Function called" )
 	args = decoded
 	local branch=args[1]
 	table.remove( args, 1 )
-	if branch == "getdata" then sendData( ply, args ) else
-	if branch == "callhook" then callHook( ply, args ) else
-	if branch == "setinheritance" then setInheritance( ply, args ) else
-	if branch == "removeGimp" then removeGimp( ply, args ) else
-	if branch == "removeAdvert" then removeAdvert( ply, args )	
-	end end end end end --Yay ends!
+	if branch == "getdata" then xgui_sendData( ply, args ) else
+	if branch == "setinheritance" then xgui_setInheritance( ply, args ) else
+	if branch == "removeGimp" then xgui_removeGimp( ply, args ) else
+	if branch == "removeAdvert" then xgui_removeAdvert( ply, args ) else
+		ply:SendLua( "print( \"XGUI: Command not found!\" )" )
+	end end end end --Yay ends!
 end
 datastream.Hook( "XGUI", xgui_cmd )
 
-function sendData( ply, args )
+function xgui_sendData( ply, args )
 	local xgui_data = {}
 	
 	--Prevents opening menu while data is being sent!
@@ -99,7 +107,7 @@ function sendData( ply, args )
 	ULib.clientRPC( ply, "xgui_RecieveData", xgui_data )
 end
 
-function setInheritance( ply, args )
+function xgui_setInheritance( ply, args )
 	if ply:query( "ulx addgroup" ) then
 		--Check for cycles
 		local group = ULib.ucl.groupInheritsFrom( args[2] )
@@ -115,7 +123,7 @@ function setInheritance( ply, args )
 	end
 end
 
-function removeGimp( ply, args )
+function xgui_removeGimp( ply, args )
 	local gi = debug.getinfo( ulx.cc_addGimpSay )
 	for i=1, gi.nups do
 		local k, v = debug.getupvalue( ulx.cc_addGimpSay, i )
@@ -130,7 +138,7 @@ function removeGimp( ply, args )
 	end
 end
 
-function removeAdvert( ply, args )
+function xgui_removeAdvert( ply, args )
 	for groupname, advertgroup in pairs( ulx.adverts ) do
 		for num, _ in pairs( advertgroup ) do
 			if tostring( groupname ) == args[1] and tostring( num ) == args[2] then

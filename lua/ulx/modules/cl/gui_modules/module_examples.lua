@@ -41,9 +41,9 @@ end
 --Step 4: Add a tab on the XGUI base and set the Title, Panel with your controls, Icon, and optional Tooltip
 xgui_base:AddSheet( "Test Module", module_tab, "gui/silkicons/group", false, false )
 
--------------------------------
---Useful Hooks and references--
--------------------------------
+---------------------
+--Useful references--
+---------------------
 --[[
 You can look up the following ULX data (If the user has permission)
 
