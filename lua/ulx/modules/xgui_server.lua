@@ -1,16 +1,5 @@
 --Server stuff for the GUI for ULX --by Stickly Man!
-
-ULib.queueFunctionCall( function()
 require("datastream")
-
-function XGUI_Streams( pl, handler, id )
-	print( "Accepting XGUI stream" )
-    return( handler == "XGUI" )
-end
-print( "Hooking XGUI accept stream" )
-hook.Add( "AcceptStream", "StreamXGUI", XGUI_Streams )
-
-end )
 
 Msg( "///////////////////////////////\n" )
 Msg( "// ULX GUI -- by Stickly Man //\n" )
@@ -42,7 +31,6 @@ ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNum
 
 --Function hub! All server functions can be called via concommand xgui!
 function xgui_cmd( ply, handler, id, encoded, decoded )
-	print( "Hook accepted, Function called" )
 	args = decoded
 	local branch=args[1]
 	table.remove( args, 1 )
