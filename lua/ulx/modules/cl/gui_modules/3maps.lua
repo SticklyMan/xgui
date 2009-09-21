@@ -45,7 +45,7 @@ xgui_select_gamemode = x_makemultichoice{ x=70, y=345, w=110, h=20, parent=xgui_
 local xgui_votemap1 = x_makebutton{ x=185, y=245, w=192, h=20, label="Vote to play this map!", parent=xgui_maps }
 xgui_votemap1.DoClick = function()
 	if xgui_cur_map:GetValue() ~= "No Map Selected" then
-		RunConsoleCommand( "ulx", "votemap", xgui_cur_map )
+		RunConsoleCommand( "ulx", "votemap", xgui_cur_map:GetValue() )
 	end
 end
 
@@ -63,10 +63,12 @@ end
 local xgui_changemap = x_makebutton{ x=185, y=295, w=192, h=20, label="Force changelevel to this map", parent=xgui_maps }
 xgui_changemap.DoClick = function()
 	if xgui_cur_map:GetValue() ~= "No Map Selected" then
-		if xgui_select_gamemode:GetValue() == "<default>" then
+		if xgui_select_gamemode:GetText() == "<default>" then
+			print( "ONE!" )
 			RunConsoleCommand( "ulx", "map", xgui_cur_map:GetValue() )
 		else
-			RunConsoleCommand( "ulx", "map", xgui_cur_map:GetValue(), xgui_select_gamemode:GetValue() )
+			print( "TWO!" .. xgui_select_gamemode:GetText() )
+			RunConsoleCommand( "ulx", "map", xgui_cur_map:GetValue(), xgui_select_gamemode:GetText() )
 		end
 	end
 end

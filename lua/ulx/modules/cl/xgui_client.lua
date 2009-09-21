@@ -1,4 +1,3 @@
-require("datastream") 
 --GUI for ULX -- by Stickly Man!
 ULib.queueFunctionCall( function()
 	 
@@ -48,7 +47,7 @@ ULib.queueFunctionCall( function()
 	end
 	
 	function ULib.cmds.NumArg:x_getcontrol()
-		//return x_makeslider{ min=self.min, max=self.max, label="Number" }
+		--return x_makeslider{ min=self.min or 0, max=self.max or 100, label="Number" }
 		return x_makeslider{ label="NumArg" }
 	end
 
@@ -57,9 +56,20 @@ ULib.queueFunctionCall( function()
 	end
 
 	function ULib.cmds.PlayerArg:x_getcontrol()
-		return x_makelabel{ label="PlayerArg", color=Color(255,255,255,255) }
+		xgui_temp = x_makemultichoice{}
+		for k, v in pairs( player.GetAll() ) do
+			xgui_temp:AddChoice( v:Nick() )
+		end
+		return xgui_temp
 	end
-
+	
+	function ULib.cmds.CallingPlayerArg:x_getcontrol()
+		return x_makelabel{ label="CallingPlayer" }
+	end
+	
+	function ULib.cmds.BoolArg:x_getcontrol()
+		return x_makecheckbox{ label="BoolArg" }
+	end
 end )
 
 function xgui_show()
@@ -145,13 +155,12 @@ function xgui_RecieveData( data_in )
 end
 
 function xgui_cmd( ply, func, args )
-	local branch=args[1]
-	if branch == "show" then xgui_show() else
-	if branch == "hide" or branch == "close" then xgui_hide() else
-	if branch == nil or branch == "toggle" then xgui_toggle() else
-		--Since the command arg passed isn't for a clientside function, we'll use this to send it to the server
-		datastream.StreamToServer( "XGUI", args ) 
-	end end end -- Yay ends!
+	if args[1] == "show" then xgui_show()
+	elseif args[1] == "hide" or args[1] == "close" then xgui_hide()
+	elseif args[1] == nil or args[1] == "toggle" then xgui_toggle()
+	else
+		--Since the command arg passed isn't for a clientside function, we'll send it to the server
+		RunConsoleCommand( "_xgui", unpack( args ) )
+	end
 end
-
 concommand.Add( "xgui", xgui_cmd )

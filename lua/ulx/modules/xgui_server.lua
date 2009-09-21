@@ -1,6 +1,4 @@
 --Server stuff for the GUI for ULX --by Stickly Man!
-require("datastream")
-
 Msg( "///////////////////////////////\n" )
 Msg( "// ULX GUI -- by Stickly Man //\n" )
 Msg( "///////////////////////////////\n" )
@@ -30,18 +28,16 @@ ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv
 ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_changeserversettings" )
 
 --Function hub! All server functions can be called via concommand xgui!
-function xgui_cmd( ply, handler, id, encoded, decoded )
-	args = decoded
+function xgui_cmd( ply, func, args )
 	local branch=args[1]
 	table.remove( args, 1 )
-	if branch == "getdata" then xgui_sendData( ply, args ) else
-	if branch == "setinheritance" then xgui_setInheritance( ply, args ) else
-	if branch == "removeGimp" then xgui_removeGimp( ply, args ) else
-	if branch == "removeAdvert" then xgui_removeAdvert( ply, args ) else
-		ply:SendLua( "print( \"XGUI: Command not found!\" )" )
-	end end end end --Yay ends!
+	if branch == "getdata" then xgui_sendData( ply, args )
+	elseif branch == "setinheritance" then xgui_setInheritance( ply, args )
+	elseif branch == "removeGimp" then xgui_removeGimp( ply, args )
+	elseif branch == "removeAdvert" then xgui_removeAdvert( ply, args )
+	end
 end
-datastream.Hook( "XGUI", xgui_cmd )
+concommand.Add( "_xgui", xgui_cmd )
 
 function xgui_sendData( ply, args )
 	local xgui_data = {}
@@ -52,7 +48,7 @@ function xgui_sendData( ply, args )
 	--If no args are specified, then update everything!
 	if #args == 0 then args = { "gamemodes", "votemaps", "maps", "gimps", "adverts" } end
 	for _, u in ipairs( args ) do
-		if u == "gamemodes" then
+		if u == "gamemodes" then --Update Gamemodes 
 			xgui_data.gamemodes = {}
 			local dirs = file.FindDir( "../gamemodes/*" )
 			for _, dir in pairs( dirs ) do
@@ -60,26 +56,18 @@ function xgui_sendData( ply, args )
 					table.insert( xgui_data.gamemodes, dir )
 				end
 			end
-		end
-		
-		if u == "votemaps" then
+		elseif u == "votemaps" then --Update Votemaps
 			xgui_data.votemaps = {}
 			for _, v in pairs( ulx.votemaps ) do
 				table.insert( xgui_data.votemaps, v )
 			end
-		end
-		
-		if u == "maps" then
+		elseif u == "maps" then --Update Maps
 			if ply:query( "ulx map" ) or ply:query( "ulx_cl_votemapEnabled" ) then
 				xgui_data.maps = ulx.maps
 			end
-		end
-		
-		if u == "gimps" then
+		elseif u == "gimps" then --Update GimpSays
 			xgui_data.gimps = ulx.gimpSays
-		end
-		
-		if u == "adverts" then
+		elseif u == "adverts" then --Update Adverts
 			xgui_data.adverts = {}
 			for groupname, advertgroup in pairs( ulx.adverts ) do 
 				for num, advert in pairs( advertgroup ) do
@@ -91,7 +79,7 @@ function xgui_sendData( ply, args )
 			end
 		end
 	end
-	--ULIb will easily send the data to the client!
+	--ULIb will quickly and easily send the data to the client!
 	ULib.clientRPC( ply, "xgui_RecieveData", xgui_data )
 end
 
