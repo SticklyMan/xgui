@@ -63,12 +63,12 @@ end
 local xgui_changemap = x_makebutton{ x=185, y=295, w=192, h=20, label="Force changelevel to this map", parent=xgui_maps }
 xgui_changemap.DoClick = function()
 	if xgui_cur_map:GetValue() ~= "No Map Selected" then
-		if xgui_select_gamemode:GetText() == "<default>" then
+		if xgui_select_gamemode:GetValue() == "<default>" then
 			print( "ONE!" )
 			RunConsoleCommand( "ulx", "map", xgui_cur_map:GetValue() )
 		else
-			print( "TWO!" .. xgui_select_gamemode:GetText() )
-			RunConsoleCommand( "ulx", "map", xgui_cur_map:GetValue(), xgui_select_gamemode:GetText() )
+			print( "TWO!" .. xgui_select_gamemode:GetValue() )
+			RunConsoleCommand( "ulx", "map", xgui_cur_map:GetValue(), xgui_select_gamemode:GetValue() )
 		end
 	end
 end

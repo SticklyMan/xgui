@@ -166,7 +166,7 @@ ULib.queueFunctionCall( function()
 				xgui_temp:AddChoice( v )
 			end
 			xgui_temp.OnSelect = function( self )
-				RunConsoleCommand( t.convar, tonumber(string.sub( self:GetText(), 1, 2 ) ) )
+				RunConsoleCommand( t.convar, tonumber(string.sub( self:GetValue(), 1, 2 ) ) )
 			end
 			xgui_temp:SetText( t.convardata[ GetConVarNumber( t.convar )+1 ] )
 		
@@ -195,7 +195,7 @@ ULib.queueFunctionCall( function()
 	end
 
 	--A function for DMultiChoice that will get the text of the currently selected option
-	function DMultiChoice:GetText()
+	function DMultiChoice:GetValue()
 		return self.TextEntry:GetValue()
 	end
 

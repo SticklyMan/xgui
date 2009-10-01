@@ -4,15 +4,34 @@
 xgui_group = x_makeXpanel( )
 
 x_makelabel{ x=5, y=10, label="Groups", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
+x_makelabel{ x=135, y=10, label="Allowed Access", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
+x_makelabel{ x=265, y=10, label="Inherited Access", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
+
+xgui_access_list = x_makelistview{ x=135, y=30, w=125, h=250, multiselect=true, parent=xgui_group, headerheight=0 }
+xgui_access_list:AddColumn( "" )
+xgui_inhaccess_list = x_makelistview{ x=265, y=30, w=125, h=250, multiselect=false, parent=xgui_group, headerheight=0 } 
+xgui_inhaccess_list:AddColumn( "" )
 
 xgui_group_list = x_makelistview{ x=5, y=30, w=125, h=125, multiselect=false, parent=xgui_group, headerheight=0 }
 xgui_group_list:AddColumn( "" )
 xgui_group_list.OnRowSelected = function()
-	xgui_group_name:SetText( xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-	if ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from ~= nil then
-		xgui_group_inherit:SetText( ULib.ucl.groups[xgui_group_list:GetSelected()[1]:GetColumnText(1)].inherit_from )
+	xgui_access_list:Clear()
+	xgui_inhaccess_list:Clear()
+	local group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
+	xgui_group_name:SetText( group )
+	if ULib.ucl.groups[group].inherit_from ~= nil then
+		xgui_group_inherit:SetText( ULib.ucl.groups[group].inherit_from )
 	else
 		xgui_group_inherit:SetText( "user" )
+	end
+	for _, access in ipairs( ULib.ucl.groups[group].allow ) do
+		xgui_access_list:AddLine( access )
+	end
+	while ( ULib.ucl.groups[group].inherit_from ~= nil ) do
+		group = ULib.ucl.groups[group].inherit_from
+		for _, access in ipairs( ULib.ucl.groups[group].allow ) do
+			xgui_inhaccess_list:AddLine( access )
+		end
 	end
 end
 
@@ -91,8 +110,8 @@ xgui_group_inherit = x_makemultichoice{ x=45, y=175, w=85, parent=xgui_group }
 xgui_group_inherit.OnSelect = function()
 	if xgui_group_list:GetSelectedLine() then
 		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
-			if xgui_group_inherit:GetText() ~= "<none>" then
-				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetText() )
+			if xgui_group_inherit:GetValue() ~= "<none>" then
+				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetValue() )
 			else
 				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
 			end
@@ -109,13 +128,13 @@ xgui_group.XGUI_Refresh = function()
 	xgui_group_name:SetText( "" )
 	xgui_group_inherit:Clear()
 	xgui_group_inherit:SetText( "user" )
-	SortGroups( ULib.ucl.getInheritanceTree() )
+	xgui_SortGroups( ULib.ucl.getInheritanceTree() )
 end
 hook.Add( ULib.HOOK_UCLCHANGED, "XGUI_updategroups", xgui_group.XGUI_Refresh )
 
-function SortGroups( t )
+function xgui_SortGroups( t )
 	for k, v in pairs( t ) do
-		SortGroups( v )
+		xgui_SortGroups( v )
 	end
 	for k, v in pairs( t ) do
 		xgui_group_list:AddLine( k )

@@ -7,7 +7,9 @@ local xgui_general = x_makepanellist{ x=5, y=30, w=190, h=335, spacing=1, paddin
 	local xgui_general_cat1 = x_makepanellist{ autosize=true }
 		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable Noclip", convar="sbox_cl_noclip" } )
 		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable Godmode", convar="sbox_cl_godmode" } )
-		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable PvP Damage", convar="sbox_cl_plpldamage" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Disable PvP Damage", convar="sbox_cl_plpldamage" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Spawn With Weapons", convar="sbox_cl_weapons" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Limited Physgun", convar="cl_physgun_limited" } )
 	xgui_general:AddItem( x_makecat{ label="Gamemode Settings", contents=xgui_general_cat1, parent=xgui_general, expanded=false } )
 	
 	local xgui_general_cat2 = x_makepanellist{ autosize=true }
@@ -27,7 +29,9 @@ local xgui_general = x_makepanellist{ x=5, y=30, w=190, h=335, spacing=1, paddin
 	
 	local xgui_general_cat3 = x_makepanellist{ autosize=true }
 		xgui_general_cat3:AddItem( x_makecheckbox{ label="Disable AI", convar="ai_cl_disabled", tooltip="Disables AI movement and thinking" } )
-		xgui_general_cat3:AddItem( x_makecheckbox{ label="Keep AI Ragdolls", convar="ai_cl_keepragdolls", tooltip="When an AI dies, it will leave behind a ragdoll" } )
+		if SinglePlayer() then  
+			xgui_general_cat3:AddItem( x_makecheckbox{ label="Keep AI Ragdolls", convar="ai_cl_keepragdolls", tooltip="When an AI dies, it will leave behind a ragdoll" } )
+		end
 		xgui_general_cat3:AddItem( x_makecheckbox{ label="AI Ignore Players", convar="ai_cl_ignoreplayers", tooltip="AI will ignore players" } )
 		xgui_general_cat3:AddItem( x_makeslider{ label="sv_gravity", min=-1000, max=1000, convar="sv_cl_gravity", tooltip="Changes the gravity. Default 600" } )
 		xgui_general_cat3:AddItem( x_makeslider{ label="phys_timescale", min=0, max=4, decimal=2, convar="phys_cl_timescale", tooltip="Changes the timescale of the physics. Default is 1" } )

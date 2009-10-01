@@ -42,20 +42,27 @@ ULib.queueFunctionCall( function()
 		end
 	end
 	--Load control interpretations for Ulib argument types
-	function ULib.cmds.BaseArg:x_getcontrol()
+	function ULib.cmds.BaseArg.x_getcontrol( arg )
 		return x_makelabel{ label="Not Supported", color=Color( 255,255,255,255 ) }
 	end
 	
-	function ULib.cmds.NumArg:x_getcontrol()
-		--return x_makeslider{ min=self.min or 0, max=self.max or 100, label="Number" }
-		return x_makeslider{ label="NumArg" }
+	function ULib.cmds.NumArg.x_getcontrol( arg )
+		return x_makeslider{ min=arg.min, max=arg.max, value=arg.default, label=arg.hint or "NumArg" }
 	end
 
-	function ULib.cmds.StringArg:x_getcontrol()
-		return x_maketextbox{ text="StringArg", focuscontrol=true }
+	function ULib.cmds.StringArg.x_getcontrol( arg )
+		if arg.completes == nil then
+			return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
+		else
+			xgui_temp = x_makemultichoice{ text=arg.hint or "StringArg" }
+			for _, v in ipairs( arg.completes ) do
+				xgui_temp:AddChoice( v )
+			end
+			return xgui_temp
+		end
 	end
 
-	function ULib.cmds.PlayerArg:x_getcontrol()
+	function ULib.cmds.PlayerArg.x_getcontrol( arg )
 		xgui_temp = x_makemultichoice{}
 		for k, v in pairs( player.GetAll() ) do
 			xgui_temp:AddChoice( v:Nick() )
@@ -63,12 +70,12 @@ ULib.queueFunctionCall( function()
 		return xgui_temp
 	end
 	
-	function ULib.cmds.CallingPlayerArg:x_getcontrol()
-		return x_makelabel{ label="CallingPlayer" }
+	function ULib.cmds.CallingPlayerArg.x_getcontrol( arg )
+		return x_makelabel{ label=arg.hint or "CallingPlayer" }
 	end
 	
-	function ULib.cmds.BoolArg:x_getcontrol()
-		return x_makecheckbox{ label="BoolArg" }
+	function ULib.cmds.BoolArg.x_getcontrol( arg )
+		return x_makecheckbox{ label=arg.hint or "BoolArg" }
 	end
 end )
 

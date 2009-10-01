@@ -19,6 +19,7 @@ ULib.ucl.registerAccess( "xgui_changeserversettings", "superadmin", "Allows chan
 ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "sbox_godmode", "sbox_cl_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "sbox_plpldamage", "sbox_cl_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_changeserversettings" )
+ULib.replicatedWritableCvar( "sbox_weapons", "sbox_cl_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "sv_voiceenable", "sv_cl_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "sv_alltalk", "sv_cl_alltalk", GetConVarNumber( "sv_alltalk" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "ai_disabled", "ai_cl_disabled", GetConVarNumber( "ai_disabled" ), false, false, "xgui_changeserversettings" )
@@ -26,6 +27,7 @@ ULib.replicatedWritableCvar( "ai_keepragdolls", "ai_cl_keepragdolls", GetConVarN
 ULib.replicatedWritableCvar( "ai_ignoreplayers", "ai_cl_ignoreplayers", GetConVarNumber( "ai_ignoreplayers" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv_gravity" ), false, false, "xgui_changeserversettings" )
 ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_changeserversettings" )
+ULib.replicatedWritableCvar( "physgun_limited", "cl_physgun_limited", GetConVarNumber( "physgun_limited" ), false, false, "xgui_changeserversettings" )
 
 --Function hub! All server functions can be called via concommand xgui!
 function xgui_cmd( ply, func, args )
