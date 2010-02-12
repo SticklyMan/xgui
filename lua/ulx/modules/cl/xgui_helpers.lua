@@ -51,6 +51,8 @@ ULib.queueFunctionCall( function()
 		xgui_temp:SetText( t.label or "" )
 		xgui_temp:SizeToContents()
 		xgui_temp:SetToolTip( t.tooltip )
+		if t.w then xgui_temp:SetWidth( t.w ) end
+		if t.h then xgui_temp:SetHeight( t.h ) end
 		if t.textcolor then xgui_temp:SetTextColor( t.textcolor ) end
 		return xgui_temp
 	end
@@ -182,7 +184,12 @@ ULib.queueFunctionCall( function()
 		return xgui_temp
 	end
 
-	--A simple color picker
+	--If we aren't in the sandbox gamemode, then "CtrlColor" doesn't exist! Let's add it in here:
+	if gmod.GetGamemode().Name ~= "Sandbox" then
+		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
+	end
+	
+	--Color picker used in Garry's menus
 	function x_makecolorpicker( t )
 		local xgui_temp = vgui.Create( "CtrlColor", t.parent )
 			xgui_temp:SetConVarR( "colour_r" )

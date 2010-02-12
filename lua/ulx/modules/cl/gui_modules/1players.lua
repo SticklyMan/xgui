@@ -96,8 +96,8 @@ function xgui_setselected( selcat )
 	xgui_temp = x_makebutton{ label=cmd.cmd }
 	xgui_temp.DoClick = function()
 		local buildcmd = cmd.cmd
-		for _, v in ipairs( xgui_argspot.Items ) do
-			buildcmd = buildcmd .. " \"" .. v:GetValue() .. "\""
+		for i=1,#xgui_argspot.Items - 2 do
+			buildcmd = buildcmd .. " \"" .. xgui_argspot.Items[i]:GetValue() .. "\""
 		end
 		print( buildcmd )
 		LocalPlayer():ConCommand( buildcmd )
@@ -107,8 +107,8 @@ function xgui_setselected( selcat )
 		xgui_temp = x_makebutton{ label=cmd.opposite }
 		xgui_temp.DoClick = function()
 			local buildcmd = cmd.opposite
-			for _, v in ipairs( xgui_argspot.Items ) do
-				buildcmd = buildcmd .. " \"" .. v:GetValue() .. "\""
+			for i=1,#xgui_argspot.Items - 2 do
+				buildcmd = buildcmd .. " \"" .. xgui_argspot.Items[i]:GetValue() .. "\""
 			end
 			LocalPlayer():ConCommand( buildcmd )
 		end

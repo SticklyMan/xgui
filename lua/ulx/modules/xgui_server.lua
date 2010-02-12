@@ -14,20 +14,22 @@ end
 Msg( "// GUI Modules Added!        //\n" )
 Msg( "///////////////////////////////\n" )
 
---Here we will use ULib to replicate the server settins so that anyone with access can change them (not just listen server host or rcon!)
-ULib.ucl.registerAccess( "xgui_changeserversettings", "superadmin", "Allows changing of gamemode and server-specific settings on the settings tab." )
-ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "sbox_godmode", "sbox_cl_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "sbox_plpldamage", "sbox_cl_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "sbox_weapons", "sbox_cl_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "sv_voiceenable", "sv_cl_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "sv_alltalk", "sv_cl_alltalk", GetConVarNumber( "sv_alltalk" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "ai_disabled", "ai_cl_disabled", GetConVarNumber( "ai_disabled" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "ai_keepragdolls", "ai_cl_keepragdolls", GetConVarNumber( "ai_keepragdolls" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "ai_ignoreplayers", "ai_cl_ignoreplayers", GetConVarNumber( "ai_ignoreplayers" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv_gravity" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_changeserversettings" )
-ULib.replicatedWritableCvar( "physgun_limited", "cl_physgun_limited", GetConVarNumber( "physgun_limited" ), false, false, "xgui_changeserversettings" )
+ULib.ucl.registerAccess( "xgui_svsettings", "superadmin", "Allows changing of gamemode and server-specific settings on the settings tab." )
+ULib.ucl.registerAccess( "xgui_managegroups", "superadmin", "Allows managing of groups, users, and access strings via the groups tab." )
+
+--Here we will use ULib to replicate the server settings so that anyone with access can change them (not just listen server host or rcon!)
+ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sbox_godmode", "sbox_cl_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sbox_plpldamage", "sbox_cl_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sbox_weapons", "sbox_cl_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sv_voiceenable", "sv_cl_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sv_alltalk", "sv_cl_alltalk", GetConVarNumber( "sv_alltalk" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "ai_disabled", "ai_cl_disabled", GetConVarNumber( "ai_disabled" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "ai_keepragdolls", "ai_cl_keepragdolls", GetConVarNumber( "ai_keepragdolls" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "ai_ignoreplayers", "ai_cl_ignoreplayers", GetConVarNumber( "ai_ignoreplayers" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv_gravity" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "physgun_limited", "cl_physgun_limited", GetConVarNumber( "physgun_limited" ), false, false, "xgui_svsettings" )
 
 --Function hub! All server functions can be called via concommand xgui!
 function xgui_cmd( ply, func, args )
@@ -37,6 +39,7 @@ function xgui_cmd( ply, func, args )
 	elseif branch == "setinheritance" then xgui_setInheritance( ply, args )
 	elseif branch == "removeGimp" then xgui_removeGimp( ply, args )
 	elseif branch == "removeAdvert" then xgui_removeAdvert( ply, args )
+	elseif branch == "removeUserID" then xgui_removeUserID( ply, args )
 	end
 end
 concommand.Add( "_xgui", xgui_cmd )
@@ -48,7 +51,7 @@ function xgui_sendData( ply, args )
 	ply:SendLua( "xgui_hasLoaded = false" )
 	
 	--If no args are specified, then update everything!
-	if #args == 0 then args = { "gamemodes", "votemaps", "maps", "gimps", "adverts" } end
+	if #args == 0 then args = { "gamemodes", "votemaps", "maps", "gimps", "adverts", "users" } end
 	for _, u in ipairs( args ) do
 		if u == "gamemodes" then --Update Gamemodes 
 			xgui_data.gamemodes = {}
@@ -79,6 +82,8 @@ function xgui_sendData( ply, args )
 					table.insert( xgui_data.adverts, temp )
 				end
 			end
+		elseif u == "users" then --Update Users
+			xgui_data.users = ULib.ucl.users
 		end
 	end
 	--ULIb will quickly and easily send the data to the client!

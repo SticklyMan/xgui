@@ -52,6 +52,7 @@ xgui_data.votemaps	- A list of votemaps (also the only maps visible to non-admin
 xgui_data.maps		- A list of every map on the server (Must have access to ulx map or access to enable/disable votemaps (ulx_cl_votemapEnabled))
 xgui_data.gimps		- A list of gimpsays
 xgui_data.adverts		- A list of adverts and data
+xgui_data.users		- A list of all users in groups by STEAMID, along with any restrictions (Must have access to xgui_managegroups)
 
 If needed, you can resend server data to the client by RunConsoleCommand( "xgui", "getdata", ... ) where ... is the categories you would like to update (leaving it blank updates everything)
 e.g: RunConsoleCommand( "xgui", "getdata", "votemaps", "gamemodes" )
