@@ -35,7 +35,6 @@ showclose - Determines whether to show X button on makeframepopup
 ]]--
 
 local function xgui_helpers()
-	print("COMMENCE HALP!")
 	function x_makecheckbox( t )
 		local xgui_temp = vgui.Create( "DCheckBoxLabel", t.parent )
 		xgui_temp:SetPos( t.x, t.y )
@@ -348,7 +347,6 @@ local function xgui_helpers()
 	end
 
 	derma.DefineControl( "DPanel_XGUI", "", PANEL, "EditablePanel" )
-	print("END HALP!")
 end
 
 hook.Add( "ULibLocalPlayerReady", "InitHelpers", xgui_helpers, -20)

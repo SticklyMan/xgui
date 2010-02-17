@@ -305,7 +305,7 @@ function xgui_getGroupAccess( objname )
 	xgui_clearInh()
 	for name, access in pairs( ULib.ucl.groups[objname].allow ) do
 		if type(name) == "number" then  --Determine if this command does not have restrictions
-			if ULib.cmds.translatedCmds[access] then --Check if its a command or other access string
+			if ULib.cmds.translatedCmds[access] then  --Check if its a command or other access string
 				xgui_access_list:AddLine( access )
 			else
 				xgui_access_otherlist:AddLine( access )
