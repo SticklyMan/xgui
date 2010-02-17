@@ -244,7 +244,7 @@ xgui_group.XGUI_Refresh = function()
 	xgui_groupremove:SetDisabled( true )
 	xgui_layoutLists()
 end
-hook.Add( ULib.HOOK_UCLCHANGED, "XGUI_updategroups", xgui_group.XGUI_Refresh )
+hook.Add( "UCLCHANGED", "XGUI_updategroups", xgui_group.XGUI_Refresh )
 
 function xgui_SortGroups( t )
 	for k, v in pairs( t ) do

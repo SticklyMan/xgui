@@ -34,7 +34,8 @@ nopopup - Used only with makeframepopup, will set whether the frame pops up or n
 showclose - Determines whether to show X button on makeframepopup
 ]]--
 
-ULib.queueFunctionCall( function()
+local function xgui_helpers()
+	print("COMMENCE HALP!")
 	function x_makecheckbox( t )
 		local xgui_temp = vgui.Create( "DCheckBoxLabel", t.parent )
 		xgui_temp:SetPos( t.x, t.y )
@@ -188,7 +189,7 @@ ULib.queueFunctionCall( function()
 	if gmod.GetGamemode().Name ~= "Sandbox" then
 		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
 	end
-	
+
 	--Color picker used in Garry's menus
 	function x_makecolorpicker( t )
 		local xgui_temp = vgui.Create( "CtrlColor", t.parent )
@@ -347,4 +348,7 @@ ULib.queueFunctionCall( function()
 	end
 
 	derma.DefineControl( "DPanel_XGUI", "", PANEL, "EditablePanel" )
-end )
+	print("END HALP!")
+end
+
+hook.Add( "ULibLocalPlayerReady", "InitHelpers", xgui_helpers, -20)
