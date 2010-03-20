@@ -1,12 +1,18 @@
 --Players module for ULX GUI -- by Stickly Man!
 --Handles all user-based commands, such as kick, slay, ban, etc.
 
-xgui_player = x_makeXpanel( )
+xgui_player = x_makeXpanel{ parent=xgui_null }
 
-xgui_rcon = x_maketextbox{ x=5, y=345, w=335, parent=xgui_player, text="Enter an RCON command...", focuscontrol=true }
-xgui_rcon.OnEnter = function()
-	RunConsoleCommand( "ulx", "rcon", unpack( string.Explode( " ", xgui_rcon:GetValue() ) ) )
-	xgui_rcon:SetText( "Enter an RCON command..." )
+xgui_pmessage = x_maketextbox{ x=5, y=345, w=335, parent=xgui_player, text="Send a private message to selected players...", focuscontrol=true }
+xgui_pmessage.OnEnter = function()
+	if xgui_player_list:GetSelectedLine() then
+		for _, v in pairs( xgui_player_list:GetSelected() ) do
+			if LocalPlayer():Nick() ~= v:GetColumnText(1) then
+				RunConsoleCommand( "ulx", "psay", v:GetColumnText(1), unpack( string.Explode( " ", xgui_pmessage:GetValue() ) ) )
+			end
+		end
+		xgui_pmessage:SetText( "Send a private message to selected players..." )
+	end
 end
 
 xgui_player_list = x_makelistview{ x=5, y=30, w=335, h=315, multiselect=true, parent=xgui_player }
@@ -99,7 +105,6 @@ function xgui_setselected( selcat )
 		for i=1,#xgui_argspot.Items - 2 do
 			buildcmd = buildcmd .. " \"" .. xgui_argspot.Items[i]:GetValue() .. "\""
 		end
-		print( buildcmd )
 		LocalPlayer():ConCommand( buildcmd )
 	end
 	xgui_argspot:AddItem( xgui_temp )
@@ -117,4 +122,4 @@ function xgui_setselected( selcat )
 	xgui_argspot:AddItem( x_makelabel{ label=cmd.helpStr } )
 end
 
-xgui_base:AddSheet( "Players", xgui_player, "gui/silkicons/user", false, false )
+table.insert( xgui_modules.tab, { name="Players", panel=xgui_player, icon="gui/silkicons/user", tooltip=nil, access=nil } )

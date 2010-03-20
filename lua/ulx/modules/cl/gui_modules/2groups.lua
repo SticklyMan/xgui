@@ -2,17 +2,17 @@
 --Manages groups and players within groups
 
 local xgui_restrict_color = Color( 255, 255, 255, 0 )
-xgui_group = x_makeXpanel( )
+xgui_group = x_makeXpanel{ parent=xgui_null }
 xgui_group.DefaultPaint = xgui_group.Paint
 xgui_group.Paint = function( self )
 	self:DefaultPaint()
 	draw.RoundedBox( 6, 135, 5, 450, 360, xgui_restrict_color )	
 end
 
-x_makelabel{ x=5, y=10, label="Groups", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
-x_makelabel{ x=140, y=10, label="Command Access", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
-x_makelabel{ x=290, y=10, w=135, label="Restrictions", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
-x_makelabel{ x=435, y=10, label="Other Access", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
+x_makelabel{ x=5, y=10, label="Groups", parent=xgui_group, textcolor=color_black }
+x_makelabel{ x=140, y=10, label="Command Access", parent=xgui_group, textcolor=color_black }
+x_makelabel{ x=290, y=10, w=135, label="Restrictions", parent=xgui_group, textcolor=color_black }
+x_makelabel{ x=435, y=10, label="Other Access", parent=xgui_group, textcolor=color_black }
 
 xgui_access_plist = x_makepanellist{ x=140, y=30, w=145, h=330, padding=1, spacing=1, parent=xgui_group }
 	xgui_access_list = x_makelistview{ multiselect=true, headerheight=0 }
@@ -121,8 +121,8 @@ xgui_group_name.OnEnter = function()
 	end
 end
 
-x_makelabel{ x=5, y=168, label="Inherits", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
-x_makelabel{ x=5, y=188, label="Users in group", parent=xgui_group, textcolor=Color( 0, 0, 0, 255 ) }
+x_makelabel{ x=5, y=168, label="Inherits", parent=xgui_group, textcolor=color_black }
+x_makelabel{ x=5, y=188, label="Users in group", parent=xgui_group, textcolor=color_black }
 xgui_group_inherit = x_makemultichoice{ x=45, y=165, w=90, parent=xgui_group }
 xgui_group_inherit.OnSelect = function()
 	if xgui_group_list:GetSelectedLine() then
@@ -227,11 +227,10 @@ xgui_changeuserbtn.DoClick = function()
 	xgui_list_groups:Open()
 end
 
-xgui_base:AddSheet( "Groups", xgui_group, "gui/silkicons/group", false, false )
+table.insert( xgui_modules.tab, { name="Groups", panel=xgui_group, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
 
 xgui_group.XGUI_Refresh = function()
 	xgui_restrict_color = Color( 255, 255, 255, 0 )
-	RunConsoleCommand( "xgui", "getdata", "users" )
 	xgui_group_list:Clear()
 	xgui_group_users:Clear()
 	xgui_group_name:SetText( "" )
@@ -244,7 +243,12 @@ xgui_group.XGUI_Refresh = function()
 	xgui_groupremove:SetDisabled( true )
 	xgui_layoutLists()
 end
-hook.Add( "UCLCHANGED", "XGUI_updategroups", xgui_group.XGUI_Refresh )
+
+xgui_group.UCLChanged = function()
+	RunConsoleCommand( "xgui", "getdata", "users" )
+	xgui_group.XGUI_Refresh()
+end
+hook.Add( "UCLChanged", "XGUI_updategroups", xgui_group.UCLChanged )
 
 function xgui_SortGroups( t )
 	for k, v in pairs( t ) do

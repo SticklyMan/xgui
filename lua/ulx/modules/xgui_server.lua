@@ -14,14 +14,25 @@ end
 Msg( "// GUI Modules Added!        //\n" )
 Msg( "///////////////////////////////\n" )
 
-ULib.ucl.registerAccess( "xgui_svsettings", "superadmin", "Allows changing of gamemode and server-specific settings on the settings tab." )
-ULib.ucl.registerAccess( "xgui_managegroups", "superadmin", "Allows managing of groups, users, and access strings via the groups tab." )
+--Chat command for people who loove chat commands!
+function xgui_chatCommand( ply )
+	ply:SendLua( "xgui_show()" )
+end
+ULib.addSayCommand(	"!xgui", xgui_chatCommand, "ulx" )
+
+--XGUI specific Accesses
+ULib.ucl.registerAccess( "xgui_gmsettings", "superadmin", "Allows changing of gamemode-specific settings on the settings tab in XGUI." )
+ULib.ucl.registerAccess( "xgui_svsettings", "superadmin", "Allows changing of server-specific settings on the settings tab in XGUI." )
+ULib.ucl.registerAccess( "xgui_ulxsettings", "superadmin", "Allows changing of ULX-specific settings on the settings tab in XGUI." )
+ULib.ucl.registerAccess( "xgui_managegroups", "superadmin", "Allows managing of groups, users, and access strings via the groups tab in XGUI." )
+ULib.ucl.registerAccess( "xgui_managebans", "superadmin", "Allows addition, removal, and viewing of bans in XGUI." )
 
 --Here we will use ULib to replicate the server settings so that anyone with access can change them (not just listen server host or rcon!)
-ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "sbox_godmode", "sbox_cl_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "sbox_plpldamage", "sbox_cl_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "sbox_weapons", "sbox_cl_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_godmode", "sbox_cl_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_plpldamage", "sbox_cl_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_weapons", "sbox_cl_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_gmsettings" )
+
 ULib.replicatedWritableCvar( "sv_voiceenable", "sv_cl_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_svsettings" )
 ULib.replicatedWritableCvar( "sv_alltalk", "sv_cl_alltalk", GetConVarNumber( "sv_alltalk" ), false, false, "xgui_svsettings" )
 ULib.replicatedWritableCvar( "ai_disabled", "ai_cl_disabled", GetConVarNumber( "ai_disabled" ), false, false, "xgui_svsettings" )
@@ -33,13 +44,20 @@ ULib.replicatedWritableCvar( "physgun_limited", "cl_physgun_limited", GetConVarN
 
 --Function hub! All server functions can be called via concommand xgui!
 function xgui_cmd( ply, func, args )
+	--Lets the client know that the server has XGUI
+	ply:SendLua( "xgui_isInstalled = true" )
+	
 	local branch=args[1]
 	table.remove( args, 1 )
 	if branch == "getdata" then xgui_sendData( ply, args )
 	elseif branch == "setinheritance" then xgui_setInheritance( ply, args )
+	elseif branch == "addGimp" then xgui_addGimp( ply, args )
 	elseif branch == "removeGimp" then xgui_removeGimp( ply, args )
+	elseif branch == "addAdvert" then xgui_addAdvert( ply, args )
 	elseif branch == "removeAdvert" then xgui_removeAdvert( ply, args )
 	elseif branch == "removeUserID" then xgui_removeUserID( ply, args )
+	elseif branch == "updateBanName" then xgui_UpdateBanName( ply, args )
+	elseif branch == "refreshBans" then ULib.refreshBans() xgui_ULXCommandCalled( nil, "ulx banid" )
 	end
 end
 concommand.Add( "_xgui", xgui_cmd )
@@ -51,7 +69,7 @@ function xgui_sendData( ply, args )
 	ply:SendLua( "xgui_hasLoaded = false" )
 	
 	--If no args are specified, then update everything!
-	if #args == 0 then args = { "gamemodes", "votemaps", "maps", "gimps", "adverts", "users" } end
+	if #args == 0 then args = { "gamemodes", "votemaps", "maps", "gimps", "adverts", "users", "bans" } end
 	for _, u in ipairs( args ) do
 		if u == "gamemodes" then --Update Gamemodes 
 			xgui_data.gamemodes = {}
@@ -66,24 +84,26 @@ function xgui_sendData( ply, args )
 			for _, v in pairs( ulx.votemaps ) do
 				table.insert( xgui_data.votemaps, v )
 			end
-		elseif u == "maps" then --Update Maps
+		elseif u == "maps" then --Update Full List of Server Maps
 			if ply:query( "ulx map" ) or ply:query( "ulx_cl_votemapEnabled" ) then
 				xgui_data.maps = ulx.maps
 			end
 		elseif u == "gimps" then --Update GimpSays
-			xgui_data.gimps = ulx.gimpSays
+			if ply:query( "xgui_ulxsettings" ) then
+				xgui_data.gimps = ulx.gimpSays
+			end
 		elseif u == "adverts" then --Update Adverts
-			xgui_data.adverts = {}
-			for groupname, advertgroup in pairs( ulx.adverts ) do 
-				for num, advert in pairs( advertgroup ) do
-					local temp = advert
-					temp.groupname = groupname
-					temp.num = num
-					table.insert( xgui_data.adverts, temp )
-				end
+			if ply:query( "xgui_ulxsettings" ) then
+				xgui_data.adverts = ulx.adverts
 			end
 		elseif u == "users" then --Update Users
-			xgui_data.users = ULib.ucl.users
+			if ply:query( "xgui_managegroups" ) then
+				xgui_data.users = ULib.ucl.users
+			end
+		elseif u == "bans" then --Update Bans
+			if ply:query( "xgui_managebans" ) then
+				xgui_data.bans = ULib.bans
+			end
 		end
 	end
 	--ULIb will quickly and easily send the data to the client!
@@ -106,14 +126,79 @@ function xgui_setInheritance( ply, args )
 	end
 end
 
+function xgui_addGimp( ply, args )
+	if ply:query( "xgui_ulxsettings" ) then
+		ulx.addGimpSay( args[1] )
+		for _, v in pairs( player.GetAll() ) do
+			if v:query( "xgui_ulxsettings" ) then
+				ULib.clientRPC( v, "xgui_settings.XGUI_Refresh", "gimps", ulx.gimpSays )
+			end
+		end
+	end
+end
+
 function xgui_removeGimp( ply, args )
-	local gi = debug.getinfo( ulx.cc_addGimpSay )
-	for i=1, gi.nups do
-		local k, v = debug.getupvalue( ulx.cc_addGimpSay, i )
-		if k == "gimpSays" then
-			for a, b in ipairs( v ) do
-				if b == args[1] then
-					table.remove( v, a )
+	if ply:query( "xgui_ulxsettings" ) then
+		for a, b in ipairs( ulx.gimpSays ) do
+			if b == args[1] then
+				table.remove( ulx.gimpSays, a )
+				for _, v in pairs( player.GetAll() ) do
+					if v:query( "xgui_ulxsettings" ) then
+						ULib.clientRPC( v, "xgui_settings.XGUI_Refresh", "gimps", ulx.gimpSays )
+					end
+				end
+				return nil
+			end
+		end
+	end
+end
+
+function xgui_addAdvert( ply, args )
+	if ply:query( "xgui_ulxsettings" ) then
+		if args[4] == "" then args[4] = nil end
+		if args[1] == "number" then -- Ungrouped advert, Make a new group and move the ungrouped advert into it
+			local i = 1
+			while ulx.adverts["Group " .. i] ~= nil do
+				i=i+1
+			end
+			ulx.adverts["Group " .. i] = { {} }
+			for k, v in pairs( ulx.adverts[tonumber( args[4] )][1] ) do
+				ulx.adverts["Group " .. i][1][k] = v
+			end
+			table.remove( ulx.adverts, tonumber( args[4] ) )
+			timer.Remove( "ULXAdvert" .. "number" .. tonumber( args[4] ) )
+			args[4] = "Group " .. i
+		end
+		if args[5] == nil then
+			ulx.addAdvert( args[2], tonumber( args[3] ), args[4] )
+		else
+			ulx.addAdvert( args[2], tonumber( args[3] ), args[4], { r = tonumber( args[5] ), g = tonumber( args[6] ), b = tonumber( args[7] ), a = tonumber( args[8] ) }, tonumber( args[9] ) )
+		end
+		for _, v in pairs( player.GetAll() ) do
+			if v:query( "xgui_ulxsettings" ) then
+				ULib.clientRPC( v, "xgui_settings.XGUI_Refresh", "adverts", ulx.adverts )
+			end
+		end
+		return nil
+	end
+end
+
+function xgui_removeAdvert( ply, args ) --node.group, node.data.message, type( node.group )
+	if ply:query( "xgui_ulxsettings" ) then
+		if args[3] == "number" then args[1] = tonumber( args[1] ) end
+		for groupname, advertgroup in pairs( ulx.adverts ) do
+			for num, data in pairs( advertgroup ) do
+				if groupname == args[1] and data.message == args[2] then
+					table.remove( advertgroup, num )
+					if next( advertgroup ) == nil then
+						ulx.adverts[groupname] = nil
+						timer.Remove( "ULXAdvert" .. type( groupname ) .. groupname )
+					end
+					for _, v in pairs( player.GetAll() ) do
+						if v:query( "xgui_ulxsettings" ) then
+							ULib.clientRPC( v, "xgui_settings.XGUI_Refresh", "adverts", ulx.adverts )
+						end
+					end
 					return nil
 				end
 			end
@@ -121,17 +206,29 @@ function xgui_removeGimp( ply, args )
 	end
 end
 
-function xgui_removeAdvert( ply, args )
-	for groupname, advertgroup in pairs( ulx.adverts ) do
-		for num, _ in pairs( advertgroup ) do
-			if tostring( groupname ) == args[1] and tostring( num ) == args[2] then
-				table.remove( advertgroup, num )
-				if next( advertgroup ) == nil then
-					adverts.groupname = nil
-					timer.Remove( "ULXAdvert" .. type( groupname ) .. groupname )
-				end
-				return nil
+function xgui_UpdateBanName( ply, args )
+	if ply:query( "xgui_managebans" ) then 
+		for ID, baninfo in pairs( ULib.bans ) do
+			if ID == args[1] then
+				baninfo.name = args[2]
+				--Save the banfile
+				file.Write( ULib.BANS_FILE, ULib.makeKeyValues( ULib.bans ) )
+				--Call our function to refresh ban data for players
+				xgui_ULXCommandCalled( nil, "ulx banid" )
 			end
 		end
 	end
 end
+
+--This will check for ULX functions and delegate appropriate actions based on which commands were called
+--Ex. When someone uses ulx ban, call the clients to refresh the appropriate data
+function xgui_ULXCommandCalled( ply, cmdName, args )
+	if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then
+		for _, v in pairs( player.GetAll() ) do
+			if v:query( "xgui_managebans" ) then
+				ULib.clientRPC( v, "xgui_bans.XGUI_Refresh", ULib.bans )
+			end
+		end
+	end
+end
+hook.Add( "ULibPostTranslatedCommand", "XGUI_HookULXCommand", xgui_ULXCommandCalled )

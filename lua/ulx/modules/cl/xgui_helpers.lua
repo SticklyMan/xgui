@@ -9,6 +9,7 @@ convar - used to link a control to a convar
 text - set the text in a textbox
 access - ULX access string used to determine whether the control is enabled or disabled
 saccess - ULX access string used to determine if the control is visible
+btype - Used to set the symbol on a DSysButton. Valid choices are close, grip, down, up, updown, tick, right, left, question, and none.
 
 NUMBERS:
 x, y, w, h - position, width, and height of control
@@ -75,8 +76,16 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetText( t.label or "" )
 		return xgui_temp
+	end	
+	
+	function x_makesysbutton( t )
+		local xgui_temp = vgui.Create( "DSysButton", t.parent )
+		xgui_temp:SetType( t.btype )
+		xgui_temp:SetSize( t.w, t.h or 20 )
+		xgui_temp:SetPos( t.x, t.y )
+		return xgui_temp
 	end
-
+	
 	function x_makeframepopup( t )
 		local xgui_temp = vgui.Create( "DFrame", t.parent )
 		xgui_temp:SetSize( t.w, t.h )
@@ -122,6 +131,7 @@ local function xgui_helpers()
 
 	function x_makecat( t )
 		local xgui_temp = vgui.Create( "DCollapsibleCategory", t.parent )
+		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetSize( t.w, t.h )
 		xgui_temp:SetLabel( t.label or "" )
 		xgui_temp:SetContents( t.contents )
@@ -137,7 +147,7 @@ local function xgui_helpers()
 	end
 
 	function x_makeXpanel( t )
-		xgui_temp = vgui.Create( "DPanel_XGUI" )
+		xgui_temp = vgui.Create( "DPanel_XGUI", t.parent )
 		xgui_temp:MakePopup()
 		xgui_temp:SetKeyboardInputEnabled( false )
 		xgui_temp:SetMouseInputEnabled( true )
@@ -162,6 +172,7 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetEditable( t.enableinput )
+		xgui_temp:SetToolTip( t.tooltip )
 		if t.convar then
 			--Special code for setting convars
 			for i, v in ipairs( t.convardata ) do
@@ -183,7 +194,14 @@ local function xgui_helpers()
 		xgui_temp:SetAutoSize( t.autosize )
 		return xgui_temp
 	end
-
+	
+	function x_maketree( t )
+		local xgui_temp = vgui.Create( "DTree", t.parent )
+		xgui_temp:SetPos( t.x, t.y )
+		xgui_temp:SetSize( t.w, t.h )
+		return xgui_temp
+	end
+	
 	--If we aren't in the sandbox gamemode, then "CtrlColor" doesn't exist! Let's add it in here:
 	if gmod.GetGamemode().Name ~= "Sandbox" then
 		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
@@ -201,22 +219,24 @@ local function xgui_helpers()
 		return xgui_temp
 	end
 
+	--Garry's DTree:Clear() function doesn't exist.. let's make one
+	function DTree:Clear()
+		for item, node in pairs( self.Items ) do
+			node:Remove()
+			self.Items[item] = nil
+		end
+		self.m_pSelectedItem = nil
+		self:InvalidateLayout()
+	end
+	
 	--A function for DMultiChoice that will get the text of the currently selected option
 	function DMultiChoice:GetValue()
 		return self.TextEntry:GetValue()
 	end
-
+	
+	--A function to remove any choice in a DMultiChoice
 	function DMultiChoice:RemoveChoice( choice )
 		table.remove( self.Choices, choice )
-	end
-
-	function DMultiChoice:RenameChoice( old, new )
-		for i, v in ipairs( self.Choices ) do
-			if v == old then 
-				table.remove( self.Choices, i )
-				table.insert( self.Choices, i, new )
-			end
-		end
 	end
 
 	--A function for DMultiChoice that will remove a given option
@@ -241,7 +261,18 @@ local function xgui_helpers()
 			end
 		end
 	end
-
+	
+	--Clears all of the tabs in a DPropertySheet, parents removed panels to xgui_null.
+	function DPropertySheet:Clear()
+		for _, Sheet in ipairs( self.Items ) do
+			Sheet.Panel:SetParent( xgui_null )
+			Sheet.Tab:Remove()
+		end
+		self.m_pActiveTab = nil
+		self:SetActiveTab( nil )
+		self.tabScroller.Panels = {}
+		self.Items = {}
+	end
 	--------------------------------------------------
 	--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the convar when the mouse is released! (And allows for textbox input)
 	--------------------------------------------------
@@ -349,4 +380,4 @@ local function xgui_helpers()
 	derma.DefineControl( "DPanel_XGUI", "", PANEL, "EditablePanel" )
 end
 
-hook.Add( "ULibLocalPlayerReady", "InitHelpers", xgui_helpers, -20)
+hook.Add( "ULibLocalPlayerReady", "InitHelpers", xgui_helpers, -20 )
