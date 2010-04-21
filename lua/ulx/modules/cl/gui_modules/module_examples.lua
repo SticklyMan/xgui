@@ -1,3 +1,5 @@
+--TODO: THIS EXAMPLE IS OUTDATED SINCE LATEST DATA TRANSFER CHANGES!!
+
 --Here are some examples on how to add modules and stuff to XGUI!
 
 --Your lua file should be placed in the gui_modules folder (or replicated folderpath)

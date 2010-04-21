@@ -92,7 +92,7 @@ local xgui_ULX = x_makepanellist{ x=200, y=30, w=190, h=335, spacing=1, padding=
 				xgui_gimp_button:SetText( "Remove" )
 			end
 			
-			xgui_settings.XGUI_Refresh( "gimps" )
+			xgui_settings.updateGimps()
 		end
 		xgui_ULX_cat1:AddItem( xgui_gimp_button )
 		
@@ -172,7 +172,7 @@ local xgui_ULX = x_makepanellist{ x=200, y=30, w=190, h=335, spacing=1, padding=
 				end
 			end
 			
-			xgui_settings.XGUI_Refresh( "adverts" )
+			xgui_settings.updateAdverts()
 		end
 		xgui_ULX_cat1:AddItem( xgui_advert_button )
 		
@@ -223,67 +223,56 @@ local xgui_GUI = x_makepanellist{ x=395, y=30, w=190, h=200, spacing=1, padding=
 		xgui_GUI_cat1:AddItem( x_makecheckbox{ label="Use XGUI to save settings", tooltip="This doesn't do anything yet" } )
 		xgui_GUI_cat1:AddItem( x_makecheckbox{ label="Disable Tooltips", tooltip="This doesn't do anything yet" } )
 		xgui_GUI_cat1:AddItem( x_makecheckbox{ label="Send map thumbnails to clients", tooltip="This doesn't do anything yet" } )
-		xgui_button_refresh = x_makebutton{ label="Refresh Server Data.." }
+		xgui_button_refresh = x_makebutton{ label="Refresh Server Data..." }
 		xgui_button_refresh.DoClick=function()
 			if xgui_isInstalled then  --We can't be in offline mode to do this
-				xgui_hide()
-				xgui_hasLoaded = false
 				RunConsoleCommand( "xgui", "getdata" )
-				xgui_show()
 			end
 		end
 		xgui_GUI_cat1:AddItem( xgui_button_refresh )
 	xgui_GUI:AddItem( x_makecat{ label="XGUI Settings", contents=xgui_GUI_cat1, expanded=true } )
 	
-xgui_settings.XGUI_Refresh = function( arg, data )
-	if type( arg ) == "string" then
-		if arg == "gimps" then
-			if type( data ) == "table" then
-				xgui_data.gimps = data
-			end
-			if xgui_gimp and xgui_gimp:IsVisible() then
-				xgui_gimp_list:Clear()
-				for k, v in pairs( xgui_data.gimps ) do
-					xgui_gimp_list:AddLine( v )
-				end
-			end
-		elseif arg == "adverts" then
-			if type( data ) == "table" then
-				xgui_data.adverts = data
-			end
-			if xgui_advert then 
-				xgui_advert_tree:Clear()
-				xgui_advert_group:Clear()
-				xgui_advert_group:AddChoice( "<No Group/New Group>" )
-				xgui_advert_group:ChooseOptionID( 1 )
-				for group, adverts in pairs( xgui_data.adverts ) do
-					if #adverts > 1 then --Check if it's a group or a single advert
-						local xgui_temp = xgui_advert_tree:AddNode( group )
-						xgui_advert_group:AddChoice( group )
-						xgui_temp.Icon:SetImage( "gui/silkicons/folder_go" )
-						xgui_temp.group = group
-						for advert, data in pairs( adverts ) do
-							local node = xgui_temp:AddNode( data.message )
-							node.data = data
-							node:SetTooltip( data.message )
-							if data.color then 
-								node.Icon:SetImage( "gui/silkicons/application_view_tile" )
-							else
-								node.Icon:SetImage( "gui/silkicons/application_view_detail" )
-							end
-						end
+xgui_settings.updateGimps = function()
+	if xgui_gimp and xgui_gimp:IsVisible() then
+		xgui_gimp_list:Clear()
+		for k, v in pairs( xgui_data.gimps ) do
+			xgui_gimp_list:AddLine( v )
+		end
+	end
+end
+
+xgui_settings.updateAdverts = function()
+	if xgui_advert and xgui_advert:IsVisible() then 
+		xgui_advert_tree:Clear()
+		xgui_advert_group:Clear()
+		xgui_advert_group:AddChoice( "<No Group/New Group>" )
+		xgui_advert_group:ChooseOptionID( 1 )
+		for group, adverts in pairs( xgui_data.adverts ) do
+			if #adverts > 1 then --Check if it's a group or a single advert
+				local xgui_temp = xgui_advert_tree:AddNode( group )
+				xgui_advert_group:AddChoice( group )
+				xgui_temp.Icon:SetImage( "gui/silkicons/folder_go" )
+				xgui_temp.group = group
+				for advert, data in pairs( adverts ) do
+					local node = xgui_temp:AddNode( data.message )
+					node.data = data
+					node:SetTooltip( data.message )
+					if data.color then 
+						node.Icon:SetImage( "gui/silkicons/application_view_tile" )
 					else
-						local node = xgui_advert_tree:AddNode( adverts[1].message )
-						xgui_advert_group:AddChoice( adverts[1].message )
-						node.data = adverts[1]
-						node.group = group
-						node:SetTooltip( adverts[1].message )
-						if adverts[1].color then
-							node.Icon:SetImage( "gui/silkicons/application_view_tile" )
-						else
-							node.Icon:SetImage( "gui/silkicons/application_view_detail" )
-						end
+						node.Icon:SetImage( "gui/silkicons/application_view_detail" )
 					end
+				end
+			else
+				local node = xgui_advert_tree:AddNode( adverts[1].message )
+				xgui_advert_group:AddChoice( adverts[1].message )
+				node.data = adverts[1]
+				node.group = group
+				node:SetTooltip( adverts[1].message )
+				if adverts[1].color then
+					node.Icon:SetImage( "gui/silkicons/application_view_tile" )
+				else
+					node.Icon:SetImage( "gui/silkicons/application_view_detail" )
 				end
 			end
 		end
@@ -291,3 +280,5 @@ xgui_settings.XGUI_Refresh = function( arg, data )
 end
 
 table.insert( xgui_modules.tab, { name="Settings", panel=xgui_settings, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
+table.insert( xgui_modules.hook["adverts"], xgui_settings.updateAdverts )
+table.insert( xgui_modules.hook["gimps"], xgui_settings.updateGimps )

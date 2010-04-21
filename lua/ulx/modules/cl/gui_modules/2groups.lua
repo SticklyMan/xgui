@@ -227,29 +227,6 @@ xgui_changeuserbtn.DoClick = function()
 	xgui_list_groups:Open()
 end
 
-table.insert( xgui_modules.tab, { name="Groups", panel=xgui_group, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
-
-xgui_group.XGUI_Refresh = function()
-	xgui_restrict_color = Color( 255, 255, 255, 0 )
-	xgui_group_list:Clear()
-	xgui_group_users:Clear()
-	xgui_group_name:SetText( "" )
-	xgui_group_inherit:Clear()
-	xgui_group_inherit:SetText( "user" )
-	xgui_clearInh()
-	xgui_SortGroups( ULib.ucl.getInheritanceTree() )
-	xgui_changeuserbtn:SetDisabled( true )
-	xgui_adduserbtn:SetDisabled( true )
-	xgui_groupremove:SetDisabled( true )
-	xgui_layoutLists()
-end
-
-xgui_group.UCLChanged = function()
-	RunConsoleCommand( "xgui", "getdata", "users" )
-	xgui_group.XGUI_Refresh()
-end
-hook.Add( "UCLChanged", "XGUI_updategroups", xgui_group.UCLChanged )
-
 function xgui_SortGroups( t )
 	for k, v in pairs( t ) do
 		xgui_SortGroups( v )
@@ -407,3 +384,21 @@ function IsOnline( ID, checkName )
 	end
 	return false
 end
+
+xgui_group.updateUsers = function()
+	xgui_restrict_color = Color( 255, 255, 255, 0 )
+	xgui_group_list:Clear()
+	xgui_group_users:Clear()
+	xgui_group_name:SetText( "" )
+	xgui_group_inherit:Clear()
+	xgui_group_inherit:SetText( "user" )
+	xgui_clearInh()
+	xgui_SortGroups( ULib.ucl.getInheritanceTree() )
+	xgui_changeuserbtn:SetDisabled( true )
+	xgui_adduserbtn:SetDisabled( true )
+	xgui_groupremove:SetDisabled( true )
+	xgui_layoutLists()
+end
+
+table.insert( xgui_modules.tab, { name="Groups", panel=xgui_group, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
+table.insert( xgui_modules.hook["users"], xgui_group.updateUsers )

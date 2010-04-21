@@ -13,7 +13,7 @@ btype - Used to set the symbol on a DSysButton. Valid choices are close, grip, d
 
 NUMBERS:
 x, y, w, h - position, width, and height of control
-min, max, decimal - used with a slider, sets the minimum and maximum value, and the number of decimal places to use.
+min, max, decimal - used with a slider, sets the minimum and maximum value, and the number of decimal places to use. Also used with a DProgressBar
 spacing, padding - used with panellist, determines how much spacing there is between controls, and their distance from the edge of the panel
 value - sets the value of a slider/numberwang
 headerheight - sets height of a DListView header
@@ -33,6 +33,8 @@ focuscontrol - Determines whether to specify special functions for xgui_base's k
 expanded - Determines whether or not a category is expanded when it is created
 nopopup - Used only with makeframepopup, will set whether the frame pops up or not
 showclose - Determines whether to show X button on makeframepopup
+percent - If true, progressbar will show as a %
+disabled - Used with controls (as of now, only buttons) to determine if it is disabled.
 ]]--
 
 local function xgui_helpers()
@@ -41,7 +43,9 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetText( t.label or "" )
 		xgui_temp:SizeToContents()
+		xgui_temp:SetValue( t.value or 0 )
 		xgui_temp:SetConVar( t.convar )
+		if t.textcolor then xgui_temp:SetTextColor( t.textcolor ) end
 		if t.tooltip then xgui_temp:SetTooltip( t.tooltip ) end
 		return xgui_temp
 	end
@@ -75,6 +79,7 @@ local function xgui_helpers()
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetText( t.label or "" )
+		xgui_temp:SetDisabled( t.disabled )
 		return xgui_temp
 	end	
 	
@@ -89,8 +94,9 @@ local function xgui_helpers()
 	function x_makeframepopup( t )
 		local xgui_temp = vgui.Create( "DFrame", t.parent )
 		xgui_temp:SetSize( t.w, t.h )
-		xgui_temp:Center()
+		xgui_temp:SetPos( t.x or ScrW()/2-t.w/2, t.y or ScrH()/2-t.h/2 )
 		xgui_temp:SetTitle( t.label or "" )
+		if t.draggable ~= nil then xgui_temp:SetDraggable( t.draggable ) end
 		if t.nopopup ~= true then xgui_temp:MakePopup() end
 		if t.showclose ~= nil then xgui_temp:ShowCloseButton( t.showclose ) end
 		return xgui_temp
@@ -153,7 +159,7 @@ local function xgui_helpers()
 		xgui_temp:SetMouseInputEnabled( true )
 		return xgui_temp
 	end
-
+	
 	function x_makenumber( t )
 		local xgui_temp = vgui.Create( "DNumberWang", t.parent )
 		xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
@@ -202,7 +208,7 @@ local function xgui_helpers()
 		return xgui_temp
 	end
 	
-	--If we aren't in the sandbox gamemode, then "CtrlColor" doesn't exist! Let's add it in here:
+	--If we aren't in the sandbox gamemode, then "CtrlColor" isn't included-- Don't see anything wrong with including it here!
 	if gmod.GetGamemode().Name ~= "Sandbox" then
 		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
 	end
@@ -218,7 +224,20 @@ local function xgui_helpers()
 			xgui_temp:SetSize( t.w, t.h )
 		return xgui_temp
 	end
-
+	
+	--Includes Garry's ever-so-awesome progress bar!
+	include( "menu/ProgressBar.lua" )
+	function x_makeprogressbar( t )
+		xgui_temp = vgui.Create( "DProgressBar", t.parent )
+		xgui_temp:SetPos( t.x, t.y )
+		xgui_temp:SetSize( t.w or 100, t.h or 20 )
+		xgui_temp:SetMin( t.min or 0 )
+		xgui_temp:SetMax( t.max or 100 )
+		xgui_temp:SetValue( t.value or 0 )
+		if t.percent then xgui_temp:LabelAsPecentage() end -- Uh oh, Garry misspelled percentage, watch for this if it gets fixed!
+		return xgui_temp
+	end
+	
 	--Garry's DTree:Clear() function doesn't exist.. let's make one
 	function DTree:Clear()
 		for item, node in pairs( self.Items ) do
@@ -229,14 +248,9 @@ local function xgui_helpers()
 		self:InvalidateLayout()
 	end
 	
-	--A function for DMultiChoice that will get the text of the currently selected option
+	--A quick function to get the value of a DMultiChoice (I like consistency)
 	function DMultiChoice:GetValue()
 		return self.TextEntry:GetValue()
-	end
-	
-	--A function to remove any choice in a DMultiChoice
-	function DMultiChoice:RemoveChoice( choice )
-		table.remove( self.Choices, choice )
 	end
 
 	--A function for DMultiChoice that will remove a given option
@@ -272,6 +286,53 @@ local function xgui_helpers()
 		self:SetActiveTab( nil )
 		self.tabScroller.Panels = {}
 		self.Items = {}
+	end
+	
+	--------------------------------------------------
+	--Here is slightly modified Derma code specific to XGUI's base.
+	--------------------------------------------------
+	function x_makeXGUIbase()
+		local xgui_base = vgui.Create( "DPropertySheet" )
+		xgui_base:SetVisible( false )
+		xgui_base:SetPos( ScrW()/2 - 300, ScrH()/2 - 200 )
+		xgui_base:SetSize( 600, 400 )
+		xgui_base:SetFadeTime( .12 )
+		--(The following is a direct copy of Garry's code, minus the comments. Any added comments were changes relating to XGUI)
+		function xgui_base:PerformLayout()
+			local ActiveTab = self:GetActiveTab()
+			local Padding = self:GetPadding()
+			if (!ActiveTab) then return end
+			ActiveTab:InvalidateLayout( true )
+			self.tabScroller:StretchToParent( Padding, 0, Padding, nil )
+			self.tabScroller:SetTall( ActiveTab:GetTall() )
+			self.tabScroller:InvalidateLayout( true )
+			for k, v in pairs( self.Items ) do
+				v.Tab:GetPanel():SetVisible( false )
+				v.Tab:SetZPos( 100 - k )
+				v.Tab:ApplySchemeSettings()
+			end
+			if ( ActiveTab ) then
+				local ActivePanel = ActiveTab:GetPanel()
+				ActivePanel:SetVisible( true )
+				--Since we're using Frames instead of panels, this will set the position to the correct location.
+				ActivePanel:SetPos( ScrW()/2 - 295, ScrH()/2 - 173 )
+				if ( !ActivePanel.NoStretchX ) then 
+					ActivePanel:SetWide( self:GetWide() - Padding * 2 ) 
+				else
+					ActivePanel:CenterHorizontal()
+				end
+				if ( !ActivePanel.NoStretchY ) then 
+					ActivePanel:SetTall( self:GetTall() - ActiveTab:GetTall() - Padding * 2 ) 
+				else
+					ActivePanel:CenterVertical()
+				end
+				ActivePanel:InvalidateLayout()
+				ActiveTab:SetZPos( 100 )
+			end
+			self.animFade:Run()
+		end
+		
+		return xgui_base
 	end
 	--------------------------------------------------
 	--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the convar when the mouse is released! (And allows for textbox input)

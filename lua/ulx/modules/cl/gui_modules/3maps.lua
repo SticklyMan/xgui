@@ -62,18 +62,22 @@ xgui_veto.DoClick = function()
 	RunConsoleCommand( "ulx", "veto" )
 end
 
-xgui_maps.XGUI_Refresh = function()
-	xgui_select_gamemode:Clear()
-	xgui_select_gamemode:AddChoice( "<default>" )
-	xgui_select_gamemode:SetText( "<default>" )
-	for _, v in ipairs( xgui_data.gamemodes ) do
-		xgui_select_gamemode:AddChoice( v )
-	end
-	
+xgui_maps.updateMaps = function()
 	xgui_maps_list:Clear()
 	for _,v in ipairs( xgui_data.votemaps ) do
 		xgui_maps_list:AddLine( v )
 	end
 end
 
+xgui_maps.updateGamemodes = function()
+	xgui_select_gamemode:Clear()
+	xgui_select_gamemode:AddChoice( "<default>" )
+	xgui_select_gamemode:SetText( "<default>" )
+	for _, v in ipairs( xgui_data.gamemodes ) do
+		xgui_select_gamemode:AddChoice( v )
+	end
+end
+
 table.insert( xgui_modules.tab, { name="Maps", panel=xgui_maps, icon="gui/silkicons/world", tooltip=nil, access=nil } )
+table.insert( xgui_modules.hook["votemaps"], xgui_maps.updateMaps )
+table.insert( xgui_modules.hook["gamemodes"], xgui_maps.updateGamemodes )

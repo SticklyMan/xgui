@@ -24,36 +24,41 @@ xgui_argspot = x_makepanellist{ x=440, y=30, w=145, h=335, parent=xgui_player }
 
 local xgui_command_cats = {}
 
-xgui_player.XGUI_Refresh = function()
-	xgui_commands:Clear()
-	xgui_command_cats = {}
-	
-	for cmd, data in pairs( ULib.cmds.translatedCmds ) do
-		if data.opposite ~= cmd && ULib.ucl.query( LocalPlayer(), cmd ) then
-			local catname = data.category
-			if catname == nil or catname == "" then catname = "Uncategorized" end
-			if !xgui_command_cats[catname] then
-				--Make a new category
-				xgui_command_cats[catname] = x_makelistview{ headerheight=0, multiselect=false, h=136 }
-				xgui_command_cats[catname].OnRowSelected = function( self ) xgui_setselected( self ) end
-				xgui_command_cats[catname]:AddColumn( "" )
-				xgui_commands:AddItem( x_makecat{ label=catname, contents=xgui_command_cats[catname] } )
-			end
-			xgui_command_cats[catname]:AddLine( string.gsub( cmd, "ulx ", "" ), cmd )
+--Load control interpretations for Ulib argument types
+function ULib.cmds.BaseArg.x_getcontrol( arg )
+	return x_makelabel{ label="Not Supported", color=Color( 255,255,255,255 ) }
+end
+
+function ULib.cmds.NumArg.x_getcontrol( arg )
+	return x_makeslider{ min=arg.min, max=arg.max, value=arg.default, label=arg.hint or "NumArg" }
+end
+
+function ULib.cmds.StringArg.x_getcontrol( arg )
+	if arg.completes == nil then
+		return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
+	else
+		xgui_temp = x_makemultichoice{ text=arg.hint or "StringArg" }
+		for _, v in ipairs( arg.completes ) do
+			xgui_temp:AddChoice( v )
 		end
+		return xgui_temp
 	end
-	for _, cat in pairs( xgui_command_cats ) do
-		cat:SetHeight( 17*#cat:GetLines() )
+end
+
+function ULib.cmds.PlayerArg.x_getcontrol( arg )
+	xgui_temp = x_makemultichoice{}
+	for k, v in pairs( player.GetAll() ) do
+		xgui_temp:AddChoice( v:Nick() )
 	end
-	
-	local selected = xgui_player_list:GetSelected()
-	xgui_player_list:Clear()
-	for k, v in pairs( player.GetAll() ) do	
-		xgui_player_list:AddLine( v:Nick(), v:GetUserGroup() )
-	end
-	for _, line in pairs( selected ) do
-		xgui_player_list:SelectItem( xgui_player_list:GetLineByColumnText( line:GetColumnText(1), 1, false ) )
-	end
+	return xgui_temp
+end
+
+function ULib.cmds.CallingPlayerArg.x_getcontrol( arg )
+	return x_makelabel{ label=arg.hint or "CallingPlayer" }
+end
+
+function ULib.cmds.BoolArg.x_getcontrol( arg )
+	return x_makecheckbox{ label=arg.hint or "BoolArg" }
 end
 
 function xgui_setselected( selcat )
@@ -122,4 +127,37 @@ function xgui_setselected( selcat )
 	xgui_argspot:AddItem( x_makelabel{ label=cmd.helpStr } )
 end
 
+xgui_player.xRefresh = function()
+	xgui_commands:Clear()
+	xgui_command_cats = {}
+	
+	for cmd, data in pairs( ULib.cmds.translatedCmds ) do
+		if data.opposite ~= cmd && ULib.ucl.query( LocalPlayer(), cmd ) then
+			local catname = data.category
+			if catname == nil or catname == "" then catname = "Uncategorized" end
+			if !xgui_command_cats[catname] then
+				--Make a new category
+				xgui_command_cats[catname] = x_makelistview{ headerheight=0, multiselect=false, h=136 }
+				xgui_command_cats[catname].OnRowSelected = function( self ) xgui_setselected( self ) end
+				xgui_command_cats[catname]:AddColumn( "" )
+				xgui_commands:AddItem( x_makecat{ label=catname, contents=xgui_command_cats[catname] } )
+			end
+			xgui_command_cats[catname]:AddLine( string.gsub( cmd, "ulx ", "" ), cmd )
+		end
+	end
+	for _, cat in pairs( xgui_command_cats ) do
+		cat:SetHeight( 17*#cat:GetLines() )
+	end
+	
+	local selected = xgui_player_list:GetSelected()
+	xgui_player_list:Clear()
+	for k, v in pairs( player.GetAll() ) do	
+		xgui_player_list:AddLine( v:Nick(), v:GetUserGroup() )
+	end
+	for _, line in pairs( selected ) do
+		xgui_player_list:SelectItem( xgui_player_list:GetLineByColumnText( line:GetColumnText(1), 1, false ) )
+	end
+end
+
 table.insert( xgui_modules.tab, { name="Players", panel=xgui_player, icon="gui/silkicons/user", tooltip=nil, access=nil } )
+table.insert( xgui_modules.hook["onOpen"], xgui_player.xRefresh )
