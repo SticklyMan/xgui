@@ -1,7 +1,7 @@
 --Settings module for ULX GUI -- by Stickly Man!
 --Allows changing of various settings
 
-xgui_settings = x_makeXpanel{ parent=xgui_null }
+xgui_settings = x_makeXpanel{ parent=xgui.null }
 
 local xgui_general = x_makepanellist{ x=5, y=30, w=190, h=335, spacing=1, padding=0, parent=xgui_settings, autosize=false }
 
@@ -225,7 +225,7 @@ local xgui_GUI = x_makepanellist{ x=395, y=30, w=190, h=200, spacing=1, padding=
 		xgui_GUI_cat1:AddItem( x_makecheckbox{ label="Send map thumbnails to clients", tooltip="This doesn't do anything yet" } )
 		xgui_button_refresh = x_makebutton{ label="Refresh Server Data..." }
 		xgui_button_refresh.DoClick=function()
-			if xgui_isInstalled then  --We can't be in offline mode to do this
+			if xgui.isInstalled then  --We can't be in offline mode to do this
 				RunConsoleCommand( "xgui", "getdata" )
 			end
 		end
@@ -235,7 +235,7 @@ local xgui_GUI = x_makepanellist{ x=395, y=30, w=190, h=200, spacing=1, padding=
 xgui_settings.updateGimps = function()
 	if xgui_gimp and xgui_gimp:IsVisible() then
 		xgui_gimp_list:Clear()
-		for k, v in pairs( xgui_data.gimps ) do
+		for k, v in pairs( xgui.data.gimps ) do
 			xgui_gimp_list:AddLine( v )
 		end
 	end
@@ -247,7 +247,7 @@ xgui_settings.updateAdverts = function()
 		xgui_advert_group:Clear()
 		xgui_advert_group:AddChoice( "<No Group/New Group>" )
 		xgui_advert_group:ChooseOptionID( 1 )
-		for group, adverts in pairs( xgui_data.adverts ) do
+		for group, adverts in pairs( xgui.data.adverts ) do
 			if #adverts > 1 then --Check if it's a group or a single advert
 				local xgui_temp = xgui_advert_tree:AddNode( group )
 				xgui_advert_group:AddChoice( group )
@@ -279,6 +279,6 @@ xgui_settings.updateAdverts = function()
 	end
 end
 
-table.insert( xgui_modules.tab, { name="Settings", panel=xgui_settings, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
-table.insert( xgui_modules.hook["adverts"], xgui_settings.updateAdverts )
-table.insert( xgui_modules.hook["gimps"], xgui_settings.updateGimps )
+table.insert( xgui.modules.tab, { name="Settings", panel=xgui_settings, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
+table.insert( xgui.hook["adverts"], xgui_settings.updateAdverts )
+table.insert( xgui.hook["gimps"], xgui_settings.updateGimps )

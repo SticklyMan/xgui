@@ -2,7 +2,7 @@
 --Manages groups and players within groups
 
 local xgui_restrict_color = Color( 255, 255, 255, 0 )
-xgui_group = x_makeXpanel{ parent=xgui_null }
+xgui_group = x_makeXpanel{ parent=xgui.null }
 xgui_group.DefaultPaint = xgui_group.Paint
 xgui_group.Paint = function( self )
 	self:DefaultPaint()
@@ -153,9 +153,9 @@ xgui_adduserbtn.DoClick = function()
 		if v:GetUserGroup() ~= xgui_group_list:GetSelected()[1]:GetColumnText(1) then
 			xgui_list_players:AddOption( v:Nick() .. " - " .. v:GetUserGroup(), function()
 							RunConsoleCommand( "ulx", "adduser", v:Nick(), xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-							for ID, ply in pairs( xgui_data.users ) do
+							for ID, ply in pairs( xgui.data.users ) do
 								if ply.name == v:Nick() then
-									xgui_data.users[ID].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
+									xgui.data.users[ID].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
 								end
 							end
 							xgui_getGroupsUsers()
@@ -164,11 +164,11 @@ xgui_adduserbtn.DoClick = function()
 	end
 	xgui_list_players:AddSpacer()
 	
-	for ID, user in pairs( xgui_data.users ) do
+	for ID, user in pairs( xgui.data.users ) do
 		if not IsOnline( ID ) and user.group ~= xgui_group_list:GetSelected()[1]:GetColumnText(1) then
 			xgui_list_players:AddOption( user.name .. " - " .. user.group, function()
 				RunConsoleCommand( "ulx", "adduserid", ID,  xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-				xgui_data.users[ID].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
+				xgui.data.users[ID].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
 				xgui_getGroupsUsers()
 				end)
 		end
@@ -179,7 +179,7 @@ xgui_adduserbtn.DoClick = function()
 				local xgui_theid = x_maketextbox{ x=5, y=30, w=140, parent=xgui_adduid, text="Enter STEAMID..." }
 				x_makebutton{ x=55, y=55, w=40, label="Add", parent=xgui_adduid }.DoClick = function()
 					RunConsoleCommand( "ulx", "adduserid", "\"" .. xgui_theid:GetValue() .. "\"", xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-					xgui_data.users[xgui_theid:GetValue()].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
+					xgui.data.users[xgui_theid:GetValue()].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
 					xgui_getGroupsUsers()
 				end
 				end)
@@ -194,16 +194,16 @@ xgui_changeuserbtn.DoClick = function()
 			if xgui_group_users:GetSelected()[1]:GetColumnText(2) ~= "" and not IsOnline( xgui_group_users:GetSelected()[1]:GetColumnText(1), true ) then
 				xgui_list_groups:AddOption( k, function() 
 										LocalPlayer():ConCommand( "ulx adduserid \"" .. xgui_group_users:GetSelected()[1]:GetColumnText(2) .. "\" " .. k )
-										xgui_data.users[xgui_group_users:GetSelected()[1]:GetColumnText(2)].group = k
+										xgui.data.users[xgui_group_users:GetSelected()[1]:GetColumnText(2)].group = k
 										xgui_getGroupsUsers()
 										end )
 			else
 				xgui_list_groups:AddOption( k, function() 
 										local name = xgui_group_users:GetSelected()[1]:GetColumnText(1)
 										RunConsoleCommand( "ulx", "adduser", name, k )
-										for ID, ply in pairs( xgui_data.users ) do
+										for ID, ply in pairs( xgui.data.users ) do
 											if ply.name == name then 
-												xgui_data.users[ID].group = k
+												xgui.data.users[ID].group = k
 											end
 										end
 										xgui_getGroupsUsers()
@@ -217,11 +217,11 @@ xgui_changeuserbtn.DoClick = function()
 						if IsOnline( name, true ) then
 							RunConsoleCommand( "ulx", "removeuser", name )
 						else
-							for ID, user in pairs( xgui_data.users ) do
+							for ID, user in pairs( xgui.data.users ) do
 								if user.name == name then RunConsoleCommand( "ulx", "removeuser", user.name ) end
 							end
 						end
-						xgui_data.users[xgui_group_users:GetSelected()[1]:GetColumnText(2)] = nil
+						xgui.data.users[xgui_group_users:GetSelected()[1]:GetColumnText(2)] = nil
 						xgui_getGroupsUsers()
 						end )
 	xgui_list_groups:Open()
@@ -241,7 +241,7 @@ function xgui_getGroupsUsers()
 	xgui_group_users:Clear()
 	xgui_changeuserbtn:SetDisabled( true )
 	if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
-		for ID, user in pairs( xgui_data.users ) do
+		for ID, user in pairs( xgui.data.users ) do
 			if user.group == xgui_group_list:GetSelected()[1]:GetColumnText(1) then
 				if user.name == nil or user.name == "" then user.name = ID end
 				xgui_group_users:AddLine( user.name, ID ).Paint = function( self )
@@ -316,13 +316,13 @@ end
 function xgui_getUserAccess( objname )
 	xgui_clearInh()
 	local group = nil
-	for ID, ply in pairs( xgui_data.users ) do
+	for ID, ply in pairs( xgui.data.users ) do
 		if ply.name == objname then
 			objname = ID
 			group = ply.group
 		end
 	end
-	for name, access in pairs( xgui_data.users[objname].allow ) do
+	for name, access in pairs( xgui.data.users[objname].allow ) do
 		if type(name) == "number" then  --Determine if this command does not have restrictions
 			if ULib.cmds.translatedCmds[access] then --Check if its a command or other access string
 				xgui_access_list:AddLine( access )
@@ -371,7 +371,7 @@ end
 function IsOnline( ID, checkName )
 	if not checkName then
 		for _, v in pairs( player.GetAll() ) do
-			if xgui_data.users[ID].name == v:Nick() then
+			if xgui.data.users[ID].name == v:Nick() then
 				return true
 			end
 		end
@@ -400,5 +400,5 @@ xgui_group.updateUsers = function()
 	xgui_layoutLists()
 end
 
-table.insert( xgui_modules.tab, { name="Groups", panel=xgui_group, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
-table.insert( xgui_modules.hook["users"], xgui_group.updateUsers )
+table.insert( xgui.modules.tab, { name="Groups", panel=xgui_group, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
+table.insert( xgui.hook["users"], xgui_group.updateUsers )

@@ -29,7 +29,7 @@ multiselect - Allow multiple selects
 autosize - Used with the panel list, it will size the panel based on its contents
 enableinput - Used with textbox/multichoice, will enable/disable input
 vscroll, hscroll - Enables/disabels vertical and horizontal scrollbars
-focuscontrol - Determines whether to specify special functions for xgui_base's keyboard focus handling stuff
+focuscontrol - Determines whether to specify special functions for xgui.base's keyboard focus handling stuff
 expanded - Determines whether or not a category is expanded when it is created
 nopopup - Used only with makeframepopup, will set whether the frame pops up or not
 showclose - Determines whether to show X button on makeframepopup
@@ -116,10 +116,10 @@ local function xgui_helpers()
 		if ( t.focuscontrol == true ) then
 			xgui_temp.OnGetFocus = function( self )
 				self:SelectAllText()
-				xgui_SetKeyboard( self )
+				xgui.SetKeyboard( self )
 			end
 			xgui_temp.OnLoseFocus = function( self )
-				xgui_ReleaseKeyboard()
+				xgui.ReleaseKeyboard()
 				self:UpdateConvarValue()
 			end
 		end
@@ -157,6 +157,7 @@ local function xgui_helpers()
 		xgui_temp:MakePopup()
 		xgui_temp:SetKeyboardInputEnabled( false )
 		xgui_temp:SetMouseInputEnabled( true )
+		xgui_temp.IsXPanel = true
 		return xgui_temp
 	end
 	
@@ -212,7 +213,6 @@ local function xgui_helpers()
 	if gmod.GetGamemode().Name ~= "Sandbox" then
 		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
 	end
-
 	--Color picker used in Garry's menus
 	function x_makecolorpicker( t )
 		local xgui_temp = vgui.Create( "CtrlColor", t.parent )
@@ -253,17 +253,7 @@ local function xgui_helpers()
 		return self.TextEntry:GetValue()
 	end
 
-	--A function for DMultiChoice that will remove a given option
-	function DMultiChoice:RemoveChoice( choice )
-		for i, v in ipairs( self.Choices ) do
-			if v == choice then
-				table.remove( self.Choices, i )
-				return
-			end
-		end
-	end
-
-	--Get a line in a DListView by searching for a column value ( ID determines whether to return the line object, or the ID )
+	--Get a line in a DListView by searching for a column value ( outID determines whether to return the line object, or the ID )
 	function DListView:GetLineByColumnText( search, column, outID )
 		for ID, line in pairs( self.Lines ) do
 			if line:GetColumnText( column ) == search then
@@ -276,10 +266,10 @@ local function xgui_helpers()
 		end
 	end
 	
-	--Clears all of the tabs in a DPropertySheet, parents removed panels to xgui_null.
+	--Clears all of the tabs in a DPropertySheet, parents removed panels to xgui.null.
 	function DPropertySheet:Clear()
 		for _, Sheet in ipairs( self.Items ) do
-			Sheet.Panel:SetParent( xgui_null )
+			Sheet.Panel:SetParent( xgui.null )
 			Sheet.Tab:Remove()
 		end
 		self.m_pActiveTab = nil
@@ -296,7 +286,7 @@ local function xgui_helpers()
 		xgui_base:SetVisible( false )
 		xgui_base:SetPos( ScrW()/2 - 300, ScrH()/2 - 200 )
 		xgui_base:SetSize( 600, 400 )
-		xgui_base:SetFadeTime( .12 )
+		xgui_base:SetFadeTime( .2 )
 		--(The following is a direct copy of Garry's code, minus the comments. Any added comments were changes relating to XGUI)
 		function xgui_base:PerformLayout()
 			local ActiveTab = self:GetActiveTab()
@@ -314,15 +304,17 @@ local function xgui_helpers()
 			if ( ActiveTab ) then
 				local ActivePanel = ActiveTab:GetPanel()
 				ActivePanel:SetVisible( true )
-				--Since we're using Frames instead of panels, this will set the position to the correct location.
-				ActivePanel:SetPos( ScrW()/2 - 295, ScrH()/2 - 173 )
-				if ( !ActivePanel.NoStretchX ) then 
-					ActivePanel:SetWide( self:GetWide() - Padding * 2 ) 
+				--If we're using XPanels (which are modified Popuped Frames) instead of regular panels, this will set the position to the correct location.
+				if ActivePanel.IsXPanel then
+					ActivePanel:SetPos( ScrW()/2 - 295, ScrH()/2 - 173 )
+				end
+				if ( !ActivePanel.NoStretchX ) then
+					ActivePanel:SetWide( self:GetWide() - Padding * 2 )
 				else
 					ActivePanel:CenterHorizontal()
 				end
-				if ( !ActivePanel.NoStretchY ) then 
-					ActivePanel:SetTall( self:GetTall() - ActiveTab:GetTall() - Padding * 2 ) 
+				if ( !ActivePanel.NoStretchY ) then
+					ActivePanel:SetTall( self:GetTall() - ActiveTab:GetTall() - Padding * 2 )
 				else
 					ActivePanel:CenterVertical()
 				end
@@ -331,9 +323,59 @@ local function xgui_helpers()
 			end
 			self.animFade:Run()
 		end
+		--(End Garry's code block)
+		
+		--Modify the animation since transparent frames on top of each other don't look right.
+		function xgui_base:CrossFade( anim, delta, data )
+			local old = data.OldTab:GetPanel()
+			local new = data.NewTab:GetPanel()
+
+			if ( delta < 0.5 ) then
+				old:SetVisible( true )
+				new:SetVisible( false )
+				old:SetAlpha( 255-( 255*( delta*2 ) ) )
+			else
+				old:SetVisible( false )
+				new:SetVisible( true )
+				new:SetAlpha( 255*( ( delta-0.5 )*2 ) )
+			end
+		end
+		xgui_base.animFade = Derma_Anim( "Fade", xgui_base, xgui_base.CrossFade )
+		
+		--Fade in/out effect when opening/closing XGUI!
+		function xgui_base:FadeIn( anim, delta, panel )
+			if ( anim.Started ) then
+				panel:SetAlpha( 0 )
+			end
+			panel:SetAlpha( delta*255 )
+			panel:GetActiveTab():GetPanel():SetAlpha( delta*255 )
+		end
+		xgui_base.animFadeIn = Derma_Anim( "Fade", xgui_base, xgui_base.FadeIn )
+		
+		function xgui_base:FadeOut( anim, delta, panel )
+			if ( anim.Finished ) then
+				panel:SetAlpha( 255 )
+				panel:SetVisible( false )
+			end
+			panel:SetAlpha( 255-( delta*255 ) )
+			panel:GetActiveTab():GetPanel():SetAlpha( 255-( delta*255 ) )
+		end
+		xgui_base.animFadeOut = Derma_Anim( "Fade", xgui_base, xgui_base.FadeOut )
+
+		function xgui_base:Think()
+			self.animFade:Run()
+			self.animFadeIn:Run()
+			self.animFadeOut:Run()
+		end
+		
+		--Cool blur effect for pure awesomeness!
+		--function xgui_base.Paint()
+		
+		--end
 		
 		return xgui_base
 	end
+	
 	--------------------------------------------------
 	--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the convar when the mouse is released! (And allows for textbox input)
 	--------------------------------------------------
@@ -351,12 +393,12 @@ local function xgui_helpers()
 		
 		--Keyboard focus stuff
 		xgui_temp.Wang.TextEntry.OnGetFocus = function()
-			xgui_SetKeyboard()
+			xgui.SetKeyboard()
 		end
 		xgui_temp.Wang.TextEntry.OnLoseFocus = function( self )
 			self:UpdateConvarValue()
 			xgui_temp.Wang:SetValue( xgui_temp.Wang.TextEntry:GetValue() )
-			xgui_ReleaseKeyboard()
+			xgui.ReleaseKeyboard()
 		end	
 		
 		--Slider update stuff (Most of this code is copied from the default DNumSlider)
