@@ -185,7 +185,7 @@ function xgui.sendData( ply, args )
 			end
 		elseif u == "sboxlimits" then --Update Sandbox Cvar Limits
 			if ply:query( "xgui_gmsettings" ) then
-				if xgui.sboxLimits ~= nil then
+				if xgui.sboxLimits ~= nil and ULib.isSandbox() then
 					table.insert( chunks, { xgui.sboxLimits, "sboxlimits" } )
 				end
 			end

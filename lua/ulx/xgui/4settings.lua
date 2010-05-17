@@ -279,6 +279,6 @@ xgui_settings.updateAdverts = function()
 	end
 end
 
-table.insert( xgui.modules.tab, { name="Settings", panel=xgui_settings, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
+table.insert( xgui.modules.tab, { name="Settings_old", panel=xgui_settings, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
 table.insert( xgui.hook["adverts"], xgui_settings.updateAdverts )
 table.insert( xgui.hook["gimps"], xgui_settings.updateGimps )

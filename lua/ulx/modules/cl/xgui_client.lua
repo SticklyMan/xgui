@@ -11,7 +11,7 @@ local function xgui_init()
 	xgui.modules = { tab = {}, gamemode = {}, setting = {} }
 	--Set up various hooks modules can "hook" into. 
 	xgui.hook = { onUnban={}, onOpen = {}, sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
-
+	
 	--Used to set which panel has the keyboard focus
 	xgui.textpanel=nil
 
