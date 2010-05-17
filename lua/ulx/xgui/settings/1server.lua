@@ -3,4 +3,4 @@
 
 local server_settings = x_makeXpanel{ parent=xgui.null }
 
-table.insert( xgui.modules.setting, { name="Server", panel=server_settings, icon="gui/silkicons/wrench", tooltip=nil, access="xgui_svsettings" } )
+table.insert( xgui.modules.setting, { name="Server", panel=server_settings, icon="gui/silkicons/application", tooltip=nil, access="xgui_svsettings" } )

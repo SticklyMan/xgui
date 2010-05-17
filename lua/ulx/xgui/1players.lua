@@ -37,6 +37,7 @@ function xgui_player.setselected( selcat )
 	local xgui_temp = false
 	xgui_player.argspot = x_makepanellist{ x=440, y=30, w=145, h=335, parent=xgui_player }
 	local cmd = ULib.cmds.translatedCmds[selcat:GetSelected()[1]:GetColumnText(2)]
+	local argnum = 1
 	for _, arg in ipairs( cmd.args ) do
 		if arg.type.invisible ~= true and arg.invisible ~= true then
 			if arg.type == ULib.cmds.PlayerArg and xgui_temp == false then
@@ -63,8 +64,9 @@ function xgui_player.setselected( selcat )
 				end
 				xgui_player.list:OnRowSelected()
 			else
-				xgui_player.argspot:AddItem( arg.type.x_getcontrol( arg ) )
+				xgui_player.argspot:AddItem( arg.type.x_getcontrol( arg, argnum ) )
 			end
+			argnum = argnum + 1
 		end
 	end
 	local xgui_temp = x_makebutton{ label=cmd.cmd }
@@ -94,18 +96,24 @@ end
 function ULib.cmds.BaseArg.x_getcontrol( arg )
 	return x_makelabel{ label="Not Supported", color=Color( 255,255,255,255 ) }
 end
-function ULib.cmds.NumArg.x_getcontrol( arg )
-	return x_makeslider{ min=arg.min, max=arg.max, value=arg.default, label=arg.hint or "NumArg" }
+function ULib.cmds.NumArg.x_getcontrol( arg, argnum )
+	local access, tag = LocalPlayer():query( arg.cmd )
+	local restrictions = {}
+	ULib.cmds.NumArg.processRestrictions( restrictions, arg, tag and string.Explode( " ", tag )[argnum] )
+	return x_makeslider{ min=restrictions.min, max=restrictions.max, value=arg.default, label=arg.hint or "NumArg" }
 end
-function ULib.cmds.StringArg.x_getcontrol( arg )
-	if arg.completes == nil then
-		return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
-	else
+function ULib.cmds.StringArg.x_getcontrol( arg, argnum )
+	local access, tag = LocalPlayer():query( arg.cmd )
+	local restrictions = {}
+	
+	if arg.completes then  --THIS IS IMPORTANT SOON: if table.HasValue( cmdInfo, cmds.restrictToCompletes ) or self.playerLevelRestriction then
 		xgui_temp = x_makemultichoice{ text=arg.hint or "StringArg" }
 		for _, v in ipairs( arg.completes ) do
 			xgui_temp:AddChoice( v )
 		end
 		return xgui_temp
+	else
+		return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
 	end
 end
 function ULib.cmds.PlayerArg.x_getcontrol( arg )

@@ -39,20 +39,62 @@ ULib.ucl.registerAccess( "xgui_managegroups", "superadmin", "Allows managing of 
 ULib.ucl.registerAccess( "xgui_managebans", "superadmin", "Allows addition, removal, and viewing of bans in XGUI." )
 
 --Here we will use ULib to replicate the server settings so that anyone with access can change them (not just listen server host or rcon!)
-ULib.replicatedWritableCvar( "sv_voiceenable", "sv_cl_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "sv_alltalk", "sv_cl_alltalk", GetConVarNumber( "sv_alltalk" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "ai_disabled", "ai_cl_disabled", GetConVarNumber( "ai_disabled" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "ai_keepragdolls", "ai_cl_keepragdolls", GetConVarNumber( "ai_keepragdolls" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "ai_ignoreplayers", "ai_cl_ignoreplayers", GetConVarNumber( "ai_ignoreplayers" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "sv_gravity", "sv_cl_gravity", GetConVarNumber( "sv_gravity" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "phys_timescale", "phys_cl_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_svsettings" )
-ULib.replicatedWritableCvar( "physgun_limited", "cl_physgun_limited", GetConVarNumber( "physgun_limited" ), false, false, "xgui_svsettings" )
---Sandbox stuff
-ULib.replicatedWritableCvar( "sbox_noclip", "sbox_cl_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_gmsettings" )
-ULib.replicatedWritableCvar( "sbox_godmode", "sbox_cl_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_gmsettings" )
-ULib.replicatedWritableCvar( "sbox_plpldamage", "sbox_cl_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_gmsettings" )
-ULib.replicatedWritableCvar( "sbox_weapons", "sbox_cl_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sv_voiceenable", "rep_sv_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sv_alltalk", "rep_sv_alltalk", GetConVarNumber( "sv_alltalk" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "ai_disabled", "rep_ai_disabled", GetConVarNumber( "ai_disabled" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "ai_keepragdolls", "rep_ai_keepragdolls", GetConVarNumber( "ai_keepragdolls" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "ai_ignoreplayers", "rep_ai_ignoreplayers", GetConVarNumber( "ai_ignoreplayers" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "sv_gravity", "rep_sv_gravity", GetConVarNumber( "sv_gravity" ), false, false, "xgui_svsettings" )
+ULib.replicatedWritableCvar( "phys_timescale", "rep_phys_timescale", GetConVarNumber( "phys_timescale" ), false, false, "xgui_svsettings" )
 
+--Sandbox stuff
+ULib.replicatedWritableCvar( "physgun_limited", "rep_physgun_limited", GetConVarNumber( "physgun_limited" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_noclip", "rep_sbox_noclip", GetConVarNumber( "sbox_noclip" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_godmode", "rep_sbox_godmode", GetConVarNumber( "sbox_godmode" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_plpldamage", "rep_sbox_plpldamage", GetConVarNumber( "sbox_plpldamage" ), false, false, "xgui_gmsettings" )
+ULib.replicatedWritableCvar( "sbox_weapons", "rep_sbox_weapons", GetConVarNumber( "sbox_weapons" ), false, false, "xgui_gmsettings" )
+
+--Get the list of known Sandbox Cvar Limits
+function xgui.cvarcallback( contents, size )
+	if size < 2900 then --This means that we probably got a 404 or other HTTP error, in other words, the server is down!
+		xgui.cvarFileStatus = 0
+	else
+		file.Write( "ulx/sbox_limits.txt", contents )
+		xgui.cvarFileStatus = 1
+	end
+end
+http.Get( "http://ulyssesmod.net/xgui/sbox_cvars.txt", "", xgui.cvarcallback )
+
+--Process the list of known Sandbox Cvar Limits and check if they exist
+function xgui.processCvars()
+	xgui.sboxLimits = {}
+	if gmod.GetGamemode().Name == "Sandbox" then
+		local curgroup
+		local f = file.Read( "ulx/sbox_limits.txt" )
+		local lines = string.Explode( "\n", f )
+		for i,v in ipairs( lines ) do
+			if v:sub( 1,1 ) ~= ";" then
+				if v:sub( 1,1 ) == "|" then
+					curgroup = table.insert( xgui.sboxLimits, {} )
+					xgui.sboxLimits[curgroup].title = v:sub( 2 )
+				else
+					local data = string.Explode( " ", v ) --Split Convar name from max limit
+					if ConVarExists( data[1] ) then
+						--We need to create a replicated cvar so the clients can manipulate/view them:
+						ULib.replicatedWritableCvar( data[1], "rep_" .. data[1], GetConVarNumber( data[1] ), false, false, "xgui_gmsettings" )
+						--Add to the list of cvars to send to the client
+						table.insert( xgui.sboxLimits[curgroup], v )
+					end
+				end
+			end
+		end
+		for _, v in pairs( player.GetAll() ) do
+			xgui.sendData( v, {[1]="sboxlimits"} )
+		end
+	end
+	hook.Remove( "ULibLocalPlayerReady", "xgui_processCvars" )
+end
+hook.Add( "ULibLocalPlayerReady", "xgui_processCvars", xgui.processCvars )
 
 function xgui.splitbans()
 	xgui.sourcebans = {}
@@ -92,7 +134,7 @@ xgui.activeUsers = {}  --Set up a table to list users who are actively transferr
 function xgui.sendData( ply, args )
 	--If no args are specified, then update everything!
 	if #args == 0 then 
-		args = { "gamemodes", "votemaps", "maps", "gimps", "adverts", "users", "bans", "sbans" } 
+		args = { "gamemodes", "votemaps", "maps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits" } 
 	end
 
 	--Perform a check to make see if the client is already being sent data OR data sending is currently restricted.
@@ -140,6 +182,12 @@ function xgui.sendData( ply, args )
 		elseif u == "users" then --Update Users
 			if ply:query( "xgui_managegroups" ) then
 				table.insert( chunks, { ULib.ucl.users, "users" } )
+			end
+		elseif u == "sboxlimits" then --Update Sandbox Cvar Limits
+			if ply:query( "xgui_gmsettings" ) then
+				if xgui.sboxLimits ~= nil then
+					table.insert( chunks, { xgui.sboxLimits, "sboxlimits" } )
+				end
 			end
 		elseif u == "bans" then --Update ULX Bans
 			if ply:query( "xgui_managebans" ) then

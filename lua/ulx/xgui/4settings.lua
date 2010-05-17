@@ -7,17 +7,17 @@ local xgui_general = x_makepanellist{ x=5, y=30, w=190, h=335, spacing=1, paddin
 
 ---------------------------Gamemode (Sandbox) Settings---------------------------
 	local xgui_general_cat1 = x_makepanellist{ autosize=true }
-		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable Noclip", convar="sbox_cl_noclip" } )
-		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable Godmode", convar="sbox_cl_godmode" } )
-		xgui_general_cat1:AddItem( x_makecheckbox{ label="Disable PvP Damage", convar="sbox_cl_plpldamage" } )
-		xgui_general_cat1:AddItem( x_makecheckbox{ label="Spawn With Weapons", convar="sbox_cl_weapons" } )
-		xgui_general_cat1:AddItem( x_makecheckbox{ label="Limited Physgun", convar="cl_physgun_limited" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable Noclip", convar="rep_sbox_noclip" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Enable Godmode", convar="rep_sbox_godmode" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Disable PvP Damage", convar="rep_sbox_plpldamage" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Spawn With Weapons", convar="rep_sbox_weapons" } )
+		xgui_general_cat1:AddItem( x_makecheckbox{ label="Limited Physgun", convar="rep_physgun_limited" } )
 	xgui_general:AddItem( x_makecat{ label="Gamemode Settings", contents=xgui_general_cat1, parent=xgui_general, expanded=false } )
 	
 ---------------------------Server Settings---------------------------	
 	local xgui_general_cat2 = x_makepanellist{ autosize=true }
-		xgui_general_cat2:AddItem( x_makecheckbox{ label="Enable Voice Chat", convar="sv_cl_voiceenable", tooltip="Enable voice chatting" } )
-		xgui_general_cat2:AddItem( x_makecheckbox{ label="Enable Alltalk", convar="sv_cl_alltalk", tooltip="Players talk to everyone instead of just team" } )
+		xgui_general_cat2:AddItem( x_makecheckbox{ label="Enable Voice Chat", convar="rep_sv_voiceenable", tooltip="Enable voice chatting" } )
+		xgui_general_cat2:AddItem( x_makecheckbox{ label="Enable Alltalk", convar="rep_sv_alltalk", tooltip="Players talk to everyone instead of just team" } )
 		local xgui_password_button = x_makebutton{ label="Change Server Password...", w=190, h=20, parent=xgui_general_cat2 }
 		xgui_password_button.DoClick = function()
 			local xgui_pw = x_makeframepopup{ label="Change Server Password", w=400, h=60 }
@@ -32,13 +32,13 @@ local xgui_general = x_makepanellist{ x=5, y=30, w=190, h=335, spacing=1, paddin
 
 ---------------------------Misc Settings---------------------------
 	local xgui_general_cat3 = x_makepanellist{ autosize=true }
-		xgui_general_cat3:AddItem( x_makecheckbox{ label="Disable AI", convar="ai_cl_disabled", tooltip="Disables AI movement and thinking" } )
+		xgui_general_cat3:AddItem( x_makecheckbox{ label="Disable AI", convar="rep_ai_disabled", tooltip="Disables AI movement and thinking" } )
 		if SinglePlayer() then  
-			xgui_general_cat3:AddItem( x_makecheckbox{ label="Keep AI Ragdolls", convar="ai_cl_keepragdolls", tooltip="When an AI dies, it will leave behind a ragdoll" } )
+			xgui_general_cat3:AddItem( x_makecheckbox{ label="Keep AI Ragdolls", convar="rep_ai_keepragdolls", tooltip="When an AI dies, it will leave behind a ragdoll" } )
 		end
-		xgui_general_cat3:AddItem( x_makecheckbox{ label="AI Ignore Players", convar="ai_cl_ignoreplayers", tooltip="AI will ignore players" } )
-		xgui_general_cat3:AddItem( x_makeslider{ label="sv_gravity", min=-1000, max=1000, convar="sv_cl_gravity", tooltip="Changes the gravity. Default 600" } )
-		xgui_general_cat3:AddItem( x_makeslider{ label="phys_timescale", min=0, max=4, decimal=2, convar="phys_cl_timescale", tooltip="Changes the timescale of the physics. Default is 1" } )
+		xgui_general_cat3:AddItem( x_makecheckbox{ label="AI Ignore Players", convar="rep_ai_ignoreplayers", tooltip="AI will ignore players" } )
+		xgui_general_cat3:AddItem( x_makeslider{ label="sv_gravity", min=-1000, max=1000, convar="rep_sv_gravity", tooltip="Changes the gravity. Default 600" } )
+		xgui_general_cat3:AddItem( x_makeslider{ label="phys_timescale", min=0, max=4, decimal=2, convar="rep_phys_timescale", tooltip="Changes the timescale of the physics. Default is 1" } )
 	xgui_general:AddItem( x_makecat{ label="Misc Settings", contents=xgui_general_cat3, parent=xgui_general, expanded=false } )
 
 ---------------------------ULX Settings---------------------------

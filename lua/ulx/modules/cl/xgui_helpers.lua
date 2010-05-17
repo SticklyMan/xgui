@@ -367,12 +367,7 @@ local function xgui_helpers()
 			self.animFadeIn:Run()
 			self.animFadeOut:Run()
 		end
-		
-		--Cool blur effect for pure awesomeness!
-		--function xgui_base.Paint()
-		
-		--end
-		
+
 		return xgui_base
 	end
 	
@@ -389,6 +384,7 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetWidth( t.w )
 		xgui_temp:SizeToContents()
+		xgui_temp.Label:SetTextColor( t.textcolor )
 		if t.value then xgui_temp:SetValue( t.value ) end
 		
 		--Keyboard focus stuff

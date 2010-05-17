@@ -6,11 +6,11 @@ local function xgui_init()
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
 	--Data storing relevant information retrieved from server.
-	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {} }
+	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
 	--Set up a table for storing third party modules and information
 	xgui.modules = { tab = {}, gamemode = {}, setting = {} }
 	--Set up various hooks modules can "hook" into. 
-	xgui.hook = { onUnban={}, onOpen = {}, sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {} }
+	xgui.hook = { onUnban={}, onOpen = {}, sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
 
 	--Used to set which panel has the keyboard focus
 	xgui.textpanel=nil
@@ -64,6 +64,7 @@ function xgui.processModules( wasvisible, activetab )
 			end
 		end
 		if v.access ~= nil then
+			print( v.access, LocalPlayer():query( v.access ) )
 			if LocalPlayer():query( v.access ) then
 				xgui.base:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
 				xgui.modules.tab[k].tabpanel = xgui.base.Items[#xgui.base.Items].Tab
@@ -172,13 +173,29 @@ function xgui.show( tabname )
 		return
 	end
 	
+	if not ULib.ucl.authed[LocalPlayer():UniqueID()] then 
+		local xgui_temp = x_makeframepopup{ label="XGUI Error!", w=250, h=90, showclose=true }
+		x_makelabel{ label="Your ULX player has not been Authed!", x=10, y=30, parent=xgui_temp }
+		x_makelabel{ label="Please wait a couple seconds and try again.", x=10, y=45, parent=xgui_temp }
+		x_makebutton{ x=50, y=63, w=60, label="Try Again", parent=xgui_temp }.DoClick = function()
+			xgui_temp:Remove()
+			xgui.show( tabname )
+		end
+		x_makebutton{ x=140, y=63, w=60, label="Close", parent=xgui_temp }.DoClick = function()
+			xgui_temp:Remove()
+		end
+		return
+	end
+	
 	--Process modules if XGUI has no tabs!
 	if #xgui.base.Items == 0 then xgui.processModules() end
 	
 	--Sets the active tab to tabname if it was specified
 	if tabname then
 		--In case the string name had spaces, it sent the whole argument table. Convert it to a string here!
-		tabname = table.concat( tabname, " " )
+		if type( tabname ) == "table" then
+			tabname = table.concat( tabname, " " )
+		end
 		for _, v in ipairs( xgui.modules.tab ) do
 			if string.lower( v.name ) == string.lower( tabname ) then
 				xgui.base:SetActiveTab( v.tabpanel )
