@@ -36,7 +36,11 @@ local function xgui_init()
 		include( "ulx/xgui/settings/" .. file )
 		Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" )
 	end
-	Msg( "// Loading Gamemode Module...        //\n" )
+	Msg( "// Loading Gamemode Module(s)...     //\n" )
+	if ULib.isSandbox() and gmod.GetGamemode().Name ~= "Sandbox" then -- If the gamemode sandbox-derived (but not sandbox, that will get added later), then add the sandbox Module
+		include( "ulx/xgui/gamemodes/sandbox.lua" )
+		Msg( "//   sandbox.lua                     //\n" )
+	end
 	for _, file in ipairs( file.FindInLua( "ulx/xgui/gamemodes/*.lua" ) ) do
 		if string.lower( file ) == string.lower( gmod.GetGamemode().Name .. ".lua" ) then
 			include( "ulx/xgui/gamemodes/" .. file )
