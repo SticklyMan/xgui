@@ -108,6 +108,7 @@ local function xgui_helpers()
 		xgui_temp:SetWide( t.w )
 		xgui_temp:SetTall( t.h or 20 )
 		xgui_temp:SetEnterAllowed( true )
+		xgui_temp:SetConVar( t.convar )
 		if t.text then xgui_temp:SetText( t.text ) end
 		if t.enableinput ~= nil then xgui_temp:SetEnabled( t.enableinput ) end
 		xgui_temp:SetToolTip( t.tooltip )
