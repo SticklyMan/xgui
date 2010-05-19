@@ -92,26 +92,39 @@ function xgui_player.setselected( selcat )
 	xgui_player.argspot:AddItem( x_makelabel{ label=cmd.helpStr } )
 end
 
+--Helper function to parse access tag for a particular argument
+function getTagArgNum( tag, argnum )
+    return tag and string.Explode( " ", tag )[argnum]
+end
+
 --Load control interpretations for Ulib argument types
-function ULib.cmds.BaseArg.x_getcontrol( arg )
-	return x_makelabel{ label="Not Supported", color=Color( 255,255,255,255 ) }
+function ULib.cmds.BaseArg.x_getcontrol( arg, argnum )
+	return x_makelabel{ label="Not Supported" }
 end
 function ULib.cmds.NumArg.x_getcontrol( arg, argnum )
 	local access, tag = LocalPlayer():query( arg.cmd )
 	local restrictions = {}
-	ULib.cmds.NumArg.processRestrictions( restrictions, arg, tag and string.Explode( " ", tag )[argnum] )
+	ULib.cmds.NumArg.processRestrictions( restrictions, arg, getTagArgNum( tag, argnum ) )
 	return x_makeslider{ min=restrictions.min, max=restrictions.max, value=arg.default, label=arg.hint or "NumArg" }
 end
 function ULib.cmds.StringArg.x_getcontrol( arg, argnum )
 	local access, tag = LocalPlayer():query( arg.cmd )
 	local restrictions = {}
+	ULib.cmds.StringArg.processRestrictions( restrictions, arg, getTagArgNum( tag, argnum ) )
 	
-	if arg.completes then  --THIS IS IMPORTANT SOON: if table.HasValue( cmdInfo, cmds.restrictToCompletes ) or self.playerLevelRestriction then
+	local is_restricted_to_completes = table.HasValue( arg, ULib.cmds.restrictToCompletes ) -- Program-level restriction (IE, ulx map)
+	    or restrictions.playerLevelRestriction -- The player's tag specifies only certain strings
+	
+	if is_restricted_to_completes then
 		xgui_temp = x_makemultichoice{ text=arg.hint or "StringArg" }
-		for _, v in ipairs( arg.completes ) do
+		for _, v in ipairs( restrictions.restrictedCompletes ) do
 			xgui_temp:AddChoice( v )
 		end
 		return xgui_temp
+	elseif restrictions.restrictedCompletes then
+		-- This is where there needs to be both a drop down AND an input box
+		return x_makelabel{ label="Stickly needs to do this part! (" ..
+			table.concat( restrictions.restrictedCompletes, "," ) .. ")", textcolor=Color( 255, 0, 0, 255 ) }
 	else
 		return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
 	end
