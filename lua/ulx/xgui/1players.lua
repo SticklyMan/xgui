@@ -129,17 +129,29 @@ function ULib.cmds.StringArg.x_getcontrol( arg, argnum )
 		return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
 	end
 end
-function ULib.cmds.PlayerArg.x_getcontrol( arg )
+function ULib.cmds.PlayerArg.x_getcontrol( arg, argnum )
+	local access, tag = LocalPlayer():query( arg.cmd )
+	local restrictions = {}
+	ULib.cmds.PlayerArg.processRestrictions( restrictions, LocalPlayer(), arg, getTagArgNum( tag, argnum ) )
+	
 	xgui_temp = x_makemultichoice{}
-	for k, v in pairs( player.GetAll() ) do
-		xgui_temp:AddChoice( v:Nick() )
+	local targets = restrictions.restrictedTargets
+	if targets == false then -- No one allowed
+		targets = {} -- TODO STICK: Do you want to do something more clever here? This just locks the control...
+	elseif targets == nil then -- Everyone allowed
+		targets = player.GetAll()
+	end
+	
+	for _, ply in ipairs( targets ) do
+		xgui_temp:AddChoice( ply:Nick() )
 	end
 	return xgui_temp
 end
-function ULib.cmds.CallingPlayerArg.x_getcontrol( arg )
+function ULib.cmds.CallingPlayerArg.x_getcontrol( arg, argnum )
 	return x_makelabel{ label=arg.hint or "CallingPlayer" }
 end
-function ULib.cmds.BoolArg.x_getcontrol( arg )
+function ULib.cmds.BoolArg.x_getcontrol( arg, argnum )
+	-- There's not actually any restrictions possible on a boolarg...
 	return x_makecheckbox{ label=arg.hint or "BoolArg" }
 end
 
