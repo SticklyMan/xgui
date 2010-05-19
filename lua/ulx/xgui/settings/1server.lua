@@ -8,20 +8,16 @@ x_makecheckbox{ x=10, y=10, label="Enable Voice Chat", convar="rep_sv_voiceenabl
 x_makecheckbox{ x=10, y=30, label="Enable Alltalk", convar="rep_sv_alltalk", parent=server_settings, textcolor=color_black }
 x_makecheckbox{ x=10, y=50, label="Disable AI", convar="rep_ai_disabled", parent=server_settings, textcolor=color_black }
 x_makecheckbox{ x=10, y=70, label="AI Ignore Players", convar="rep_ai_ignoreplayers", parent=server_settings, textcolor=color_black }
-local offset = 0
 if SinglePlayer() then
-	offset = 20
 	x_makecheckbox{ x=10, y=90, label="Keep AI Ragdolls", convar="rep_ai_keepragdolls", parent=server_settings, textcolor=color_black }
 end
-x_makeslider{ x=10, y=90+offset, w=125, label="sv_gravity", min=-1000, max=1000, convar="rep_sv_gravity", parent=server_settings, textcolor=color_black }
-x_makeslider{ x=10, y=130+offset, w=125, label="phys_timescale", min=0, max=4, decimal=2, convar="rep_phys_timescale", parent=server_settings, textcolor=color_black }
-x_maketextbox{ x=10, y=170+offset, w=125, parent=xgui_player, text="Change Password...", focuscontrol=true, parent=server_settings }.OnEnter = function( self )
-	RunConsoleCommand( "ulx", "rcon", "sv_password", unpack( string.Explode(" ", self:GetValue() ) ) )
-	self:SetText( "Change Password..." )
-end
-x_makecheckbox{ x=10, y=195+offset, label="Show MOTD", convar="ulx_cl_showMotd", parent=server_settings, textcolor=color_black }
-x_makeslider{ x=10, y=215+offset, w=125, label="Chat Spam Time", min=0, max=5, decimal=1, convar="ulx_cl_chattime", parent=server_settings, textcolor=color_black }
-x_makebutton{ x=10, y=255+offset, w=125, height=20, label="Set Welcome Message...", parent=server_settings }.DoClick = function()
+x_makeslider{ x=10, y=110, w=125, label="sv_gravity", min=-1000, max=1000, convar="rep_sv_gravity", parent=server_settings, textcolor=color_black }
+x_makeslider{ x=10, y=150, w=125, label="phys_timescale", min=0, max=4, decimal=2, convar="rep_phys_timescale", parent=server_settings, textcolor=color_black }
+
+x_makepanellist{ x=5, y=190, w=145, h=142, parent=server_settings }
+x_makecheckbox{ x=10, y=195, label="Show MOTD", convar="ulx_cl_showMotd", parent=server_settings }
+x_makeslider{ x=10, y=215, w=125, label="Chat Spam Time", min=0, max=5, decimal=1, convar="ulx_cl_chattime", parent=server_settings }
+x_makebutton{ x=10, y=255, w=125, height=20, label="Set Welcome Message...", parent=server_settings }.DoClick = function()
 	local wm = x_makeframepopup{ label="Set Welcome Message", w=400, h=60 }
 	wm.text = x_maketextbox{ x=10, y=30, w=380, h=20, text=GetConVar( "ulx_welcomemessage" ):GetString(), parent=wm }
 	wm.text.OnEnter = function()
@@ -31,7 +27,7 @@ x_makebutton{ x=10, y=255+offset, w=125, height=20, label="Set Welcome Message..
 end
 
 --------------------------Gimps----------------------------		
-x_makebutton{ x=10, y=275+offset, h=20, w=125, label="Manage Gimp Sayings...", parent=server_settings }.DoClick = function()
+x_makebutton{ x=10, y=280, h=20, w=125, label="Manage Gimp Sayings...", parent=server_settings }.DoClick = function()
 	if server_settings.gimp and server_settings.gimp:IsVisible() then return end
 	
 	server_settings.gimp = x_makeframepopup{ label="Manage Gimp Sayings", w=295, h=235 }
@@ -76,7 +72,7 @@ function server_settings.updateGimps()
 end
 
 -------------------------Adverts---------------------------
-x_makebutton{ x=10, y=295+offset, h=20, w=125, label="Manage Adverts...", parent=server_settings }.DoClick = function()
+x_makebutton{ x=10, y=305, h=20, w=125, label="Manage Adverts...", parent=server_settings }.DoClick = function()
 	if server_settings.advert and server_settings.advert:IsVisible() then return end
 	
 	server_settings.advert = x_makeframepopup{ label="Manage Adverts", w=325, h=330 }
@@ -189,6 +185,22 @@ server_settings.updateAdverts = function()
 		end
 	end
 end
+
+local plist = x_makepanellist{ x=145, y=5, w=210, h=327, parent=server_settings }
+plist:AddItem( x_makeslider{ label="Votekick Success Ratio", min=0, max=1, decimal=2, convar="ulx_cl_votekickSuccessratio" } )
+plist:AddItem( x_makeslider{ label="Votekick Minimum Votes", min=0, max=10, convar="ulx_cl_votekickMinvotes" } )
+plist:AddItem( x_makeslider{ label="Voteban Success Ratio", min=0, max=1, decimal=2, convar="ulx_cl_votebanSuccessratio" } )
+plist:AddItem( x_makeslider{ label="Voteban Minimum Votes", min=0, max=10, convar="ulx_cl_votebanMinvotes" } )
+plist:AddItem( x_makecheckbox{ label="Echo Votes", convar="ulx_cl_voteEcho" } )
+plist:AddItem( x_makecheckbox{ label="Enable Player Votemaps", convar="ulx_cl_votemapEnabled" } )
+plist:AddItem( x_makeslider{ label="Votemap Minimum Time", 	min=0, max=300,convar="ulx_cl_votemapMintime" } )
+plist:AddItem( x_makeslider{ label="Votemap Wait Time", 	min=0, max=60, 	decimal=1, convar="ulx_cl_votemapWaitTime" } )
+plist:AddItem( x_makeslider{ label="Votemap Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_cl_votemapSuccessratio" } )
+plist:AddItem( x_makeslider{ label="Votemap Minimum Votes", min=0, max=10, convar="ulx_cl_votemapMinvotes" } )
+plist:AddItem( x_makeslider{ label="Votemap Veto Time",		min=0, max=300, convar="ulx_cl_votemapVetotime" } )
+plist:AddItem( x_makelabel{ label="Server-wide Votemap Settings" } )
+plist:AddItem( x_makeslider{ label="Votemap2 Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_cl_votemap2Successratio" } )
+plist:AddItem( x_makeslider{ label="Votemap2 Minimum Votes", min=0, max=10, convar="ulx_cl_votemap2Minvotes" } ) -- TODO: Screw sliders, do two numberwangs: one percentage of votes, the other #min votes
 
 table.insert( xgui.modules.setting, { name="Server", panel=server_settings, icon="gui/silkicons/application", tooltip=nil, access="xgui_svsettings" } )
 table.insert( xgui.hook["adverts"], server_settings.updateAdverts )
