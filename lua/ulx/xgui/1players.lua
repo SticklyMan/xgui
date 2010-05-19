@@ -34,14 +34,12 @@ function xgui_player.setselected( selcat )
 	xgui_player.argspot:Remove()
 	xgui_player.plylabel = x_makelabel{ parent=xgui_player }
 	
-	local xgui_temp = false
 	xgui_player.argspot = x_makepanellist{ x=440, y=30, w=145, h=335, parent=xgui_player }
 	local cmd = ULib.cmds.translatedCmds[selcat:GetSelected()[1]:GetColumnText(2)]
 	local argnum = 1
 	for _, arg in ipairs( cmd.args ) do
 		if arg.type.invisible ~= true and arg.invisible ~= true then
-			if arg.type == ULib.cmds.PlayerArg and xgui_temp == false then
-				xgui_temp = true
+			if arg.type == ULib.cmds.PlayerArg and argnum == 1 then
 				xgui_player.argspot:AddItem( xgui_player.plylabel )
 				function xgui_player.list:OnRowSelected()
 					if xgui_player.list:GetSelected()[1] ~= nil then
@@ -51,8 +49,7 @@ function xgui_player.setselected( selcat )
 					end
 				end
 				xgui_player.list:OnRowSelected()
-			elseif arg.type == ULib.cmds.PlayersArg and xgui_temp == false then
-				xgui_temp = true
+			elseif arg.type == ULib.cmds.PlayersArg and argnum == 1 then
 				xgui_player.argspot:AddItem( xgui_player.plylabel )
 				function xgui_player.list:OnRowSelected()
 					xgui_player.plylabel:SetText( "" )
@@ -73,7 +70,7 @@ function xgui_player.setselected( selcat )
 	xgui_temp.DoClick = function()
 		local buildcmd = cmd.cmd
 		for i=1,#xgui_player.argspot.Items - 2 do
-			buildcmd = buildcmd .. " \"" .. xgui_player.argspot.Items[i]:GetValue() .. "\""
+			buildcmd = buildcmd .. " \"" .. tostring( xgui_player.argspot.Items[i]:GetValue() ) .. "\""
 		end
 		LocalPlayer():ConCommand( buildcmd )
 	end

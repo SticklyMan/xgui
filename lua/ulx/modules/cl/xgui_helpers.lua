@@ -253,6 +253,10 @@ local function xgui_helpers()
 	function DMultiChoice:GetValue()
 		return self.TextEntry:GetValue()
 	end
+	
+	function DCheckBoxLabel:GetValue()
+		return self:GetChecked()
+	end
 
 	--Get a line in a DListView by searching for a column value ( outID determines whether to return the line object, or the ID )
 	function DListView:GetLineByColumnText( search, column, outID )
