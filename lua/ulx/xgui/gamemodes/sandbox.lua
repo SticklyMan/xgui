@@ -8,8 +8,8 @@ x_makecheckbox{ x=10, y=30, label="Enable Godmode", convar="rep_sbox_godmode", p
 x_makecheckbox{ x=10, y=50, label="Disable PvP Damage", convar="rep_sbox_plpldamage", parent=sbox_settings, textcolor=color_black }
 x_makecheckbox{ x=10, y=70, label="Spawn With Weapons", convar="rep_sbox_weapons", parent=sbox_settings, textcolor=color_black }
 x_makecheckbox{ x=10, y=90, label="Limited Physgun", convar="rep_physgun_limited", parent=sbox_settings, textcolor=color_black }
-x_makelabel{ x=5, y=217, label="The limits on the right were\nretrieved from an online list\nat ulyssesmod.net. If there\nare any limits that need to\nbe added, or if you feel that\na maximum slider value\nshould be changed, then\nplease email me at:\nsticklyman@ulyssesmod.net.", parent=sbox_settings, textcolor=color_black }
-sbox_settings.plist = x_makepanellist{ x=145, y=5, h=330, w=440, spacing=1, padding=2, parent=sbox_settings }
+x_makelabel{ x=5, y=216, label="The limits on the right were\nretrieved from an online list\nat ulyssesmod.net. If there\nare any limits that need to\nbe added, or if you feel that\na maximum slider value\nshould be changed, then\nplease email me at:\nsticklyman@ulyssesmod.net.", parent=sbox_settings, textcolor=color_black }
+sbox_settings.plist = x_makepanellist{ x=145, y=5, h=327, w=440, spacing=1, padding=2, parent=sbox_settings }
 
 function sbox_settings.processLimits()
 	sbox_settings.plist:Clear()
