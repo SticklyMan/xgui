@@ -217,7 +217,7 @@ function xgui.show( tabname )
 	RestoreCursorPosition()
 	xgui.base:SetVisible( true )
 	if xgui.receivingdata then xgui.chunkbox:SetVisible( true ) end
-	xgui.base.animFadeIn:Start( xgui.base:GetFadeTime(), xgui.base )	
+	xgui.base.animFadeIn:Start( xgui.base:GetFadeTime(), xgui.base )
 end
 
 function xgui.hide()

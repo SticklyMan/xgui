@@ -22,7 +22,7 @@ OTHER:
 parent - the panel on which the control will be affixed
 contents - for a category, this will be the panellist of controls in the category
 textcolor - sets the text color
-convarcontents - table storing additional information used with convars ( e.g, multichoice contents and functions )
+choices - table with list of strings to add to a MultiChoice
 
 BOOL:
 multiselect - Allow multiple selects
@@ -34,7 +34,7 @@ expanded - Determines whether or not a category is expanded when it is created
 nopopup - Used only with makeframepopup, will set whether the frame pops up or not
 showclose - Determines whether to show X button on makeframepopup
 percent - If true, progressbar will show as a %
-disabled - Used with controls (as of now, only buttons) to determine if it is disabled.
+disabled - Used with controls to determine if it is disabled.
 ]]--
 
 local function xgui_helpers()
@@ -181,16 +181,10 @@ local function xgui_helpers()
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetEditable( t.enableinput )
 		xgui_temp:SetToolTip( t.tooltip )
-		if t.convar then
-			--Special code for setting convars
-			for i, v in ipairs( t.convardata ) do
+		if t.choices then
+			for i, v in ipairs( t.choices ) do
 				xgui_temp:AddChoice( v )
 			end
-			xgui_temp.OnSelect = function( self )
-				RunConsoleCommand( t.convar, tonumber(string.sub( self:GetValue(), 1, 2 ) ) )
-			end
-			xgui_temp:SetText( t.convardata[ GetConVarNumber( t.convar )+1 ] )
-		
 		end
 		return xgui_temp
 	end
