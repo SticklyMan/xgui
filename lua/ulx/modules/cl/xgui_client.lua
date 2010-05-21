@@ -8,7 +8,7 @@ local function xgui_init()
 	--Data storing relevant information retrieved from server.
 	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
 	--Set up a table for storing third party modules and information
-	xgui.modules = { tab = {}, gamemode = {}, setting = {} }
+	xgui.modules = { tab = {}, gamemode = {}, setting = {}, svsetting = {} }
 	--Set up various hooks modules can "hook" into. 
 	xgui.hook = { onUnban={}, onOpen = {}, sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
 	
@@ -68,7 +68,6 @@ function xgui.processModules( wasvisible, activetab )
 			end
 		end
 		if v.access ~= nil then
-			print( v.access, LocalPlayer():query( v.access ) )
 			if LocalPlayer():query( v.access ) then
 				xgui.base:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
 				xgui.modules.tab[k].tabpanel = xgui.base.Items[#xgui.base.Items].Tab
