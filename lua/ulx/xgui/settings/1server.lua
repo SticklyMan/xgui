@@ -18,11 +18,21 @@ x_makeslider{ x=10, y=130+offset, w=125, label="phys_timescale", min=0, max=4, d
 
 --------------------------Log Settings---------------------------
 local plist = x_makepanellist{ w=285, h=327, parent=xgui.null }
-plist:AddItem( x_makecheckbox{ label="Enable Logging", convar="ulx_cl_logFile", tooltip="Enable logging of ULX actions to a file" } )
+plist:AddItem( x_makecheckbox{ label="Enable Logging to Files", convar="ulx_cl_logFile" } )
 plist:AddItem( x_makecheckbox{ label="Log Chat", convar="ulx_cl_logChat", tooltip="Enable logging of Chat" } )
-plist:AddItem( x_makecheckbox{ label="Log Player Events", convar="ulx_cl_logEvents", tooltip="Enable logging of player connects, disconnects, deaths, etc" } )
-plist:AddItem( x_makecheckbox{ label="Log Spawns", convar="ulx_cl_logSpawns", tooltip="Enable logging of spawns of props, effects, etc" } )
-table.insert( xgui.modules.svsetting, { name="Logs", panel=plist, access=nil } )
+plist:AddItem( x_makecheckbox{ label="Log Player Events (Connects, Disconnects, Deaths, etc.)", convar="ulx_cl_logEvents" } )
+plist:AddItem( x_makecheckbox{ label="Log Spawns (Props, Effects, Ragdolls, etc.)", convar="ulx_cl_logSpawns" } )
+table.insert( xgui.modules.svsetting, { name="ULX Logs", panel=plist, access=nil } )
+
+-------------------------Player Votemaps-------------------------
+local plist = x_makepanellist{ w=285, h=327, parent=xgui.null }
+plist:AddItem( x_makecheckbox{ label="Enable Player Votemaps", convar="ulx_cl_votemapEnabled" } )
+plist:AddItem( x_makeslider{ label="Minimum time before any player can vote for a map.", min=0, max=300, convar="ulx_cl_votemapMintime" } )
+plist:AddItem( x_makeslider{ label="Time a user must wait before they can change their vote.", min=0, max=60, decimal=1, convar="ulx_cl_votemapWaitTime" } )
+plist:AddItem( x_makeslider{ label="Ratio of votes needed for mapchange to be successful.", min=0, max=1, decimal=2, convar="ulx_cl_votemapSuccessratio" } )
+plist:AddItem( x_makeslider{ label="Minimum number of votes needed for mapchange to be successful.", min=0, max=10, convar="ulx_cl_votemapMinvotes" } )
+plist:AddItem( x_makeslider{ label="Time in seconds an admin has to veto a successful vote. (0 to disable)",	min=0, max=300, convar="ulx_cl_votemapVetotime" } )
+table.insert( xgui.modules.svsetting, { name="ULX Player Votemaps", panel=plist, access=nil } )
 
 local plist = x_makepanellist{ w=285, h=327, parent=xgui.null }
 plist:AddItem( x_makeslider{ label="Votekick Success Ratio", min=0, max=1, decimal=2, convar="ulx_cl_votekickSuccessratio" } )
@@ -30,12 +40,7 @@ plist:AddItem( x_makeslider{ label="Votekick Minimum Votes", min=0, max=10, conv
 plist:AddItem( x_makeslider{ label="Voteban Success Ratio", min=0, max=1, decimal=2, convar="ulx_cl_votebanSuccessratio" } )
 plist:AddItem( x_makeslider{ label="Voteban Minimum Votes", min=0, max=10, convar="ulx_cl_votebanMinvotes" } )
 plist:AddItem( x_makecheckbox{ label="Echo Votes", convar="ulx_cl_voteEcho" } )
-plist:AddItem( x_makecheckbox{ label="Enable Player Votemaps", convar="ulx_cl_votemapEnabled" } )
-plist:AddItem( x_makeslider{ label="Votemap Minimum Time", 	min=0, max=300,convar="ulx_cl_votemapMintime" } )
-plist:AddItem( x_makeslider{ label="Votemap Wait Time", 	min=0, max=60, 	decimal=1, convar="ulx_cl_votemapWaitTime" } )
-plist:AddItem( x_makeslider{ label="Votemap Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_cl_votemapSuccessratio" } )
-plist:AddItem( x_makeslider{ label="Votemap Minimum Votes", min=0, max=10, convar="ulx_cl_votemapMinvotes" } )
-plist:AddItem( x_makeslider{ label="Votemap Veto Time",		min=0, max=300, convar="ulx_cl_votemapVetotime" } )
+
 plist:AddItem( x_makelabel{ label="Server-wide Votemap Settings" } )
 plist:AddItem( x_makeslider{ label="Votemap2 Success Ratio", min=0, max=1, 	decimal=2, convar="ulx_cl_votemap2Successratio" } )
 plist:AddItem( x_makeslider{ label="Votemap2 Minimum Votes", min=0, max=10, convar="ulx_cl_votemap2Minvotes" } )
@@ -46,7 +51,7 @@ server_settings.curPanel = nil
 server_settings.panel = x_makepanel{ x=300, y=5, w=285, h=327, parent=server_settings }
 
 server_settings.catList = x_makelistview{ x=145, y=5, w=150, h=327, parent=server_settings }
-server_settings.catList:AddColumn( "ULX Settings" )
+server_settings.catList:AddColumn( "Server Settings" )
 server_settings.catList.Columns[1].DoClick = function() end
 server_settings.catList.OnRowSelected=function()
 	local nPanel = xgui.modules.svsetting[server_settings.catList:GetSelected()[1]:GetValue(2)].panel
