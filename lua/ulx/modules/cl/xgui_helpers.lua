@@ -5,7 +5,8 @@
 STRINGS:
 label - used for text near a control
 tooltip - used to show info when a mouse is hovering over a control
-convar - used to link a control to a convar
+convar - used to link a control to a convar (Using Garry's Method)
+repconvar - used to more efficiently link a control to a convar (Must be a ULib replicated convar, though)
 text - set the text in a textbox
 access - ULX access string used to determine whether the control is enabled or disabled
 saccess - ULX access string used to determine if the control is visible
@@ -44,9 +45,26 @@ local function xgui_helpers()
 		xgui_temp:SetText( t.label or "" )
 		xgui_temp:SizeToContents()
 		xgui_temp:SetValue( t.value or 0 )
-		xgui_temp:SetConVar( t.convar )
+		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		if t.textcolor then xgui_temp:SetTextColor( t.textcolor ) end
 		if t.tooltip then xgui_temp:SetTooltip( t.tooltip ) end
+		--Replicated Convar Updating
+		if t.repconvar then
+			xgui_temp:SetValue( GetConVar( t.repconvar ):GetBool() )
+			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+				if cl_cvar == t.repconvar then
+					xgui_temp:SetValue( new_val )
+				end
+			end
+			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:OnChange( bVal )
+				RunConsoleCommand( t.repconvar, tostring( bVal and 1 or 0 ) )
+			end
+			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = nil
+			xgui_temp.ConVarStringThink = nil
+			xgui_temp.ConVarChanged = nil
+		end
 		return xgui_temp
 	end
 
@@ -108,7 +126,7 @@ local function xgui_helpers()
 		xgui_temp:SetWide( t.w )
 		xgui_temp:SetTall( t.h or 20 )
 		xgui_temp:SetEnterAllowed( true )
-		xgui_temp:SetConVar( t.convar )
+		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		if t.text then xgui_temp:SetText( t.text ) end
 		if t.enableinput ~= nil then xgui_temp:SetEnabled( t.enableinput ) end
 		xgui_temp:SetToolTip( t.tooltip )
@@ -117,12 +135,29 @@ local function xgui_helpers()
 		if ( t.focuscontrol == true ) then
 			xgui_temp.OnGetFocus = function( self )
 				self:SelectAllText()
-				xgui.SetKeyboard( self )
+				xgui.base:SetKeyboardInputEnabled( true )
 			end
 			xgui_temp.OnLoseFocus = function( self )
-				xgui.ReleaseKeyboard()
+				xgui.base:SetKeyboardInputEnabled( false )
 				self:UpdateConvarValue()
 			end
+		end
+		--Replicated Convar Updating
+		if t.repconvar then
+			xgui_temp:SetValue( GetConVar( t.repconvar ):GetString() )
+			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+				if cl_cvar == t.repconvar then
+					xgui_temp:SetValue( new_val )
+				end
+			end
+			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:OnEnter()
+				RunConsoleCommand( t.repconvar, self:GetValue() )
+			end
+			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = nil
+			xgui_temp.ConVarStringThink = nil
+			xgui_temp.ConVarChanged = nil
 		end
 		return xgui_temp
 	end
@@ -170,7 +205,7 @@ local function xgui_helpers()
 		xgui_temp:SetWidth( t.w )
 		xgui_temp:SizeToContents()
 		xgui_temp:SetValue( t.value )
-		xgui_temp:SetConVar( t.convar )
+		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		return xgui_temp
 	end
 
@@ -180,10 +215,59 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetEditable( t.enableinput )
+		if ( t.focuscontrol == true ) then
+			xgui_temp.DropButton.OnMousePressed = function( button, mcode ) 
+				xgui_temp:OpenMenu( xgui_temp.DropButton )
+				xgui.base:SetKeyboardInputEnabled( false )
+			end
+			xgui_temp.TextEntry.OnMousePressed = function( self )
+				self:SelectAllText()
+				xgui.base:SetKeyboardInputEnabled( true )
+			end
+			xgui_temp.TextEntry.OnLoseFocus = function( self )
+				xgui.base:SetKeyboardInputEnabled( false )
+				self:UpdateConvarValue()
+			end
+		end
 		xgui_temp:SetToolTip( t.tooltip )
 		if t.choices then
 			for i, v in ipairs( t.choices ) do
 				xgui_temp:AddChoice( v )
+			end
+		end
+		--Replicated Convar Updating
+		if t.repconvar then
+			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
+				local cvar = GetConVar( t.repconvar ):GetInt()
+				if cvar + 1 <= #xgui_temp.Choices then
+					xgui_temp:ChooseOptionID( cvar + 1 )
+				else
+					xgui_temp:SetText( "Invalid Convar Value" )
+				end
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						if new_val + 1 <= #xgui_temp.Choices then
+							xgui_temp:ChooseOptionID( new_val + 1 )
+						else
+							xgui_temp:SetText( "Invalid Convar Value" )
+						end
+					end
+				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnSelect( index )
+					RunConsoleCommand( t.repconvar, tostring( index - 1 ) )
+				end
+			else  --Otherwise, use each choice as a string for the convar
+				xgui_temp:SetText( GetConVar( t.repconvar ):GetString() )
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						xgui_temp:SetText( new_val )
+					end
+				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnSelect( index, value )
+					RunConsoleCommand( t.repconvar, value )
+				end
 			end
 		end
 		return xgui_temp
@@ -276,7 +360,7 @@ local function xgui_helpers()
 		self.tabScroller.Panels = {}
 		self.Items = {}
 	end
-	
+
 	--------------------------------------------------
 	--Here is slightly modified Derma code specific to XGUI's base.
 	--------------------------------------------------
@@ -371,14 +455,14 @@ local function xgui_helpers()
 	end
 	
 	--------------------------------------------------
-	--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the convar when the mouse is released! (And allows for textbox input)
+	--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the value when the mouse is released! (And allows for textbox input)
 	--------------------------------------------------
 	function x_makeslider( t )
 		local xgui_temp = vgui.Create( "DNumSlider", t.parent )
 		xgui_temp:SetText( t.label or "" )
 		xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
 		xgui_temp:SetDecimals( t.decimal or 0 )
-		xgui_temp:SetConVar( t.convar )
+		--if t.convar then xgui_temp:SetConVar( t.convar ) end
 		xgui_temp:SetTooltip( t.tooltip )
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetWidth( t.w )
@@ -388,12 +472,12 @@ local function xgui_helpers()
 		
 		--Keyboard focus stuff
 		xgui_temp.Wang.TextEntry.OnGetFocus = function()
-			xgui.SetKeyboard()
+			xgui.base:SetKeyboardInputEnabled( true )
 		end
 		xgui_temp.Wang.TextEntry.OnLoseFocus = function( self )
 			self:UpdateConvarValue()
 			xgui_temp.Wang:SetValue( xgui_temp.Wang.TextEntry:GetValue() )
-			xgui.ReleaseKeyboard()
+			xgui.base:SetKeyboardInputEnabled( false )
 		end	
 		
 		--Slider update stuff (Most of this code is copied from the default DNumSlider)
@@ -459,7 +543,23 @@ local function xgui_helpers()
 				self:SetValue( xgui_temp_fVal )
 			return end
 		end
-		
+		--Replicated Convar Updating
+		if t.repconvar then
+			xgui_temp:SetValue( GetConVar( t.repconvar ):GetFloat() )
+			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+				if cl_cvar == t.repconvar then
+					xgui_temp:SetValue( new_val )
+				end
+			end
+			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:OnValueChanged( val )
+				RunConsoleCommand( t.repconvar, tostring( val ) )
+			end
+			xgui_temp.Wang.TextEntry.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = nil
+			xgui_temp.ConVarStringThink = nil
+			xgui_temp.ConVarChanged = nil
+		end
 		return xgui_temp
 	end
 

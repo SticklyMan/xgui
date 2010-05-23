@@ -120,8 +120,7 @@ function ULib.cmds.StringArg.x_getcontrol( arg, argnum )
 		return xgui_temp
 	elseif restrictions.restrictedCompletes then
 		-- This is where there needs to be both a drop down AND an input box
-		return x_makelabel{ label="Stickly needs to do this part! (" ..
-			table.concat( restrictions.restrictedCompletes, "," ) .. ")", textcolor=Color( 255, 0, 0, 255 ) }
+		return x_makemultichoice{ choices=restrictions.restrictedCompletes, enableinput=true, focuscontrol=true }
 	else
 		return x_maketextbox{ text=arg.hint or "StringArg", focuscontrol=true }
 	end

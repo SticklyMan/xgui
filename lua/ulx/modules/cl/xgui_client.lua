@@ -11,9 +11,6 @@ local function xgui_init()
 	xgui.modules = { tab = {}, gamemode = {}, setting = {}, svsetting = {} }
 	--Set up various hooks modules can "hook" into. 
 	xgui.hook = { onUnban={}, onOpen = {}, sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
-	
-	--Used to set which panel has the keyboard focus
-	xgui.textpanel=nil
 
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
@@ -230,33 +227,6 @@ function xgui.toggle()
 		xgui.show()
 	else
 		xgui.hide()
-	end
-end
-
-function xgui.SetKeyboard( panel )
-	for _,obj in ipairs( xgui.base.Items ) do
-		if ( obj.Tab == xgui.base:GetActiveTab() ) then
-			xgui.textpanel = panel
-			obj.Panel:SetKeyboardInputEnabled( true )
-			hook.Add( "VGUIMousePressed", "XGUI_Checkmouse", xgui.CheckMousePos )
-		end
-	end
-end
-
-function xgui.CheckMousePos( panel, mcode )
-	if mcode == MOUSE_LEFT then
-		if ( panel ~= xgui.textpanel ) then
-			xgui.ReleaseKeyboard()
-		end
-	end
-end
-
-function xgui.ReleaseKeyboard()
-	for _,obj in ipairs(xgui.base.Items) do
-		if ( obj.Tab == xgui.base:GetActiveTab() ) then
-			obj.Panel:SetKeyboardInputEnabled( false )
-			hook.Remove( "VGUIMousePressed", "XGUI_Checkmouse" )
-		end
 	end
 end
 
