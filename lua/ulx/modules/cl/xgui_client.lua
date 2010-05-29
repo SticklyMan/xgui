@@ -1,5 +1,9 @@
 --GUI for ULX -- by Stickly Man!
 xgui = {}
+--Set up a table for storing third party modules and information
+xgui.modules = { tab={}, gamemode={}, setting={}, svsetting={} }
+--Set up various hooks modules can "hook" into. 
+xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
 
 local function xgui_init()
 	--Check if the server has XGUI installed
@@ -7,10 +11,6 @@ local function xgui_init()
 
 	--Data storing relevant information retrieved from server.
 	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
-	--Set up a table for storing third party modules and information
-	xgui.modules = { tab = {}, gamemode = {}, setting = {}, svsetting = {} }
-	--Set up various hooks modules can "hook" into. 
-	xgui.hook = { onUnban={}, onOpen = {}, sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
 
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
@@ -113,6 +113,10 @@ function xgui.processModules( wasvisible, activetab )
 			xgui.modules.tab[k].tabpanel = settings.Items[#settings.Items].Tab
 		end
 	end
+	
+	--Call any functions that requested to be called when permissions change
+	for _, func in ipairs( xgui.hook["onProcessModules" ] ) do func() end
+	
 	if activetab then
 		for k, v in ipairs( xgui.modules.tab ) do
 			if v.name == table.concat( activetab, " " ) and v.panel:GetParent() ~= xgui.null then 
@@ -270,12 +274,17 @@ end
 --Function called when data chunk is recieved from server
 function xgui.getChunk( data, curtable )
 	xgui.chunkbox:Progress( curtable )
-	for k, v in pairs( data ) do
-		if type(k) == "number" then
-			table.insert( xgui.data[curtable], v )
-		else
+	--We need seperate cases for these to prevent data getting out-of-order (adverts), while supporting chunk'd tables
+	if curtable == "bans" then
+		for k, v in pairs( data ) do
 			xgui.data[curtable][k] = v
 		end
+	elseif curtable == "sbans" then
+		for k, v in ipairs( data ) do
+			table.insert( xgui.data[curtable], v )
+		end
+	else
+		xgui.data[curtable] = data
 	end
 	xgui.callRefresh( curtable, data )
 end

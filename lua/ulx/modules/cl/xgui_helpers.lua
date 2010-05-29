@@ -50,20 +50,24 @@ local function xgui_helpers()
 		if t.tooltip then xgui_temp:SetTooltip( t.tooltip ) end
 		--Replicated Convar Updating
 		if t.repconvar then
-			xgui_temp:SetValue( GetConVar( t.repconvar ):GetBool() )
-			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-				if cl_cvar == t.repconvar then
-					xgui_temp:SetValue( new_val )
+			if GetConVar( t.repconvar ) == nil then
+				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
+			else
+				xgui_temp:SetValue( GetConVar( t.repconvar ):GetBool() )
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						xgui_temp:SetValue( new_val )
+					end
 				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnChange( bVal )
+					RunConsoleCommand( t.repconvar, tostring( bVal and 1 or 0 ) )
+				end
+				xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+				xgui_temp.ConVarNumberThink = nil
+				xgui_temp.ConVarStringThink = nil
+				xgui_temp.ConVarChanged = nil
 			end
-			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-			function xgui_temp:OnChange( bVal )
-				RunConsoleCommand( t.repconvar, tostring( bVal and 1 or 0 ) )
-			end
-			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-			xgui_temp.ConVarNumberThink = nil
-			xgui_temp.ConVarStringThink = nil
-			xgui_temp.ConVarChanged = nil
 		end
 		return xgui_temp
 	end
@@ -144,20 +148,24 @@ local function xgui_helpers()
 		end
 		--Replicated Convar Updating
 		if t.repconvar then
-			xgui_temp:SetValue( GetConVar( t.repconvar ):GetString() )
-			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-				if cl_cvar == t.repconvar then
-					xgui_temp:SetValue( new_val )
+			if GetConVar( t.repconvar ) == nil then
+				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
+			else
+				xgui_temp:SetValue( GetConVar( t.repconvar ):GetString() )
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						xgui_temp:SetValue( new_val )
+					end
 				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnEnter()
+					RunConsoleCommand( t.repconvar, self:GetValue() )
+				end
+				xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+				xgui_temp.ConVarNumberThink = nil
+				xgui_temp.ConVarStringThink = nil
+				xgui_temp.ConVarChanged = function() end
 			end
-			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-			function xgui_temp:OnEnter()
-				RunConsoleCommand( t.repconvar, self:GetValue() )
-			end
-			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-			xgui_temp.ConVarNumberThink = nil
-			xgui_temp.ConVarStringThink = nil
-			xgui_temp.ConVarChanged = nil
 		end
 		return xgui_temp
 	end
@@ -194,6 +202,8 @@ local function xgui_helpers()
 		xgui_temp:SetKeyboardInputEnabled( false )
 		xgui_temp:SetMouseInputEnabled( true )
 		xgui_temp.IsXPanel = true
+		xgui_temp:SetPos( t.x, t.y )
+		xgui_temp:SetSize( t.w, t.h )
 		return xgui_temp
 	end
 	
@@ -237,36 +247,40 @@ local function xgui_helpers()
 		end
 		--Replicated Convar Updating
 		if t.repconvar then
-			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
-				local cvar = GetConVar( t.repconvar ):GetInt()
-				if cvar + 1 <= #xgui_temp.Choices then
-					xgui_temp:ChooseOptionID( cvar + 1 )
-				else
-					xgui_temp:SetText( "Invalid Convar Value" )
-				end
-				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
-						if new_val + 1 <= #xgui_temp.Choices then
-							xgui_temp:ChooseOptionID( new_val + 1 )
-						else
-							xgui_temp:SetText( "Invalid Convar Value" )
+			if GetConVar( t.repconvar ) == nil then
+				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
+			else
+				if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
+					local cvar = GetConVar( t.repconvar ):GetInt()
+					if cvar + 1 <= #xgui_temp.Choices then
+						xgui_temp:ChooseOptionID( cvar + 1 )
+					else
+						xgui_temp:SetText( "Invalid Convar Value" )
+					end
+					function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+						if cl_cvar == t.repconvar then
+							if new_val + 1 <= #xgui_temp.Choices then
+								xgui_temp:ChooseOptionID( new_val + 1 )
+							else
+								xgui_temp:SetText( "Invalid Convar Value" )
+							end
 						end
 					end
-				end
-				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-				function xgui_temp:OnSelect( index )
-					RunConsoleCommand( t.repconvar, tostring( index - 1 ) )
-				end
-			else  --Otherwise, use each choice as a string for the convar
-				xgui_temp:SetText( GetConVar( t.repconvar ):GetString() )
-				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
-						xgui_temp:SetText( new_val )
+					hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+					function xgui_temp:OnSelect( index )
+						RunConsoleCommand( t.repconvar, tostring( index - 1 ) )
 					end
-				end
-				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-				function xgui_temp:OnSelect( index, value )
-					RunConsoleCommand( t.repconvar, value )
+				else  --Otherwise, use each choice as a string for the convar
+					xgui_temp:SetText( GetConVar( t.repconvar ):GetString() )
+					function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+						if cl_cvar == t.repconvar then
+							xgui_temp:SetText( new_val )
+						end
+					end
+					hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+					function xgui_temp:OnSelect( index, value )
+						RunConsoleCommand( t.repconvar, value )
+					end
 				end
 			end
 		end
@@ -295,10 +309,36 @@ local function xgui_helpers()
 	--Color picker used in Garry's menus
 	function x_makecolorpicker( t )
 		local xgui_temp = vgui.Create( "CtrlColor", t.parent )
+			if t.removealpha == true then
+				--Remove the alpha numberwang, also align the rgb numberwangs on the bottom
+				xgui_temp.txtA:Remove()
+				xgui_temp.SetConVarA = nil
+				function xgui_temp:PerformLayout()
+					local y = 0
+					self:SetTall( 135 )
+					self.Mixer:SetSize( 148, 100 )
+					self.Mixer:AlignTop( 5 )
+					self.Mixer:AlignLeft( 5 )
+					self.txtR:SizeToContents()
+					self.txtG:SizeToContents()
+					self.txtB:SizeToContents()
+					self.txtR:AlignLeft( 5 )
+					self.txtR:AlignBottom( 5 )
+						self.txtG:CopyBounds( self.txtR )
+						self.txtG:CenterHorizontal( 0.5 )
+							self.txtB:CopyBounds( self.txtG )
+							self.txtB:AlignRight( 5 )
+				end
+				xgui_temp.Mixer:Remove()
+				--Remove the default mixer and replace with a mixer without the alpha bar
+				xgui_temp.Mixer = vgui.Create( "XGUIColorMixerNoAlpha", xgui_temp )
+			end
 			xgui_temp:SetConVarR( "colour_r" )
 			xgui_temp:SetConVarG( "colour_g" )
 			xgui_temp:SetConVarB( "colour_b" )
-			xgui_temp:SetConVarA( "colour_a" )
+			if not t.removealpha then
+				xgui_temp:SetConVarA( "colour_a" )
+			end
 			xgui_temp:SetPos( t.x, t.y )
 			xgui_temp:SetSize( t.w, t.h )
 		return xgui_temp
@@ -462,7 +502,7 @@ local function xgui_helpers()
 		xgui_temp:SetText( t.label or "" )
 		xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
 		xgui_temp:SetDecimals( t.decimal or 0 )
-		--if t.convar then xgui_temp:SetConVar( t.convar ) end
+		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		xgui_temp:SetTooltip( t.tooltip )
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetWidth( t.w )
@@ -545,24 +585,112 @@ local function xgui_helpers()
 		end
 		--Replicated Convar Updating
 		if t.repconvar then
-			xgui_temp:SetValue( GetConVar( t.repconvar ):GetFloat() )
-			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-				if cl_cvar == t.repconvar then
-					xgui_temp:SetValue( new_val )
+			if GetConVar( t.repconvar ) == nil then
+				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
+			else
+				xgui_temp:SetValue( GetConVar( t.repconvar ):GetFloat() )
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						xgui_temp:SetValue( new_val )
+					end
 				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnValueChanged( val )
+					RunConsoleCommand( t.repconvar, tostring( val ) )
+				end
+				xgui_temp.Wang.TextEntry.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+				xgui_temp.ConVarNumberThink = nil
+				xgui_temp.ConVarStringThink = nil
+				xgui_temp.ConVarChanged = nil
 			end
-			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-			function xgui_temp:OnValueChanged( val )
-				RunConsoleCommand( t.repconvar, tostring( val ) )
-			end
-			xgui_temp.Wang.TextEntry.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-			xgui_temp.ConVarNumberThink = nil
-			xgui_temp.ConVarStringThink = nil
-			xgui_temp.ConVarChanged = nil
 		end
 		return xgui_temp
 	end
+	
+	--------------------------------------
+	--Used for the colorpicker above, this is Garry's DColorMixer with the alpha bar removed
+	--------------------------------------
+	local PANEL = {}
 
+	AccessorFunc( PANEL, "m_ConVarR", 				"ConVarR" )
+	AccessorFunc( PANEL, "m_ConVarG", 				"ConVarG" )
+	AccessorFunc( PANEL, "m_ConVarB", 				"ConVarB" )
+	AccessorFunc( PANEL, "m_fSpacer", 				"Spacer" )
+
+	function PANEL:Init()
+		self.RGBBar = vgui.Create( "DRGBBar", self )
+		self.RGBBar.OnColorChange = function( ctrl, color ) self:SetBaseColor( color ) end
+		self.ColorCube = vgui.Create( "DColorCube", self )
+		self.ColorCube.OnUserChanged = function( ctrl ) self:ColorCubeChanged( ctrl ) end
+		self:SetColor( Color( 255, 100, 100, 255 ) )
+		self:SetSpacer( 3 )
+	end
+
+	function PANEL:PerformLayout()
+		local SideBoxSize = self:GetTall() * 0.15
+		self.RGBBar:SetWide( SideBoxSize )
+		self.RGBBar:StretchToParent( 0, 0, nil, 0 )
+		self.ColorCube:MoveRightOf( self.RGBBar, 5 )
+		self.ColorCube:StretchToParent( nil, 0, SideBoxSize + self.m_fSpacer, 0 )
+	end
+
+	function PANEL:SetBaseColor( color )
+		self.RGBBar:SetColor( color )
+		self.ColorCube:SetBaseRGB( color )
+		self:UpdateConVars( self.ColorCube:GetRGB() )
+	end
+
+	function PANEL:SetColor( color )
+		self.ColorCube:SetColor( color )
+		self.RGBBar:SetColor( color )
+	end
+	
+	function PANEL:Paint() end
+	
+	function PANEL:UpdateConVar( strName, strKey, color )
+		if ( !strName ) then return end
+		RunConsoleCommand( strName, tostring( color[ strKey ] ) )
+	end
+
+	function PANEL:UpdateConVars( color )
+		self.NextConVarCheck = SysTime() + 0.1
+		self:UpdateConVar( self.m_ConVarR, 'r', color )
+		self:UpdateConVar( self.m_ConVarG, 'g', color )
+		self:UpdateConVar( self.m_ConVarB, 'b', color )
+	end
+
+	function PANEL:ColorCubeChanged( cube )
+		self:UpdateConVars( self:GetColor() )
+	end
+
+	function PANEL:GetColor()
+		local color = self.ColorCube:GetRGB()
+		color.a = 255
+		return color
+	end
+
+	function PANEL:Think()
+		--Don't update the convars while we're changing them!
+		if ( self.ColorCube:GetDragging() ) then return end
+		self:DoConVarThink( self.m_ConVarR, 'r' )
+		self:DoConVarThink( self.m_ConVarG, 'g' )
+		self:DoConVarThink( self.m_ConVarB, 'b' )
+	end
+
+	function PANEL:DoConVarThink( convar, key )
+		if ( !convar ) then return end
+		local fValue = GetConVarNumber( convar )
+		local fOldValue = self[ 'ConVarOld'..convar ]
+		if ( fOldValue && fValue == fOldValue ) then return end
+		self[ 'ConVarOld'..convar ] = fValue
+		local r = GetConVarNumber( self.m_ConVarR )
+		local g = GetConVarNumber( self.m_ConVarG )
+		local b = GetConVarNumber( self.m_ConVarB )
+		local color = Color( r, g, b, 255 )
+		self:SetColor( color )	
+	end
+	vgui.Register( "XGUIColorMixerNoAlpha", PANEL, "DPanel" )
+	
 	-----------------------------------------
 	--A stripped-down customized DPanel allowing for textbox input!
 	-----------------------------------------
