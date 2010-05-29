@@ -121,6 +121,7 @@ function adverts.updateAdverts()
 			local xgui_temp = adverts.tree:AddNode( group )
 			adverts.group:AddChoice( group )
 			xgui_temp.Icon:SetImage( "gui/silkicons/folder_go" )
+			xgui_temp.group = group
 			for advert, data in pairs( advertgroup ) do
 				local node = xgui_temp:AddNode( data.message )
 				node.data = data
