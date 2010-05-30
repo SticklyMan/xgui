@@ -51,23 +51,22 @@ local function xgui_helpers()
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
-				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
-			else
-				xgui_temp:SetValue( GetConVar( t.repconvar ):GetBool() )
-				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
-						xgui_temp:SetValue( new_val )
-					end
-				end
-				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-				function xgui_temp:OnChange( bVal )
-					RunConsoleCommand( t.repconvar, tostring( bVal and 1 or 0 ) )
-				end
-				xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-				xgui_temp.ConVarNumberThink = nil
-				xgui_temp.ConVarStringThink = nil
-				xgui_temp.ConVarChanged = nil
+				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 			end
+			xgui_temp:SetValue( GetConVar( t.repconvar ):GetBool() )
+			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+				if cl_cvar == t.repconvar then
+					xgui_temp:SetValue( new_val )
+				end
+			end
+			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:OnChange( bVal )
+				RunConsoleCommand( t.repconvar, tostring( bVal and 1 or 0 ) )
+			end
+			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = nil
+			xgui_temp.ConVarStringThink = nil
+			xgui_temp.ConVarChanged = nil
 		end
 		return xgui_temp
 	end
@@ -149,23 +148,22 @@ local function xgui_helpers()
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
-				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
-			else
-				xgui_temp:SetValue( GetConVar( t.repconvar ):GetString() )
-				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
-						xgui_temp:SetValue( new_val )
-					end
-				end
-				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-				function xgui_temp:OnEnter()
-					RunConsoleCommand( t.repconvar, self:GetValue() )
-				end
-				xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-				xgui_temp.ConVarNumberThink = nil
-				xgui_temp.ConVarStringThink = nil
-				xgui_temp.ConVarChanged = function() end
+				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 			end
+			xgui_temp:SetValue( GetConVar( t.repconvar ):GetString() )
+			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+				if cl_cvar == t.repconvar then
+					xgui_temp:SetValue( new_val )
+				end
+			end
+			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:OnEnter()
+				RunConsoleCommand( t.repconvar, self:GetValue() )
+			end
+			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = nil
+			xgui_temp.ConVarStringThink = nil
+			xgui_temp.ConVarChanged = function() end
 		end
 		return xgui_temp
 	end
@@ -248,39 +246,38 @@ local function xgui_helpers()
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
-				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
-			else
-				if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
-					local cvar = GetConVar( t.repconvar ):GetInt()
-					if cvar + 1 <= #xgui_temp.Choices then
-						xgui_temp:ChooseOptionID( cvar + 1 )
-					else
-						xgui_temp:SetText( "Invalid Convar Value" )
-					end
-					function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-						if cl_cvar == t.repconvar then
-							if new_val + 1 <= #xgui_temp.Choices then
-								xgui_temp:ChooseOptionID( new_val + 1 )
-							else
-								xgui_temp:SetText( "Invalid Convar Value" )
-							end
+				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
+			end
+			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
+				local cvar = GetConVar( t.repconvar ):GetInt()
+				if cvar + 1 <= #xgui_temp.Choices then
+					xgui_temp:ChooseOptionID( cvar + 1 )
+				else
+					xgui_temp:SetText( "Invalid Convar Value" )
+				end
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						if new_val + 1 <= #xgui_temp.Choices then
+							xgui_temp:ChooseOptionID( new_val + 1 )
+						else
+							xgui_temp:SetText( "Invalid Convar Value" )
 						end
 					end
-					hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-					function xgui_temp:OnSelect( index )
-						RunConsoleCommand( t.repconvar, tostring( index - 1 ) )
+				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnSelect( index )
+					RunConsoleCommand( t.repconvar, tostring( index - 1 ) )
+				end
+			else  --Otherwise, use each choice as a string for the convar
+				xgui_temp:SetText( GetConVar( t.repconvar ):GetString() )
+				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+					if cl_cvar == t.repconvar then
+						xgui_temp:SetText( new_val )
 					end
-				else  --Otherwise, use each choice as a string for the convar
-					xgui_temp:SetText( GetConVar( t.repconvar ):GetString() )
-					function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-						if cl_cvar == t.repconvar then
-							xgui_temp:SetText( new_val )
-						end
-					end
-					hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-					function xgui_temp:OnSelect( index, value )
-						RunConsoleCommand( t.repconvar, value )
-					end
+				end
+				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+				function xgui_temp:OnSelect( index, value )
+					RunConsoleCommand( t.repconvar, value )
 				end
 			end
 		end
@@ -586,23 +583,22 @@ local function xgui_helpers()
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
-				Msg( "XGUI: Could not get replicated convar for " .. t.repconvar .. ". Please rejoin the server to fix.\n" )
-			else
-				xgui_temp:SetValue( GetConVar( t.repconvar ):GetFloat() )
-				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
-						xgui_temp:SetValue( new_val )
-					end
-				end
-				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
-				function xgui_temp:OnValueChanged( val )
-					RunConsoleCommand( t.repconvar, tostring( val ) )
-				end
-				xgui_temp.Wang.TextEntry.ConVarStringThink = function() end --Override think functions to remove Garry's convar check to (hopefully) speed things up
-				xgui_temp.ConVarNumberThink = nil
-				xgui_temp.ConVarStringThink = nil
-				xgui_temp.ConVarChanged = nil
+				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 			end
+			xgui_temp:SetValue( GetConVar( t.repconvar ):GetFloat() )
+			function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+				if cl_cvar == t.repconvar then
+					xgui_temp:SetValue( new_val )
+				end
+			end
+			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:OnValueChanged( val )
+				RunConsoleCommand( t.repconvar, tostring( val ) )
+			end
+			xgui_temp.Wang.TextEntry.ConVarStringThink = function() end --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = nil
+			xgui_temp.ConVarStringThink = nil
+			xgui_temp.ConVarChanged = nil
 		end
 		return xgui_temp
 	end

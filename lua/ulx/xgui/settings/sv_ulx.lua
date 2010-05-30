@@ -15,10 +15,7 @@ adverts.Paint = function( self )
 end
 adverts.tree = x_maketree{ x=5, y=5, w=120, h=296, parent=adverts }
 adverts.tree.DoClick = function( self, node )
-	print( "----------------" )
-	print( node.group, node.number )
 	if node.data then
-		PrintTable( node.data )
 		adverts.message:SetText( node.data.message )
 		adverts.time:SetValue( node.data.rpt )
 		if node:GetParentNode() == adverts.tree then
@@ -62,18 +59,22 @@ panel:AddItem( adverts.display )
 panel:AddItem( x_makecolorpicker{ removealpha=true } )
 adverts.csay = x_makecat{ x=130, y=95, w=150, label="CSay Advert Options", contents=panel, parent=adverts, expanded=false }
 x_makebutton{ x=156, y=304, w=100, label="Create", parent=adverts }.DoClick = function()
-	local xgui_temp = nil
+	local group = nil
+	local new = false
 	if adverts.group:GetValue() ~= "<No Group>" then 
 		for k, v in pairs( adverts.tree.Items ) do
 			if v.Label:GetValue() == adverts.group:GetValue() then
-				xgui_temp = v.group
+				group = v.group
+				if v.data then --Making a new group with an existing advert
+					new = true
+				end
 			end
 		end
 	end
 	if adverts.csay:GetExpanded() == true then
-		RunConsoleCommand( "xgui", "addAdvert", type( xgui_temp ), adverts.message:GetValue(), adverts.time:GetValue(), xgui_temp or "", GetConVarNumber( "colour_r" ), GetConVarNumber( "colour_g" ), GetConVarNumber( "colour_b" ), 255, adverts.display:GetValue() )
+		RunConsoleCommand( "xgui", "addAdvert", tostring( new ), type( group ), adverts.message:GetValue(), ( adverts.time:GetValue() < 0.1 ) and 0.1 or adverts.time:GetValue(), group or "", GetConVarNumber( "colour_r" ), GetConVarNumber( "colour_g" ), GetConVarNumber( "colour_b" ), 255, adverts.display:GetValue() )
 	else
-		RunConsoleCommand( "xgui", "addAdvert", type( xgui_temp ), adverts.message:GetValue(), adverts.time:GetValue(), xgui_temp or "" )
+		RunConsoleCommand( "xgui", "addAdvert", tostring( new ), type( group ), adverts.message:GetValue(), ( adverts.time:GetValue() < 0.1 ) and 0.1 or adverts.time:GetValue(), group or "" )
 	end
 end
 x_makebutton{ x=15, y=304, w=100, label="Remove", parent=adverts }.DoClick = function( node )
@@ -86,11 +87,7 @@ function adverts.removeAdvert( node )
 			if node.data then --Remove a single advert
 				RunConsoleCommand( "xgui", "removeAdvert", node.group, node.number, type( node.group ) )
 			else --Remove an advert group
-				RunConsoleCommand( "_xgui", "restrictData", "true" ) --Prevents overload on data sending
-				for _, v in ipairs( node.ChildNodes.Items ) do
-					RunConsoleCommand( "xgui", "removeAdvert", node.Label:GetValue(), v.number ) 
-				end
-				RunConsoleCommand( "xgui", "restrictData", "false" )
+				RunConsoleCommand( "xgui", "removeAdvertGroup", node.group, type( node.group ) )
 			end
 		end, "Cancel", function() end )
 	end
@@ -215,7 +212,7 @@ plist:AddItem( x_makecheckbox{ label="Log Player Events (Connects, Deaths, etc.)
 plist:AddItem( x_makecheckbox{ label="Log Spawns (Props, Effects, Ragdolls, etc.)", repconvar="ulx_cl_logSpawns" } )
 plist:AddItem( x_makelabel{ label="Save log files to this directory:" } )
 if GetConVar( "ulx_cl_logDir" ) == nil then
-	Msg( "XGUI: Could not get replicated convar for ulx_cl_logDir. Please rejoin the server to fix.\n" )
+	CreateConVar( "ulx_cl_logDir", 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 else
 	local logdirbutton = x_makebutton{}
 	logdirbutton:SetText( GetConVar( "ulx_cl_logDir" ):GetString() )

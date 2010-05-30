@@ -119,6 +119,7 @@ function xgui.cmd( ply, func, args )
 	elseif branch == "removeGimp" then xgui.removeGimp( ply, args )
 	elseif branch == "addAdvert" then xgui.addAdvert( ply, args )
 	elseif branch == "removeAdvert" then xgui.removeAdvert( ply, args )
+	elseif branch == "removeAdvertGroup" then xgui.removeAdvertGroup( ply, args )
 	elseif branch == "renameAdvertGroup" then xgui.renameAdvertGroup( ply, args )
 	elseif branch == "removeUserID" then xgui.removeUserID( ply, args )
 	elseif branch == "updateBanName" then xgui.UpdateBanName( ply, args )
@@ -291,7 +292,6 @@ end
 
 function xgui.renameAdvertGroup( ply, args ) --TODO: Renaming groups may screw up timers?
 	if ply:query( "xgui_svsettings" ) then
-		local sentdata = false
 		local old = args[1]
 		local isNewGroup = tobool( args[2] )
 		table.remove( args, 1 )
@@ -302,16 +302,7 @@ function xgui.renameAdvertGroup( ply, args ) --TODO: Renaming groups may screw u
 				for k, v in pairs( ulx.adverts[old] ) do
 					ulx.addAdvert( v.message, v.rpt, new, v.color, v.len )
 				end
-				ulx.adverts[old] = nil
-				for _, v in pairs( player.GetAll() ) do
-					xgui.sendData( v, {[1]="adverts"} )
-				end
-				sentdata = true
-			end
-		end
-		if isNewGroup and sentdata == false then --Send data if the client creates a new group, but doesn't change it from it's default name
-			for _, v in pairs( player.GetAll() ) do
-				xgui.sendData( v, {[1]="adverts"} )
+				xgui.removeAdvertGroup( ply, { old, type( k ) } )
 			end
 		end
 	end
@@ -319,53 +310,63 @@ end
 
 function xgui.addAdvert( ply, args )
 	if ply:query( "xgui_svsettings" ) then
-		local holddata = false
-		if args[4] == "" then args[4] = nil end
-		if args[1] == "number" then -- Ungrouped advert, Make a new group and move the ungrouped advert into it
+		local group = nil
+		if tobool( args[1] ) then --If a new group is being created, then run special code, otherwise just add the new advert
 			local i = 1
-			while ulx.adverts["Group " .. i] ~= nil do
-				i=i+1
+			while ulx.adverts["Group " .. i] ~= nil do i=i+1 end
+			group = "Group " .. i
+			local old = ( args[2] == "number" ) and tonumber( args[5] ) or args[5]
+			for k, v in pairs( ulx.adverts[old] ) do
+				ulx.addAdvert( v.message, v.rpt, group, v.color, v.len )
 			end
-			ulx.adverts["Group " .. i] = { {} }
-			for k, v in pairs( ulx.adverts[tonumber( args[4] )][1] ) do
-				ulx.adverts["Group " .. i][1][k] = v
+			xgui.removeAdvertGroup( ply, { old, args[2] }, true )
+			local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
+			--Open the clientside messagebox to rename the new group
+			if args[2] == "number" then  --Sometimes single adverts have a groupname applied to them from an old group. If one exists, display that for the suggested name.
+				ply:SendLua( "xgui.base.RenameAdvert( \"" .. group .. "\", true )" )
+			else
+				ply:SendLua( "xgui.base.RenameAdvert( \"" .. old .. "\", true )" )
 			end
-			table.remove( ulx.adverts, tonumber( args[4] ) )
-			timer.Remove( "ULXAdvert" .. "number" .. tonumber( args[4] ) )
-			args[4] = "Group " .. i
-			ply:SendLua( "xgui.base.RenameAdvert( \"" .. args[4] .. "\", true )" ) --Open a window on the client to name the group
-			holddata = true  --Wait for the user to name the group before telling the players to reget the advert data
-		elseif args[4] then
-			if #ulx.adverts[args[4]] == 1 then --According to the client, we're creating a new group with an advert that was in an old group. Send the name of the old group and ask if they want to change it.
-				ply:SendLua( "xgui.base.RenameAdvert( \"" .. args[4] .. "\", true )" )
-				holddata = true
-			end
-		end
-		if args[5] == nil then
-			ulx.addAdvert( args[2], tonumber( args[3] ), args[4] )
 		else
-			ulx.addAdvert( args[2], tonumber( args[3] ), args[4], { r = tonumber( args[5] ), g = tonumber( args[6] ), b = tonumber( args[7] ), a = tonumber( args[8] ) }, tonumber( args[9] ) )
+			if args[5] ~= "" then
+				group = ( args[2] == "number" ) and tonumber( args[5] ) or args[5]
+			end
+			local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
 		end
-		if holddata ~= true then
+		ulx.addAdvert( args[3], tonumber( args[4] ), group, color, tonumber( args[10] ) )
+		for _, v in pairs( player.GetAll() ) do
+			xgui.sendData( v, {[1]="adverts"} )
+		end
+	end
+end
+
+function xgui.removeAdvertGroup( ply, args, hold )
+	if ply:query( "xgui_svsettings" ) then
+		local group = ( args[2] == "number" ) and tonumber( args[1] ) or args[1]
+		for i=#ulx.adverts[group],1,-1 do
+			xgui.removeAdvert( ply, { group, i, args[2] }, true )
+		end
+		if not hold then
 			for _, v in pairs( player.GetAll() ) do
 				xgui.sendData( v, {[1]="adverts"} )
 			end
 		end
-		return nil
 	end
 end
 
-function xgui.removeAdvert( ply, args )
+function xgui.removeAdvert( ply, args, hold )
 	if ply:query( "xgui_svsettings" ) then
-		local group = (args[3] == "number") and tonumber( args[1] ) or args[1]
+		local group = ( args[3] == "number" ) and tonumber( args[1] ) or args[1]
 		local number = tonumber( args[2] )
 		table.remove( ulx.adverts[group], number )
 		if #ulx.adverts[group] == 0 then --Remove the existing group if no other adverts exist
 			ulx.adverts[group] = nil
-			timer.Remove( "ULXAdvert" .. type( args[1] ) .. args[1] )
+			timer.Remove( "ULXAdvert" .. type( group ) .. group )
 		end
-		for _, v in pairs( player.GetAll() ) do
-			xgui.sendData( v, {[1]="adverts"} )
+		if not hold then
+			for _, v in pairs( player.GetAll() ) do
+				xgui.sendData( v, {[1]="adverts"} )
+			end
 		end
 	end
 end
