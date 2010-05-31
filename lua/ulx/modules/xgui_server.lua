@@ -358,6 +358,9 @@ function xgui.removeAdvert( ply, args, hold )
 	if ply:query( "xgui_svsettings" ) then
 		local group = ( args[3] == "number" ) and tonumber( args[1] ) or args[1]
 		local number = tonumber( args[2] )
+		if number == #ulx.adverts[group]
+			ulx.adverts[group].removed_last = true
+		end
 		table.remove( ulx.adverts[group], number )
 		if #ulx.adverts[group] == 0 then --Remove the existing group if no other adverts exist
 			ulx.adverts[group] = nil
