@@ -13,7 +13,7 @@ if SinglePlayer() then
 	offset = 20
 	x_makecheckbox{ x=10, y=90, label="Keep AI Ragdolls", repconvar="rep_ai_keepragdolls", parent=server_settings, textcolor=color_black }
 end
-x_makeslider{ x=10, y=90+offset, w=125, label="sv_gravity", min=-1000, max=1000, repconvar="rep_sv_gravity", parent=server_settings, textcolor=color_black }
+bob = x_makeslider{ x=10, y=90+offset, w=125, label="sv_gravity", min=-1000, max=1000, repconvar="rep_sv_gravity", parent=server_settings, textcolor=color_black }
 x_makeslider{ x=10, y=130+offset, w=125, label="phys_timescale", min=0, max=4, decimal=2, repconvar="rep_phys_timescale", parent=server_settings, textcolor=color_black }
 
 ------------------------ULX Category Menu------------------------
@@ -76,5 +76,3 @@ server_settings.processModules()
 
 table.insert( xgui.modules.setting, { name="Server", panel=server_settings, icon="gui/silkicons/application", tooltip=nil, access="xgui_svsettings" } )
 table.insert( xgui.hook["onProcessModules"], server_settings.processModules )
-
---table.insert( xgui.hook["adverts"], server_settings.updateAdverts )

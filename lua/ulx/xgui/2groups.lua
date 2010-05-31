@@ -175,7 +175,7 @@ xgui_adduserbtn.DoClick = function()
 	end
 	xgui_list_players:AddSpacer()
 	xgui_list_players:AddOption( "Add by SteamID...", function()
-				local xgui_adduid = x_makeframepopup{ label="Add ID to group " .. xgui_group_list:GetSelected()[1]:GetColumnText(1), w=150, h=80 }
+				local xgui_adduid = x_makeframepopup{ label="Add ID to group " .. xgui_group_list:GetSelected()[1]:GetColumnText(1), w=150, h=80, alwaysontop=true }
 				local xgui_theid = x_maketextbox{ x=5, y=30, w=140, parent=xgui_adduid, text="Enter STEAMID..." }
 				x_makebutton{ x=55, y=55, w=40, label="Add", parent=xgui_adduid }.DoClick = function()
 					RunConsoleCommand( "ulx", "adduserid", "\"" .. xgui_theid:GetValue() .. "\"", xgui_group_list:GetSelected()[1]:GetColumnText(1) )

@@ -95,9 +95,9 @@ end
 function xgui.base.RenameAdvert( old, isNew )
 	local advertRename
 	if isNew then
-		advertRename = x_makeframepopup{ label="Set Name of New Advert Group", w=400, h=80, showclose=false }
+		advertRename = x_makeframepopup{ label="Set Name of New Advert Group", w=400, h=80, showclose=false, alwaysontop=true }
 	else
-		advertRename = x_makeframepopup{ label="Set Name of Advert Group - " .. old, w=400, h=80, showclose=true }
+		advertRename = x_makeframepopup{ label="Set Name of Advert Group - " .. old, w=400, h=80, showclose=true, alwaysontop=true }
 	end
 	advertRename.text = x_maketextbox{ x=10, y=30, w=380, h=20, text=old, parent=advertRename }
 	advertRename.text.OnEnter = function()
@@ -119,7 +119,7 @@ function adverts.updateAdverts()
 			adverts.group:AddChoice( group )
 			xgui_temp.Icon:SetImage( "gui/silkicons/folder_go" )
 			xgui_temp.group = group
-			for advert, data in pairs( advertgroup ) do
+			for advert, data in ipairs( advertgroup ) do
 				local node = xgui_temp:AddNode( data.message )
 				node.data = data
 				node.group = group

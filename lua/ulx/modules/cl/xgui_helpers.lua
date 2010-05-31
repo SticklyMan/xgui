@@ -120,6 +120,7 @@ local function xgui_helpers()
 		if t.draggable ~= nil then xgui_temp:SetDraggable( t.draggable ) end
 		if t.nopopup ~= true then xgui_temp:MakePopup() end
 		if t.showclose ~= nil then xgui_temp:ShowCloseButton( t.showclose ) end
+		if t.alwaysontop ~= nil then xgui_temp:SetDrawOnTop( t.alwaysontop ) end
 		return xgui_temp
 	end
 
@@ -496,6 +497,11 @@ local function xgui_helpers()
 	--------------------------------------------------
 	function x_makeslider( t )
 		local xgui_temp = vgui.Create( "DNumSlider", t.parent )
+		if t.fixclip == nil or t.fixclip == true then --Fixes clipping errors on the Knob by default, but disables it if specified.
+			xgui_temp.Slider.Knob:SetSize( 13, 13 )
+			xgui_temp.Slider.Knob:SetPos( 0, 0 )
+			xgui_temp.Slider.Knob:NoClipping( false )
+		end
 		xgui_temp:SetText( t.label or "" )
 		xgui_temp:SetMinMax( t.min or 0, t.max or 100 )
 		xgui_temp:SetDecimals( t.decimal or 0 )

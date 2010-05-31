@@ -39,7 +39,7 @@ end
 xgui_bans.sbanButton = x_makebutton{ x=455, y=345, w=130, label="View Source Bans...", parent=xgui_bans, disabled=#xgui.data.sbans > 0 and false or true }
 xgui_bans.sbanButton.DoClick = function()
 	if xgui_bans.sbanWindow and xgui_bans.sbanWindow:IsVisible() then return end
-	xgui_bans.sbanWindow = x_makeframepopup{ w=160, h=400, label="Bans in banned_users.cfg" }
+	xgui_bans.sbanWindow = x_makeframepopup{ w=160, h=400, label="Bans in banned_users.cfg", alwaysontop=true }
 	xgui_bans.sbanWindow.bans = x_makelistview{ x=5, y=50, w=150, h=323, headerheight=0, parent=xgui_bans.sbanWindow }
 	xgui_bans.sbanWindow.bans:AddColumn( "" )
 	x_makelabel{ x=5, y=32, label="100 per page", parent=xgui_bans.sbanWindow }
@@ -105,7 +105,7 @@ function xgui_bans.RemoveBan( ID, noName )
 end
 
 function xgui_bans.UpdateBannameWindow( ID )
-	local xgui_updateBanName = x_makeframepopup{ w=400, h=60, label="Update Name of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID }
+	local xgui_updateBanName = x_makeframepopup{ w=400, h=60, label="Update Name of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true }
 	local xgui_newBanName = x_maketextbox{ x=10, y=30, w=380, h=20, text=xgui.data.bans[ID].name, parent=xgui_updateBanName }
 	xgui_newBanName.OnEnter = function()
 		RunConsoleCommand( "xgui", "updateBanName", ID, ( xgui_newBanName:GetValue() ~= "" and xgui_newBanName:GetValue() or nil ) )
@@ -114,7 +114,7 @@ function xgui_bans.UpdateBannameWindow( ID )
 end
 
 function xgui_bans.UpdateBanreasonWindow( ID )
-	local xgui_updateBanReason = x_makeframepopup{ w=400, h=60, label="Update Reason of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID }
+	local xgui_updateBanReason = x_makeframepopup{ w=400, h=60, label="Update Reason of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true }
 	local xgui_newBanReason = x_maketextbox{ x=10, y=30, w=380, h=20, text=xgui.data.bans[ID].reason, parent=xgui_updateBanReason }
 	xgui_newBanReason.OnEnter = function()
 		RunConsoleCommand( "xgui", "updateBanReason", ID, ( xgui_newBanReason:GetValue() ~= "" and xgui_newBanReason:GetValue() or nil ) )
@@ -123,7 +123,7 @@ function xgui_bans.UpdateBanreasonWindow( ID )
 end
 
 function xgui_bans.ShowBanDetailsWindow( ID )
-	local xgui_detailswindow = x_makeframepopup{ label="Ban Details", w=285, h=240 }
+	local xgui_detailswindow = x_makeframepopup{ label="Ban Details", w=285, h=240, alwaysontop=true }
 	local name = x_makelabel{ x=50, y=30, label="Name:", parent=xgui_detailswindow }
 	x_makelabel{ x=36, y=50, label="SteamID:", parent=xgui_detailswindow }
 	x_makelabel{ x=33, y=70, label="Ban Date:", parent=xgui_detailswindow }
@@ -163,7 +163,7 @@ function xgui_bans.ShowBanWindow( ply, ID, isUpdate )
 	if xgui_bans.freezeban:GetChecked() == true and ply then
 		RunConsoleCommand( "ulx", "freeze", ply )
 	end
-	local xgui_banwindow = x_makeframepopup{ label="Ban Player", w=285, h=180 }
+	local xgui_banwindow = x_makeframepopup{ label="Ban Player", w=285, h=180, alwaysontop=true }
 		x_makelabel{ x=37, y=33, label="Name:", parent=xgui_banwindow }
 		x_makelabel{ x=23, y=58, label="SteamID:", parent=xgui_banwindow }
 		x_makelabel{ x=28, y=83, label="Reason:", parent=xgui_banwindow }
