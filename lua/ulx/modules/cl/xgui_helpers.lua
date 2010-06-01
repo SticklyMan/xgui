@@ -63,10 +63,10 @@ local function xgui_helpers()
 			function xgui_temp:OnChange( bVal )
 				RunConsoleCommand( t.repconvar, tostring( bVal and 1 or 0 ) )
 			end
-			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-			xgui_temp.ConVarNumberThink = nil
-			xgui_temp.ConVarStringThink = nil
-			xgui_temp.ConVarChanged = nil
+			xgui_temp.Think = function() end --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = function() end
+			xgui_temp.ConVarStringThink = function() end
+			xgui_temp.ConVarChanged = function() end
 		end
 		return xgui_temp
 	end
@@ -161,9 +161,9 @@ local function xgui_helpers()
 			function xgui_temp:OnEnter()
 				RunConsoleCommand( t.repconvar, self:GetValue() )
 			end
-			xgui_temp.Think = nil --Override think functions to remove Garry's convar check to (hopefully) speed things up
-			xgui_temp.ConVarNumberThink = nil
-			xgui_temp.ConVarStringThink = nil
+			xgui_temp.Think = function() end --Override think functions to remove Garry's convar check to (hopefully) speed things up
+			xgui_temp.ConVarNumberThink = function() end
+			xgui_temp.ConVarStringThink = function() end
 			xgui_temp.ConVarChanged = function() end
 		end
 		return xgui_temp
@@ -602,9 +602,9 @@ local function xgui_helpers()
 				RunConsoleCommand( t.repconvar, tostring( val ) )
 			end
 			xgui_temp.Wang.TextEntry.ConVarStringThink = function() end --Override think functions to remove Garry's convar check to (hopefully) speed things up
-			xgui_temp.ConVarNumberThink = nil
-			xgui_temp.ConVarStringThink = nil
-			xgui_temp.ConVarChanged = nil
+			xgui_temp.ConVarNumberThink = function() end
+			xgui_temp.ConVarStringThink = function() end
+			xgui_temp.ConVarChanged = function() end
 		end
 		return xgui_temp
 	end
