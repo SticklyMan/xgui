@@ -271,6 +271,7 @@ function xgui.addGimp( ply, args )
 				xgui.sendData( v, {[1]="gimps"} )
 			end
 		end
+		xgui.saveGimps()
 	end
 end
 
@@ -284,10 +285,49 @@ function xgui.removeGimp( ply, args )
 						xgui.sendData( v, {[1]="gimps"} )
 					end
 				end
+				xgui.saveGimps()
 				return nil
 			end
 		end
 	end
+end
+
+function xgui.saveGimps()
+	local orig_file = file.Read( "ulx/gimps.txt" )
+	local comment = xgui.getCommentHeader( orig_file )
+
+	local new_file = comment
+
+	for i, gimpSay in ipairs( ulx.gimpSays ) do
+		new_file = new_file .. gimpSay .. "\n"
+	end
+	
+	file.Write( "ulx/gimps.txt", new_file )
+end
+
+function xgui.saveAdverts()
+	local orig_file = file.Read( "ulx/adverts.txt" )
+	local comment = xgui.getCommentHeader( orig_file )
+	local new_file = comment
+	
+	for group_name, group_data in pairs( ulx.adverts ) do
+		local output = ""
+		for i, data in ipairs( group_data ) do
+			if not data.color then -- Must be a tsay advert
+				output = output .. string.format( '%q %q\n', data.message, data.rpt )
+			else -- Must be a csay advert
+				output = output .. string.format( '%q\n{\n\t"red" %q\n\t"green" %q\n\t"blue" %q\n\t"time_on_screen" %q\n\t"time" %q\n}\n',
+					data.message, data.color.r, data.color.g, data.color.b, data.len, data.rpt )
+			end
+		end
+		
+		if type( group_name ) ~= "number" then
+			output = string.format( "%q\n{\n\t%s}\n", group_name, output:gsub( "\n", "\n\t" ) )
+		end
+		new_file = new_file .. output		
+	end
+	
+	file.Write( "ulx/adverts.txt", new_file )
 end
 
 function xgui.renameAdvertGroup( ply, args ) --TODO: Renaming groups may screw up timers?
@@ -336,6 +376,7 @@ function xgui.addAdvert( ply, args )
 		for _, v in pairs( player.GetAll() ) do
 			xgui.sendData( v, {[1]="adverts"} )
 		end
+		xgui.saveAdverts()
 	end
 end
 
@@ -349,6 +390,7 @@ function xgui.removeAdvertGroup( ply, args, hold )
 			for _, v in pairs( player.GetAll() ) do
 				xgui.sendData( v, {[1]="adverts"} )
 			end
+			xgui.saveAdverts()
 		end
 	end
 end
@@ -369,6 +411,7 @@ function xgui.removeAdvert( ply, args, hold )
 			for _, v in pairs( player.GetAll() ) do
 				xgui.sendData( v, {[1]="adverts"} )
 			end
+			xgui.saveAdverts()
 		end
 	end
 end
@@ -458,3 +501,21 @@ function xgui.ULXCommandCalled( ply, cmdName, args )
 	end
 end
 hook.Add( "ULibPostTranslatedCommand", "XGUI_HookULXCommand", xgui.ULXCommandCalled )
+
+function xgui.getCommentHeader( data, comment_char )
+	comment_char = comment_char or ";"
+	local lines = ULib.explode( "\n", data )
+	local end_comment_line = 0
+	for _, line in ipairs( lines ) do
+		local trimmed = line:Trim()
+		if trimmed == "" or trimmed:sub( 1, 1 ) == comment_char then
+			end_comment_line = end_comment_line + 1
+		else
+			break
+		end
+	end
+
+	local comment = table.concat( lines, "\n", 1, end_comment_line )
+	if comment ~= "" then comment = comment .. "\n" end
+	return comment
+end
