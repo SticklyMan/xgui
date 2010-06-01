@@ -185,3 +185,4 @@ end
 
 table.insert( xgui.modules.tab, { name="Players", panel=xgui_player, icon="gui/silkicons/user", tooltip=nil, access=nil } )
 table.insert( xgui.hook["onOpen"], xgui_player.plist_refresh )
+hook.Add( "UCLChanged", "xgui_RefreshPlayerList", xgui_player.plist_refresh )
