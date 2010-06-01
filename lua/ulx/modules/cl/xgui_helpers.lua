@@ -132,7 +132,7 @@ local function xgui_helpers()
 		xgui_temp:SetEnterAllowed( true )
 		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		if t.text then xgui_temp:SetText( t.text ) end
-		if t.enableinput ~= nil then xgui_temp:SetEnabled( t.enableinput ) end
+		if t.enableinput then xgui_temp:SetEnabled( t.enableinput ) end
 		xgui_temp:SetToolTip( t.tooltip )
 		
 		--For XGUI keyboard focus handling

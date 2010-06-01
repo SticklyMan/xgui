@@ -320,7 +320,6 @@ function xgui.addAdvert( ply, args )
 				ulx.addAdvert( v.message, v.rpt, group, v.color, v.len )
 			end
 			xgui.removeAdvertGroup( ply, { old, args[2] }, true )
-			local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
 			--Open the clientside messagebox to rename the new group
 			if args[2] == "number" then  --Sometimes single adverts have a groupname applied to them from an old group. If one exists, display that for the suggested name.
 				ply:SendLua( "xgui.base.RenameAdvert( \"" .. group .. "\", true )" )
@@ -331,8 +330,8 @@ function xgui.addAdvert( ply, args )
 			if args[5] ~= "" then
 				group = ( args[2] == "number" ) and tonumber( args[5] ) or args[5]
 			end
-			local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
 		end
+		local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
 		ulx.addAdvert( args[3], tonumber( args[4] ), group, color, tonumber( args[10] ) )
 		for _, v in pairs( player.GetAll() ) do
 			xgui.sendData( v, {[1]="adverts"} )

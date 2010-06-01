@@ -100,12 +100,12 @@ function xgui.base.RenameAdvert( old, isNew )
 		advertRename = x_makeframepopup{ label="Set Name of Advert Group - " .. old, w=400, h=80, showclose=true, alwaysontop=true }
 	end
 	advertRename.text = x_maketextbox{ x=10, y=30, w=380, h=20, text=old, parent=advertRename }
-	advertRename.text.OnEnter = function()
-		RunConsoleCommand( "xgui", "renameAdvertGroup", old, isNew and "true" or "false", unpack( string.Explode( " ", advertRename.text:GetValue() ) ) )
+	advertRename.text.OnEnter = function( self )
+		RunConsoleCommand( "xgui", "renameAdvertGroup", old, isNew and "true" or "false", unpack( string.Explode( " ", self:GetValue() ) ) )
 		advertRename:Remove()
 	end
 	x_makebutton{ x=175, y=55, w=50, label="OK", parent=advertRename }.DoClick = function()
-		advertRename.text.OnEnter()
+		advertRename.text:OnEnter()
 	end
 end
 function adverts.updateAdverts()
@@ -170,10 +170,10 @@ table.insert( xgui.modules.svsetting, { name="ULX General Settings", panel=plist
 ------------------------------Gimps------------------------------
 local gimps = x_makepanel{ w=285, h=327, parent=xgui.null }
 gimps.textbox = x_maketextbox{ w=235, h=20, parent=gimps, focuscontrol=true }
-gimps.textbox.OnEnter = function()
-	if gimps.textbox:GetValue() then
-		RunConsoleCommand( "xgui", "addGimp", gimps.textbox:GetValue() )
-		gimps.textbox:SetText( "" )
+gimps.textbox.OnEnter = function( self )
+	if self:GetValue() then
+		RunConsoleCommand( "xgui", "addGimp", self:GetValue() )
+		self:SetText( "" )
 	end
 end
 gimps.textbox.OnGetFocus = function( self )
@@ -184,7 +184,7 @@ end
 gimps.button = x_makebutton{ x=235, w=50, label="Add", parent=gimps }
 gimps.button.DoClick = function( self )
 	if self:GetValue() == "Add" then
-		gimps.textbox.OnEnter()
+		gimps.textbox:OnEnter()
 	elseif gimps.list:GetSelectedLine() then
 		RunConsoleCommand( "xgui", "removeGimp", gimps.list:GetSelected()[1]:GetColumnText(1) )
 	end
