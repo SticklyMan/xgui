@@ -351,7 +351,10 @@ local function xgui_helpers()
 		xgui_temp:SetMin( t.min or 0 )
 		xgui_temp:SetMax( t.max or 100 )
 		xgui_temp:SetValue( t.value or 0 )
-		if t.percent then xgui_temp:LabelAsPecentage() end -- Uh oh, Garry misspelled percentage, watch for this if it gets fixed!
+		if t.percent then
+			xgui_temp.m_bLabelAsPercentage = true 
+			xgui_temp:UpdateText()
+		end
 		return xgui_temp
 	end
 	
