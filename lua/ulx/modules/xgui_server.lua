@@ -68,7 +68,7 @@ http.Get( "http://ulyssesmod.net/xgui/sbox_cvars.txt", "", xgui.cvarcallback )
 --Process the list of known Sandbox Cvar Limits and check if they exist
 function xgui.processCvars()
 	xgui.sboxLimits = {}
-	if gmod.GetGamemode().Name == "Sandbox" then
+	if ULib.isSandbox() then
 		local curgroup
 		local f = file.Read( "ulx/sbox_limits.txt" )
 		local lines = string.Explode( "\n", f )
