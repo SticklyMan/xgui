@@ -20,8 +20,6 @@ players.plist.OnRowSelected = function( self, LineID, Line ) --TODO: Double-clic
 	local x,y = players.plist:GetPos()
 	if x >= 0 then -- A strange check, but it prevents animation glitches
 		if players.argslist:IsVisible() == false then
-			--players.doAnim:Start( xgui.base:GetFadeTime(), { panel=players.argslist, startpos=255, distance=-175, endfunc=function()
-				--players.argslist:animate( ULib.cmds.translatedCmds[players.selcmd], false )  end } )
 			players.argslist:animate( ULib.cmds.translatedCmds[players.selcmd], false )
 		end
 	end
