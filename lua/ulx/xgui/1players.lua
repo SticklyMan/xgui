@@ -120,6 +120,7 @@ function players.refreshPlist( arg, argnum )
 	for _, ply in ipairs( targets ) do
 		players.plist:AddLine( ply:Nick(), ply:GetUserGroup() )
 	end
+	players.plist:SetMultiSelect( arg.type == ULib.cmds.PlayersArg )
 end
 
 function players.refreshArgslist( cmd )
@@ -188,7 +189,6 @@ function players.buildcmd( cmd )
 		table.insert( cmd, tostring( players.argslist.Items[i]:GetValue() ) )
 		table.insert( cmd, "\"" )
 	end
-	print( table.concat( cmd ) )
 	LocalPlayer():ConCommand( table.concat( cmd ) )
 end
 
