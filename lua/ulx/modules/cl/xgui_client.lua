@@ -64,7 +64,7 @@ function xgui.processModules( wasvisible, activetab )
 				xgui.hide()
 			end
 		end
-		if v.access ~= nil then
+		if v.access then
 			if LocalPlayer():query( v.access ) then
 				xgui.base:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
 				xgui.modules.tab[k].tabpanel = xgui.base.Items[#xgui.base.Items].Tab
@@ -84,7 +84,7 @@ function xgui.processModules( wasvisible, activetab )
 	settings:Clear() --Clear out settings tabs for reprocessing
 	--Start by adding the gamemode module, if it exists
 	for k, v in pairs( xgui.modules.gamemode ) do
-		if v.access ~= nil then
+		if v.access then
 			if LocalPlayer():query( v.access ) then
 				settings:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
 				xgui.modules.setting[k].tabpanel = settings.Items[#settings.Items].Tab
@@ -100,7 +100,7 @@ function xgui.processModules( wasvisible, activetab )
 	
 	--Now add the rest of the settings modules
 	for k, v in pairs( xgui.modules.setting ) do
-		if v.access ~= nil then
+		if v.access then
 			if LocalPlayer():query( v.access ) then
 				settings:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
 				xgui.modules.setting[k].tabpanel = settings.Items[#settings.Items].Tab
@@ -217,6 +217,7 @@ function xgui.show( tabname )
 	RestoreCursorPosition()
 	xgui.base:SetVisible( true )
 	if xgui.receivingdata then xgui.chunkbox:SetVisible( true ) end
+	
 	xgui.base.animFadeIn:Start( xgui.base:GetFadeTime(), xgui.base )
 end
 

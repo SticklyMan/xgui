@@ -29,7 +29,7 @@ x_makelabel{ x=200, y=10, label="Right-click on a ban for more options", parent=
 xgui_bans.freezeban = x_makecheckbox{ x=140, y=348, label="Use Freezeban", tooltip="Freezes a player you have selected for banning while editing ban information (length, reason)", value=1, parent=xgui_bans, textcolor=color_black}
 x_makebutton{ x=5, y=345, w=130, label="Add Ban...", parent=xgui_bans }.DoClick = function()
 	local menu = DermaMenu()
-	for k, v in pairs( player.GetAll() ) do	
+	for k, v in ipairs( player.GetAll() ) do	
 		menu:AddOption( v:Nick(), function() xgui_bans.ShowBanWindow( v:Nick(), v:SteamID() ) end )
 	end
 	menu:AddSpacer()
@@ -62,12 +62,12 @@ xgui_bans.sbanButton.DoClick = function()
 		xgui_bans.sbanWindow.gotoPage( tonumber( self:GetValue() ) )
 	end
 	x_makebutton{ x=5, y=373, w=75, label="Delete", parent=xgui_bans.sbanWindow }.DoClick = function()
-		if xgui_bans.sbanWindow.bans:GetSelectedLine() ~= nil then
+		if xgui_bans.sbanWindow.bans:GetSelectedLine() then
 			xgui_bans.RemoveBan( xgui_bans.sbanWindow.bans:GetSelected()[1]:GetColumnText(1), true )
 		end
 	end
 	x_makebutton{ x=80, y=373, w=75, label="Add Details...", parent=xgui_bans.sbanWindow }.DoClick = function()
-		if xgui_bans.sbanWindow.bans:GetSelectedLine() ~= nil then
+		if xgui_bans.sbanWindow.bans:GetSelectedLine() then
 			xgui_bans.ShowBanWindow( nil, xgui_bans.sbanWindow.bans:GetSelected()[1]:GetColumnText(1), true )
 		end
 	end
@@ -189,7 +189,7 @@ function xgui_bans.ShowBanWindow( ply, ID, isUpdate )
 			elseif interval:GetValue() == "Days" then calctime = calctime*1440
 			elseif interval:GetValue() == "Years" then calctime = calctime*525600 end
 			--If the player is online, ban them by their name so it saves the players name...
-			for k, v in pairs( player.GetAll() ) do
+			for k, v in ipairs( player.GetAll() ) do
 				if v:SteamID() == steamID:GetValue() or v:Nick() == name:GetValue() then
 					RunConsoleCommand( "ulx", "ban", v:Nick(), calctime, reason:GetValue() )
 					RunConsoleCommand( "_xgui", "restrictData", "false" )
@@ -198,7 +198,7 @@ function xgui_bans.ShowBanWindow( ply, ID, isUpdate )
 				end
 			end
 			--...Otherwise ban by their ID (if valid), then call a function to set the banID name if specified.
-			if string.match( steamID:GetValue(), "STEAM_%w:%w:%w*" ) ~= nil then
+			if string.match( steamID:GetValue(), "STEAM_%w:%w:%w*" ) then
 				RunConsoleCommand( "ulx", "banid", steamID:GetValue(), calctime, reason:GetValue() )
 				RunConsoleCommand( "xgui", "updateBanName", steamID:GetValue(), ( name:GetValue() ~= "" and name:GetValue() or nil ) )
 				RunConsoleCommand( "_xgui", "restrictData", "false" )
@@ -257,7 +257,7 @@ function xgui_bans.populate( bantable )
 	for steamID, baninfo in pairs( bantable ) do
 		if not ( xgui_bans.showperma:GetChecked() == false and tonumber( baninfo.unban ) == 0 ) then
 			if tonumber( baninfo.unban ) ~= 0 and baninfo.unban - os.time() <= 0 then RunConsoleCommand( "xgui", "refreshBans" ) end
-			local xgui_tempadmin = ( baninfo.admin ~= nil ) and string.gsub( baninfo.admin, "%(STEAM_%w:%w:%w*%)", "" ) or ""
+			local xgui_tempadmin = ( baninfo.admin ) and string.gsub( baninfo.admin, "%(STEAM_%w:%w:%w*%)", "" ) or ""
 			xgui_bans.banlist:AddLine( baninfo.name or steamID, xgui_tempadmin, (( tonumber( baninfo.unban ) ~= 0 ) and os.date( "%c", baninfo.unban )) or "Never", baninfo.reason, steamID, tonumber( baninfo.unban ) )
 		end
 	end

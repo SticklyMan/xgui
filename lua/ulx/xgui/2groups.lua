@@ -44,7 +44,7 @@ xgui_group_list.OnRowSelected = function()
 	
 	xgui_adduserbtn:SetDisabled( group == "user" )
 	xgui_groupremove:SetDisabled( group == "user" )
-	if ULib.ucl.groups[group].inherit_from ~= nil then
+	if ULib.ucl.groups[group].inherit_from then
 		xgui_group_inherit:SetText( ULib.ucl.groups[group].inherit_from )
 	else
 		xgui_group_inherit:SetText( "user" )
@@ -149,7 +149,7 @@ end
 xgui_adduserbtn = x_makebutton{ x=5, y=345, w=65, label="Add..", parent=xgui_group }
 xgui_adduserbtn.DoClick = function()
 	xgui_list_players = DermaMenu()
-	for k, v in pairs( player.GetAll() ) do	
+	for k, v in ipairs( player.GetAll() ) do	
 		if v:GetUserGroup() ~= xgui_group_list:GetSelected()[1]:GetColumnText(1) then
 			xgui_list_players:AddOption( v:Nick() .. " - " .. v:GetUserGroup(), function()
 							RunConsoleCommand( "ulx", "adduser", v:Nick(), xgui_group_list:GetSelected()[1]:GetColumnText(1) )
@@ -261,7 +261,7 @@ function xgui_getGroupsUsers()
 			end
 		end
 	else
-		for k, v in pairs( player.GetAll() ) do
+		for k, v in ipairs( player.GetAll() ) do
 			if v:GetUserGroup() == "user" then
 				xgui_group_users:AddLine( v:Nick() ).Paint = function( self )
 					local Col = nil
@@ -295,7 +295,7 @@ function xgui_getGroupAccess( objname )
 			xgui_access_list:AddLine( name, "R", access )
 		end
 		--Loop through the inherited groups
-		while ( ULib.ucl.groups[objname].inherit_from ~= nil ) do
+		while ( ULib.ucl.groups[objname].inherit_from ) do
 			objname = ULib.ucl.groups[objname].inherit_from
 			for name, access in pairs( ULib.ucl.groups[objname].allow ) do
 				if type(name) == "number" then  --Determine if this command does not have restrictions
@@ -333,7 +333,7 @@ function xgui_getUserAccess( objname )
 			xgui_access_list:AddLine( name, "R", access )
 		end
 	end
-	while ( ULib.ucl.groups[group].inherit_from ~= nil ) do
+	while ( ULib.ucl.groups[group].inherit_from ) do
 		for name, access in pairs( ULib.ucl.groups[group].allow ) do
 			if type(name) == "number" then  --Determine if this command does not have restrictions
 				if ULib.cmds.translatedCmds[access] then --Check if its a command or other access string
@@ -370,13 +370,13 @@ end
 
 function IsOnline( ID, checkName )
 	if not checkName then
-		for _, v in pairs( player.GetAll() ) do
+		for _, v in ipairs( player.GetAll() ) do
 			if xgui.data.users[ID].name == v:Nick() then
 				return true
 			end
 		end
 	else
-		for _, v in pairs( player.GetAll() ) do
+		for _, v in ipairs( player.GetAll() ) do
 			if ID == v:Nick() then
 				return true
 			end

@@ -88,7 +88,7 @@ function xgui.processCvars()
 				end
 			end
 		end
-		for _, v in pairs( player.GetAll() ) do
+		for _, v in ipairs( player.GetAll() ) do
 			xgui.sendData( v, {[1]="sboxlimits"} )
 		end
 	end
@@ -266,7 +266,7 @@ end
 function xgui.addGimp( ply, args )
 	if ply:query( "xgui_svsettings" ) then
 		ulx.addGimpSay( args[1] )
-		for _, v in pairs( player.GetAll() ) do
+		for _, v in ipairs( player.GetAll() ) do
 			if v:query( "xgui_svsettings" ) then
 				xgui.sendData( v, {[1]="gimps"} )
 			end
@@ -280,7 +280,7 @@ function xgui.removeGimp( ply, args )
 		for a, b in ipairs( ulx.gimpSays ) do
 			if b == args[1] then
 				table.remove( ulx.gimpSays, a )
-				for _, v in pairs( player.GetAll() ) do
+				for _, v in ipairs( player.GetAll() ) do
 					if v:query( "xgui_svsettings" ) then
 						xgui.sendData( v, {[1]="gimps"} )
 					end
@@ -330,7 +330,7 @@ function xgui.saveAdverts()
 	file.Write( "ulx/adverts.txt", new_file )
 end
 
-function xgui.renameAdvertGroup( ply, args ) --TODO: Renaming groups may screw up timers?
+function xgui.renameAdvertGroup( ply, args )
 	if ply:query( "xgui_svsettings" ) then
 		local old = args[1]
 		local isNewGroup = tobool( args[2] )
@@ -353,7 +353,7 @@ function xgui.addAdvert( ply, args )
 		local group = nil
 		if tobool( args[1] ) then --If a new group is being created, then run special code, otherwise just add the new advert
 			local i = 1
-			while ulx.adverts["Group " .. i] ~= nil do i=i+1 end
+			while ulx.adverts["Group " .. i] do i=i+1 end
 			group = "Group " .. i
 			local old = ( args[2] == "number" ) and tonumber( args[5] ) or args[5]
 			for k, v in pairs( ulx.adverts[old] ) do
@@ -373,7 +373,7 @@ function xgui.addAdvert( ply, args )
 		end
 		local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
 		ulx.addAdvert( args[3], tonumber( args[4] ), group, color, tonumber( args[10] ) )
-		for _, v in pairs( player.GetAll() ) do
+		for _, v in ipairs( player.GetAll() ) do
 			xgui.sendData( v, {[1]="adverts"} )
 		end
 		xgui.saveAdverts()
@@ -387,7 +387,7 @@ function xgui.removeAdvertGroup( ply, args, hold )
 			xgui.removeAdvert( ply, { group, i, args[2] }, true )
 		end
 		if not hold then
-			for _, v in pairs( player.GetAll() ) do
+			for _, v in ipairs( player.GetAll() ) do
 				xgui.sendData( v, {[1]="adverts"} )
 			end
 			xgui.saveAdverts()
@@ -408,7 +408,7 @@ function xgui.removeAdvert( ply, args, hold )
 			timer.Remove( "ULXAdvert" .. type( group ) .. group )
 		end
 		if not hold then
-			for _, v in pairs( player.GetAll() ) do
+			for _, v in ipairs( player.GetAll() ) do
 				xgui.sendData( v, {[1]="adverts"} )
 			end
 			xgui.saveAdverts()
@@ -463,7 +463,7 @@ end
 function xgui.dataRestrict( args )
 	if args[1] == "true" then
 		xgui.restrictdata = true
-		for _, ply in pairs( player.GetAll() ) do --Give each player an empty queue to hold info that needs to be updated when restrict is turned off
+		for _, ply in ipairs( player.GetAll() ) do --Give each player an empty queue to hold info that needs to be updated when restrict is turned off
 			if xgui.activeUsers[ply] == nil then
 				xgui.activeUsers[ply] = {}
 			end
@@ -471,7 +471,7 @@ function xgui.dataRestrict( args )
 	elseif args[1] == "false" then
 		xgui.restrictdata = nil
 		--Run through each player and see if they have data in their queue that needs to be sent
-		for _, ply in pairs( player.GetAll() ) do
+		for _, ply in ipairs( player.GetAll() ) do
 			if xgui.activeUsers[ply] then
 				ULib.clientRPC( ply, "xgui.forceDataCheck" )
 			end
@@ -482,7 +482,7 @@ end
 --Ex. When someone uses ulx ban, call the clients to refresh the appropriate data
 function xgui.ULXCommandCalled( ply, cmdName, args )
 	if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then xgui.splitbans() end -- Recheck the bans if a ban was added/removed
-	for _, v in pairs( player.GetAll() ) do
+	for _, v in ipairs( player.GetAll() ) do
 		if cmdName == "ulx ban" or cmdName == "ulx banid" then
 			xgui.sendData( v, {[1]="bans"} )
 			xgui.unbanTimer()
