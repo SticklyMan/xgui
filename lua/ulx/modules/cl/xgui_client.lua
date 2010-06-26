@@ -10,7 +10,7 @@ local function xgui_init()
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
 	--Data storing relevant information retrieved from server.
-	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, votemaps = {}, gamemodes = {}, sboxlimits = {} }
+	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, gamemodes = {}, sboxlimits = {} }
 
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
@@ -155,7 +155,6 @@ function xgui.isNotInstalled( tabname )
 		if xgui.isInstalled == nil then
 			xgui.wait:Remove()
 			xgui.wait = nil
-			xgui.data.votemaps = ulx.maps
 			gui.EnableScreenClicker( true )
 			RestoreCursorPosition( )
 			xgui.notinstalled = x_makeframepopup{ label="Warning!", w=350, h=90, nopopup=true, showclose=false }
@@ -284,6 +283,8 @@ function xgui.getChunk( data, curtable )
 		for k, v in ipairs( data ) do
 			table.insert( xgui.data[curtable], v )
 		end
+	elseif curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update it's table of votemaps
+		ulx.populateClVotemaps( data )
 	else
 		xgui.data[curtable] = data
 	end

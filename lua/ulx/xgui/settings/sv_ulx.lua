@@ -16,6 +16,7 @@ end
 adverts.tree = x_maketree{ x=5, y=5, w=120, h=296, parent=adverts }
 adverts.tree.DoClick = function( self, node )
 	if node.data then
+		adverts.updatebutton:SetDisabled( false )
 		adverts.message:SetText( node.data.message )
 		adverts.time:SetValue( node.data.rpt )
 		if node:GetParentNode() == adverts.tree then
@@ -34,6 +35,8 @@ adverts.tree.DoClick = function( self, node )
 			adverts.csay:SetExpanded( false )
 			adverts.csay:InvalidateLayout()
 		end
+	else
+		adverts.updatebutton:SetDisabled( true )
 	end
 end
 adverts.tree.DoRightClick = function( self, node )
@@ -58,7 +61,7 @@ adverts.display = x_makeslider{ label="Display Time (seconds)", min=1, max=60, v
 panel:AddItem( adverts.display )
 panel:AddItem( x_makecolorpicker{ removealpha=true } )
 adverts.csay = x_makecat{ x=130, y=95, w=150, label="CSay Advert Options", contents=panel, parent=adverts, expanded=false }
-x_makebutton{ x=156, y=304, w=100, label="Create", parent=adverts }.DoClick = function()
+x_makebutton{ x=192, y=304, w=88, label="Create", parent=adverts }.DoClick = function()
 	local group = nil
 	local new = false
 	if adverts.group:GetValue() ~= "<No Group>" then 
@@ -77,8 +80,17 @@ x_makebutton{ x=156, y=304, w=100, label="Create", parent=adverts }.DoClick = fu
 		RunConsoleCommand( "xgui", "addAdvert", tostring( new ), type( group ), adverts.message:GetValue(), ( adverts.time:GetValue() < 0.1 ) and 0.1 or adverts.time:GetValue(), group or "" )
 	end
 end
-x_makebutton{ x=15, y=304, w=100, label="Remove", parent=adverts }.DoClick = function( node )
+x_makebutton{ x=5, y=304, w=88, label="Remove", parent=adverts }.DoClick = function( node )
 	adverts.removeAdvert( adverts.tree:GetSelectedItem() )
+end
+adverts.updatebutton = x_makebutton{ x=98, y=304, w=89, label="Update", parent=adverts, disabled=true }
+adverts.updatebutton.DoClick = function( node )
+	local node = adverts.tree:GetSelectedItem()
+	if adverts.csay:GetExpanded() == true then
+		RunConsoleCommand( "xgui", "updateAdvert", type( node.group ), node.group, node.number, adverts.message:GetValue(), ( adverts.time:GetValue() < 0.1 ) and 0.1 or adverts.time:GetValue(), adverts.display:GetValue(), GetConVarNumber( "colour_r" ), GetConVarNumber( "colour_g" ), GetConVarNumber( "colour_b" ) )
+	else
+		RunConsoleCommand( "xgui", "updateAdvert", type( node.group ), node.group, node.number, adverts.message:GetValue(), ( adverts.time:GetValue() < 0.1 ) and 0.1 or adverts.time:GetValue() )
+	end
 end
 function adverts.removeAdvert( node )
 	if node then
@@ -109,6 +121,7 @@ function xgui.base.RenameAdvert( old, isNew )
 	end
 end
 function adverts.updateAdverts()
+	adverts.updatebutton:SetDisabled( true )
 	adverts.tree:Clear()
 	adverts.group:Clear()
 	adverts.group:AddChoice( "<No Group>" )
@@ -226,7 +239,7 @@ else
 end
 table.insert( xgui.modules.svsetting, { name="ULX Logs", panel=plist, access=nil } )
 
--------------------------Player Votemaps-------------------------
+---------------------Player Votemap Settings---------------------
 local plist = x_makepanellist{ w=285, h=327, parent=xgui.null }
 plist:AddItem( x_makelabel{ label="Player Votemap Settings" } )
 plist:AddItem( x_makecheckbox{ label="Enable Player Votemaps", repconvar="ulx_cl_votemapEnabled" } )
@@ -235,7 +248,65 @@ plist:AddItem( x_makeslider{ label="Time (min) until a user can change their vot
 plist:AddItem( x_makeslider{ label="Ratio of votes needed to accept mapchange", min=0, max=1, decimal=2, repconvar="ulx_cl_votemapSuccessratio" } )
 plist:AddItem( x_makeslider{ label="Minimum votes for a successful mapchange", min=0, max=10, repconvar="ulx_cl_votemapMinvotes" } )
 plist:AddItem( x_makeslider{ label="Time (sec) for an admin to veto a mapchange", min=0, max=300, repconvar="ulx_cl_votemapVetotime" } )
-table.insert( xgui.modules.svsetting, { name="ULX Player Votemaps", panel=plist, access=nil } )
+table.insert( xgui.modules.svsetting, { name="ULX Player Votemap Settings", panel=plist, access=nil } )
+
+-----------------------Player Votemap List-----------------------
+local panel = x_makepanel{ w=285, h=327, parent=xgui.null }
+panel.Paint = function( self )
+	draw.RoundedBox( 4, 0, 0, 285, 327, Color( 111, 111, 111, 255 ) )	
+end
+x_makelabel{ label="Allowed Votemaps", x=5, y=3, parent=panel }
+x_makelabel{ label="Excluded Votemaps", x=150, y=3, parent=panel }
+panel.votemaps = x_makelistview{ y=20, w=140, h=267, multiselect=true, headerheight=0, parent=panel }
+panel.votemaps:AddColumn( "" )
+panel.votemaps.OnRowSelected = function()
+	panel.add:SetDisabled( true )
+	panel.remove:SetDisabled( false )
+	panel.remainingmaps:ClearSelection()
+end
+panel.remainingmaps = x_makelistview{ x=145, y=20, w=140, h=267, multiselect=true, headerheight=0, parent=panel }
+panel.remainingmaps:AddColumn( "" )
+panel.remainingmaps.OnRowSelected = function()
+	panel.add:SetDisabled( false )
+	panel.remove:SetDisabled( true )
+	panel.votemaps:ClearSelection()
+end
+panel.remove = x_makebutton{ y=287, w=140, label="Remove -->", disabled=true, parent=panel }
+panel.remove.DoClick = function()
+	panel.remove:SetDisabled( true )
+	local temp = {}
+	for _, v in ipairs( panel.votemaps:GetSelected() ) do
+		table.insert( temp, v:GetColumnText(1) )
+	end
+	RunConsoleCommand( "xgui", "removeVotemaps", unpack( temp ) )
+end
+panel.add = x_makebutton{ x=145, y=287, w=140, label="<-- Add", disabled=true, parent=panel }
+panel.add.DoClick = function()
+	panel.add:SetDisabled( true )
+	local temp = {}
+	for _, v in ipairs( panel.remainingmaps:GetSelected() ) do
+		table.insert( temp, v:GetColumnText(1) )
+	end
+	RunConsoleCommand( "xgui", "addVotemaps", unpack( temp ) )
+end
+panel.votemapmode = x_makemultichoice{ y=307, w=285, repconvar="ulx_cl_votemapMapmode", isNumberConvar=true, numOffset=0, choices={ "Include new maps by default", "Exclude new maps by default" }, parent=panel }
+panel.updateList = function()
+	if #ulx.maps ~= 0 then
+		panel.votemaps:Clear()
+		panel.remainingmaps:Clear()
+		panel.add:SetDisabled( true )
+		panel.remove:SetDisabled( true )
+		for _, v in ipairs( ulx.maps ) do
+			if table.HasValue( ulx.votemaps, v ) then
+				panel.votemaps:AddLine( v )
+			else
+				panel.remainingmaps:AddLine( v )
+			end
+		end
+	end
+end
+table.insert( xgui.hook["votemaps"], panel.updateList )
+table.insert( xgui.modules.svsetting, { name="ULX Player Votemap List", panel=panel, access=nil } )
 
 -------------------------Reserved Slots--------------------------
 local plist = x_makepanellist{ w=285, h=327, parent=xgui.null }

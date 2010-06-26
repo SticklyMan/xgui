@@ -107,7 +107,6 @@ function xgui.splitbans()
 		end
 	end
 end
-xgui.splitbans()
 
 --Function hub! All server functions can be called via concommand xgui!
 function xgui.cmd( ply, func, args )
@@ -121,7 +120,9 @@ function xgui.cmd( ply, func, args )
 	elseif branch == "removeAdvert" then xgui.removeAdvert( ply, args )
 	elseif branch == "removeAdvertGroup" then xgui.removeAdvertGroup( ply, args )
 	elseif branch == "renameAdvertGroup" then xgui.renameAdvertGroup( ply, args )
-	elseif branch == "removeUserID" then xgui.removeUserID( ply, args )
+	elseif branch == "updateAdvert" then xgui.updateAdvert( ply, args )
+	elseif branch == "addVotemaps" then xgui.addVotemaps( ply, args )
+	elseif branch == "removeVotemaps" then xgui.removeVotemaps( ply, args )
 	elseif branch == "updateBanName" then xgui.UpdateBanName( ply, args )
 	elseif branch == "updateBanReason" then xgui.UpdateBanReason( ply, args )
 	elseif branch == "refreshBans" then ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" )
@@ -136,7 +137,7 @@ xgui.activeUsers = {}  --Set up a table to list users who are actively transferr
 function xgui.sendData( ply, args )
 	--If no args are specified, then update everything!
 	if #args == 0 then 
-		args = { "gamemodes", "votemaps", "maps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits" } 
+		args = { "gamemodes", "votemaps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits" } 
 	end
 
 	--Perform a check to make see if the client is already being sent data OR data sending is currently restricted.
@@ -169,10 +170,6 @@ function xgui.sendData( ply, args )
 				table.insert( t, v )
 			end
 			table.insert( chunks, { t, "votemaps" } )
-		elseif u == "maps" then --Update Full List of Server Maps
-			if ply:query( "ulx map" ) or ply:query( "ulx_cl_votemapEnabled" ) then
-				table.insert( chunks, { ulx.maps, "maps" } )
-			end
 		elseif u == "gimps" then --Update GimpSays
 			if ply:query( "xgui_svsettings" ) then
 				table.insert( chunks, { ulx.gimpSays, "gimps" } )
@@ -395,6 +392,24 @@ function xgui.removeAdvertGroup( ply, args, hold )
 	end
 end
 
+function xgui.updateAdvert( ply, args )
+	if ply:query( "xgui_svsettings" ) then
+		local group = ( args[1] == "number" ) and tonumber( args[2] ) or args[2]
+		local number = tonumber( args[3] )
+		local advert = ulx.adverts[group][number]
+		advert.message = args[4]
+		advert.rpt = tonumber( args[5] )
+		advert.len = tonumber( args[6] )
+		if args[7] then
+			advert.color = { a=255, r=tonumber( args[7] ), g=tonumber( args[8] ), b=tonumber( args[9] ) }
+		end
+		for _, v in ipairs( player.GetAll() ) do
+			xgui.sendData( v, {[1]="adverts"} )
+		end
+		xgui.saveAdverts()
+	end
+end
+
 function xgui.removeAdvert( ply, args, hold )
 	if ply:query( "xgui_svsettings" ) then
 		local group = ( args[3] == "number" ) and tonumber( args[1] ) or args[1]
@@ -416,6 +431,65 @@ function xgui.removeAdvert( ply, args, hold )
 	end
 end
 
+function xgui.addVotemaps( ply, args )
+	if ply:query( "xgui_svsettings" ) then
+		for _, votemap in ipairs( args ) do
+			table.insert( ulx.votemaps, votemap )
+		end
+	end
+	for _, v in ipairs( player.GetAll() ) do
+		xgui.sendData( v, {[1]="votemaps"} )
+	end
+	xgui.saveVotemaps( GetConVar( "ulx_votemapMapmode" ):GetInt() )
+end
+
+function xgui.removeVotemaps( ply, args )
+	if ply:query( "xgui_svsettings" ) then
+		for _, votemap in ipairs( args ) do
+			for i, map in ipairs( ulx.votemaps ) do
+				if map == votemap then
+					table.remove( ulx.votemaps, i )
+					break
+				end
+			end
+		end
+	end
+	for _, v in ipairs( player.GetAll() ) do
+		xgui.sendData( v, {[1]="votemaps"} )
+	end
+	xgui.saveVotemaps( GetConVar( "ulx_votemapMapmode" ):GetInt() )
+end
+
+function xgui.saveVotemaps( mapmode )
+	local orig_file = file.Read( "ulx/votemaps.txt" )
+	local comment = xgui.getCommentHeader( orig_file )
+	local new_file = comment
+
+	if mapmode == 1 then --Use all maps EXCEPT what's specified in votemaps.txt
+		for _, map in ipairs( ulx.maps ) do
+			if not table.HasValue( ulx.votemaps, map ) then
+				new_file = new_file .. map .. "\n"
+			end
+		end
+	elseif mapmode == 2 then --Use only the maps specified in votemaps.txt
+		for _, map in ipairs( ulx.votemaps ) do
+			new_file = new_file .. map .. "\n"
+		end
+	else 
+		Msg( "XGUI: Could not save votemaps- Invalid or nonexistent ulx_votemapMapmode cvar!" ) --Don't error here, it breaks the hook X|
+		return
+	end
+	
+	file.Write( "ulx/votemaps.txt", new_file )
+end
+
+function xgui.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+	if cl_cvar == "ulx_cl_votemapMapmode" then
+		xgui.saveVotemaps( tonumber( new_val ) )
+	end
+end
+hook.Add( "ULibReplicatedCvarChanged", "XGUI_ServerCatchCvar", xgui.ConVarUpdated )
+
 --Create timers that will automatically refresh clent's banlists when a users ban runs out. Polls hourly.
 function xgui.unbanTimer()
 	timer.Simple( 3600, xgui.unbanTimer )
@@ -429,7 +503,6 @@ function xgui.unbanTimer()
 		end
 	end
 end
-xgui.unbanTimer()
 
 function xgui.UpdateBanName( ply, args )
 	if ply:query( "xgui_managebans" ) then 
@@ -519,3 +592,6 @@ function xgui.getCommentHeader( data, comment_char )
 	if comment ~= "" then comment = comment .. "\n" end
 	return comment
 end
+
+xgui.splitbans() --Once the functions are loaded, call functions that need to be run
+xgui.unbanTimer() --(Prevents XGUI being partially loaded in case of an error)

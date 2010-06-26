@@ -251,16 +251,17 @@ local function xgui_helpers()
 				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 			end
 			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
+				if t.numOffset == nil then t.numOffset = 1 end
 				local cvar = GetConVar( t.repconvar ):GetInt()
-				if cvar + 1 <= #xgui_temp.Choices then
-					xgui_temp:ChooseOptionID( cvar + 1 )
+				if cvar + t.numOffset <= #xgui_temp.Choices then
+					xgui_temp:ChooseOptionID( cvar + t.numOffset )
 				else
 					xgui_temp:SetText( "Invalid Convar Value" )
 				end
 				function xgui_temp.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 					if cl_cvar == t.repconvar then
-						if new_val + 1 <= #xgui_temp.Choices then
-							xgui_temp:ChooseOptionID( new_val + 1 )
+						if new_val + t.numOffset <= #xgui_temp.Choices and new_val + t.numOffset > 0 then
+							xgui_temp:ChooseOptionID( new_val + t.numOffset )
 						else
 							xgui_temp:SetText( "Invalid Convar Value" )
 						end
@@ -268,7 +269,7 @@ local function xgui_helpers()
 				end
 				hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
 				function xgui_temp:OnSelect( index )
-					RunConsoleCommand( t.repconvar, tostring( index - 1 ) )
+					RunConsoleCommand( t.repconvar, tostring( index - t.numOffset ) )
 				end
 			else  --Otherwise, use each choice as a string for the convar
 				xgui_temp:SetText( GetConVar( t.repconvar ):GetString() )

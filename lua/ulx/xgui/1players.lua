@@ -123,27 +123,44 @@ end
 
 function players.refreshArgslist( cmd )
 	players.argslist:Clear()
-	local argnum = 1
+	local argnum = 0
 	local curitem
 	for _, arg in ipairs( cmd.args ) do
+		argnum = argnum + 1
 		if not ( argnum == 2 and arg.type == ULib.cmds.PlayersArg or arg.type == ULib.cmds.PlayerArg ) then
 			if arg.type.invisible ~= true and arg.invisible ~= true then
-				curitem = arg.type
+				curitem = arg
 				players.argslist:AddItem( arg.type.x_getcontrol( arg, argnum ) )
 			end
 		end
-		argnum = argnum + 1
 	end
-	if curitem == ULib.cmds.NumArg then
+	if curitem and curitem.repeat_min then --This command repeats!
+		for i=2,curitem.repeat_min do --Start at 2 because the first one is already there
+			players.argslist:AddItem( curitem.type.x_getcontrol( curitem, argnum ) )
+		end
+		local button = x_makebutton{ label="Add another choice...", parent=players.argslist.pnlCanvas }
+		button.argnum = argnum
+		button.xguiIgnore = true
+		button.arg = curitem
+		button.DoClick = function( self )
+			table.insert( players.argslist.Items, self.insertPos, self.arg.type.x_getcontrol( self.arg, self.argnum ) )
+			players.argslist.Items[self.insertPos]:SetParent( players.argslist.pnlCanvas )
+			players.argslist:InvalidateLayout()
+			self.insertPos = self.insertPos + 1
+		end
+		button.insertPos = #players.argslist.Items + 1
+		players.argslist:AddItem( button )
+	elseif curitem and curitem.type == ULib.cmds.NumArg then
 		players.argslist.Items[#players.argslist.Items].Wang.TextEntry.OnEnter = function( self )
 			players.buildcmd( cmd.cmd )
 		end
-	elseif curitem == ULib.cmds.StringArg then
+	elseif curitem and curitem.type == ULib.cmds.StringArg then
 		players.argslist.Items[#players.argslist.Items].OnEnter = function( self )
 			players.buildcmd( cmd.cmd )
 		end
 	end
 	local xgui_temp = x_makebutton{ label=cmd.cmd }
+	xgui_temp.xguiIgnore = true
 	xgui_temp.DoClick = function()
 		players.buildcmd( cmd.cmd )
 	end
@@ -153,6 +170,7 @@ function players.refreshArgslist( cmd )
 		xgui_temp.DoClick = function()
 			players.buildcmd( cmd.opposite )
 		end
+		xgui_temp.xguiIgnore = true
 		players.argslist:AddItem( xgui_temp )
 	end
 	local labelstr = {}
@@ -168,26 +186,30 @@ function players.refreshArgslist( cmd )
 		marker = i+1
 	end
 	table.insert( labelstr, string.sub( cmd.helpStr, marker ) )
-	players.argslist:AddItem( x_makelabel{ label=table.concat( labelstr ), font="DefaultFixed" } )
+	local xgui_temp = x_makelabel{ label=table.concat( labelstr ), font="DefaultFixed" }
+	xgui_temp.xguiIgnore = true
+	players.argslist:AddItem( xgui_temp )
 end
 
 function players.buildcmd( cmd )
-	local cmd = { cmd }
+	local cmd = string.Explode( " ", cmd )
 	if players.plist:IsVisible() then
-		table.insert( cmd, " \"" )
+		local plys = {}
 		for _, arg in ipairs( players.plist:GetSelected() ) do
-			table.insert( cmd, arg:GetColumnText(1) )
-			table.insert( cmd, "," )
+			table.insert( plys, arg:GetColumnText(1) )
+			table.insert( plys, "," )
 		end
-		table.remove( cmd ) --Remove extra comma
-		table.insert( cmd, "\" " )
+		table.remove( plys ) --Removes the final comma
+		table.insert( cmd, table.concat( plys ) )
 	end
-	for i=1,#players.argslist.Items - 2 do
-		table.insert( cmd, " \"" )
-		table.insert( cmd, tostring( players.argslist.Items[i]:GetValue() ) )
-		table.insert( cmd, "\"" )
+	
+	for _, arg in ipairs( players.argslist.Items ) do
+		if not arg.xguiIgnore then
+			table.insert( cmd, arg:GetValue() )
+		end
 	end
-	LocalPlayer():ConCommand( table.concat( cmd ) )
+	PrintTable( cmd )
+	RunConsoleCommand( unpack( cmd ) )
 end
 
 --------------
@@ -260,7 +282,7 @@ players.refresh = function()
 						self:GetParent():Toggle()
 						if players.expandedcat then
 							if players.expandedcat ~= self:GetParent() then
-								players.expandedcat:Toggle() 
+								players.expandedcat:Toggle()
 							else
 								players.expandedcat = nil
 								return

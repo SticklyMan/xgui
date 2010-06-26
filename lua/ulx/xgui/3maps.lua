@@ -58,10 +58,16 @@ x_makebutton{ x=185, y=320, w=192, label="Veto a map vote", parent=xgui_maps }.D
 	RunConsoleCommand( "ulx", "veto" )
 end
 
-xgui_maps.updateMaps = function()
+xgui_maps.updateVoteMaps = function()
 	xgui_maps.list:Clear()
-	for _,v in ipairs( xgui.data.votemaps ) do
-		xgui_maps.list:AddLine( v )
+	if LocalPlayer():query( "ulx map" ) then --Show all maps for superadmins
+		for _,v in ipairs( ulx.maps ) do
+			xgui_maps.list:AddLine( v )
+		end
+	else
+		for _,v in ipairs( ulx.votemaps ) do --Show the list of votemaps for users without access to "ulx map"
+			xgui_maps.list:AddLine( v )
+		end
 	end
 end
 
@@ -75,5 +81,5 @@ xgui_maps.updateGamemodes = function()
 end
 
 table.insert( xgui.modules.tab, { name="Maps", panel=xgui_maps, icon="gui/silkicons/world", tooltip=nil, access=nil } )
-table.insert( xgui.hook["votemaps"], xgui_maps.updateMaps )
+table.insert( xgui.hook["votemaps"], xgui_maps.updateVoteMaps )
 table.insert( xgui.hook["gamemodes"], xgui_maps.updateGamemodes )
