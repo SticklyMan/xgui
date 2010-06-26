@@ -402,6 +402,8 @@ function xgui.updateAdvert( ply, args )
 		advert.len = tonumber( args[6] )
 		if args[7] then
 			advert.color = { a=255, r=tonumber( args[7] ), g=tonumber( args[8] ), b=tonumber( args[9] ) }
+		else
+			advert.color = nil
 		end
 		for _, v in ipairs( player.GetAll() ) do
 			xgui.sendData( v, {[1]="adverts"} )
@@ -476,7 +478,7 @@ function xgui.saveVotemaps( mapmode )
 			new_file = new_file .. map .. "\n"
 		end
 	else 
-		Msg( "XGUI: Could not save votemaps- Invalid or nonexistent ulx_votemapMapmode cvar!" ) --Don't error here, it breaks the hook X|
+		Msg( "XGUI: Could not save votemaps- Invalid or nonexistent ulx_votemapMapmode cvar!\n" ) --Don't error here, it breaks the hook X|
 		return
 	end
 	

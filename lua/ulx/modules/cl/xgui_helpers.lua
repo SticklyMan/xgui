@@ -253,7 +253,7 @@ local function xgui_helpers()
 			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
 				if t.numOffset == nil then t.numOffset = 1 end
 				local cvar = GetConVar( t.repconvar ):GetInt()
-				if cvar + t.numOffset <= #xgui_temp.Choices then
+				if cvar + t.numOffset <= #xgui_temp.Choices and cvar + t.numOffset > 0 then
 					xgui_temp:ChooseOptionID( cvar + t.numOffset )
 				else
 					xgui_temp:SetText( "Invalid Convar Value" )

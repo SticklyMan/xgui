@@ -173,22 +173,24 @@ function players.refreshArgslist( cmd )
 		xgui_temp.xguiIgnore = true
 		players.argslist:AddItem( xgui_temp )
 	end
-	local labelstr = {}
-	local i = 0
-	local marker = 0
-	while marker+26 < string.len(cmd.helpStr) do
-		i=marker+26
-		while string.sub(cmd.helpStr, i, i ) ~= " " do
-			i=i-1
+	if cmd.helpStr then --If the command has a string for help
+		local labelstr = {}
+		local i = 0
+		local marker = 0
+		while marker+26 < string.len(cmd.helpStr) do
+			i=marker+26
+			while string.sub(cmd.helpStr, i, i ) ~= " " do
+				i=i-1
+			end
+			table.insert( labelstr, string.sub( cmd.helpStr, marker, i ) )
+			table.insert( labelstr, "\n" )
+			marker = i+1
 		end
-		table.insert( labelstr, string.sub( cmd.helpStr, marker, i ) )
-		table.insert( labelstr, "\n" )
-		marker = i+1
+		table.insert( labelstr, string.sub( cmd.helpStr, marker ) )
+		local xgui_temp = x_makelabel{ label=table.concat( labelstr ), font="DefaultFixed" }
+		xgui_temp.xguiIgnore = true
+		players.argslist:AddItem( xgui_temp )
 	end
-	table.insert( labelstr, string.sub( cmd.helpStr, marker ) )
-	local xgui_temp = x_makelabel{ label=table.concat( labelstr ), font="DefaultFixed" }
-	xgui_temp.xguiIgnore = true
-	players.argslist:AddItem( xgui_temp )
 end
 
 function players.buildcmd( cmd )
