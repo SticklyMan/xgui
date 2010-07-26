@@ -40,7 +40,7 @@ adverts.tree.DoClick = function( self, node )
 	end
 end
 adverts.tree.DoRightClick = function( self, node )
-	adverts.tree:SetSelectedItem( node )
+	self:SetSelectedItem( node )
 	local menu = DermaMenu()
 	if node.data == nil then
 		menu:AddOption( "Rename Group...", function() xgui.base.RenameAdvert( node.Label:GetValue() ) end )
@@ -173,8 +173,77 @@ table.insert( xgui.modules.svsetting, { name="ULX Command/Event Echos", panel=pl
 ------------------------General Settings-------------------------
 local plist = x_makepanellist{ w=285, h=327, parent=xgui.null }
 plist:AddItem( x_makelabel{ label="General ULX Settings" } )
-plist:AddItem( x_makecheckbox{ label="Show MOTD when players join", convar="ulx_cl_showMotd" } )
 plist:AddItem( x_makeslider{ label="Chat spam time", min=0, max=5, decimal=1, repconvar="ulx_cl_chattime" } )
+plist:AddItem( x_makelabel{ label="\nMOTD Settings" } )
+--Very custom convar handling for ulx_cl_shotMotd
+plist.motdEnabled = x_makecheckbox{ label="Show MOTD when players join" }
+function plist.motdEnabled:Toggle() self.Button:DoClick() end
+plist.motdEnabled.Button.DoClick = function( self )
+	self:Toggle()
+	local bVal = self:GetChecked()
+	if bVal == true then
+		if plist.motdURLEnabled:GetChecked() then
+			RunConsoleCommand( "ulx_cl_showMotd", plist.motdURLText:GetValue() )
+		else
+			RunConsoleCommand( "ulx_cl_showMotd", "1" )
+		end
+	else
+		RunConsoleCommand( "ulx_cl_showMotd", "0" )
+	end
+end
+plist.motdURLEnabled = x_makecheckbox{ label="Get MOTD from URL instead of motd.txt:" }
+bob = plist.motdURLEnabled
+function plist.motdURLEnabled:Toggle() self.Button:DoClick() end
+plist.motdURLEnabled.Button.DoClick = function( self )
+	self:Toggle()
+	local bVal = self:GetChecked()
+	if bVal == true then
+		if plist.motdURLText:GetValue() ~= "" then
+			RunConsoleCommand( "ulx_cl_showMotd", plist.motdURLText:GetValue() )
+		end
+		plist.motdURLText:SetDisabled( false )
+	else
+		RunConsoleCommand( "ulx_cl_showMotd", "1" )
+		plist.motdURLText:SetDisabled( true )
+	end
+end
+plist.motdURLText = x_maketextbox{ focuscontrol=true }
+function plist.motdURLText:UpdateConvarValue()
+	if plist.motdURLText:GetValue() ~= "" then
+		RunConsoleCommand( "ulx_cl_showMotd", self:GetValue() )
+	end
+end
+function plist.motdURLText:OnEnter() self:UpdateConvarValue() end
+function plist.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+	if cl_cvar == "ulx_cl_showMotd" then
+		if tonumber( new_val ) == nil then --MOTD is enabled and set to a URL 
+			plist.motdEnabled:SetValue( 1 )
+			plist.motdURLEnabled:SetValue( 1 )
+			plist.motdURLEnabled:SetDisabled( false )
+			plist.motdURLText:SetValue( new_val )
+			plist.motdURLText:SetDisabled( false )
+		else
+			plist.motdEnabled:SetValue( new_val )
+			if new_val == "1" then
+				plist.motdURLEnabled:SetValue( 0 )
+				plist.motdURLEnabled:SetDisabled( false )
+				plist.motdURLText:SetDisabled( true )
+			elseif new_val == "0" then
+				plist.motdURLEnabled:SetDisabled( true )
+				plist.motdURLText:SetDisabled( true )
+			end
+		end
+	end
+end
+plist.OnOpened = function()
+	if plist.motdURLEnabled:GetDisabled() then
+		timer.Simple( .001, plist.motdURLEnabled.SetDisabled, plist.motdURLEnabled, true ) --Since the DCheckBox doesn't properly show itself as Disabled on startup, we have to set it here.
+	end
+end
+hook.Add( "ULibReplicatedCvarChanged", "XGUI_ulx_cl_showMotd", plist.ConVarUpdated )
+plist:AddItem( plist.motdEnabled )
+plist:AddItem( plist.motdURLEnabled )
+plist:AddItem( plist.motdURLText )
 plist:AddItem( x_makelabel{ label="\nWelcome Message:" } )
 plist:AddItem( x_maketextbox{ repconvar="ulx_cl_welcomemessage", focuscontrol=true } )
 plist:AddItem( x_makelabel{ label="Allowed variables: %curmap%, %host%" } )
@@ -224,19 +293,19 @@ plist:AddItem( x_makecheckbox{ label="Log Chat", repconvar="ulx_cl_logChat" } )
 plist:AddItem( x_makecheckbox{ label="Log Player Events (Connects, Deaths, etc.)", repconvar="ulx_cl_logEvents" } )
 plist:AddItem( x_makecheckbox{ label="Log Spawns (Props, Effects, Ragdolls, etc.)", repconvar="ulx_cl_logSpawns" } )
 plist:AddItem( x_makelabel{ label="Save log files to this directory:" } )
+local logdirbutton = x_makebutton{}
 if GetConVar( "ulx_cl_logDir" ) == nil then
 	CreateConVar( "ulx_cl_logDir", 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 else
-	local logdirbutton = x_makebutton{}
-	logdirbutton:SetText( GetConVar( "ulx_cl_logDir" ):GetString() )
-	function logdirbutton.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-		if cl_cvar == "ulx_cl_logDir" then
-			logdirbutton:SetText( new_val )
-		end
-	end
-	hook.Add( "ULibReplicatedCvarChanged", "XGUI_ulx_cl_logDir", logdirbutton.ConVarUpdated )
-	plist:AddItem( logdirbutton )
+	logdirbutton:SetText( "data/" .. GetConVar( "ulx_cl_logDir" ):GetString() )
 end
+function logdirbutton.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+	if cl_cvar == "ulx_cl_logDir" then
+		logdirbutton:SetText( "data/" .. new_val )
+	end
+end
+hook.Add( "ULibReplicatedCvarChanged", "XGUI_ulx_cl_logDir", logdirbutton.ConVarUpdated )
+plist:AddItem( logdirbutton )
 table.insert( xgui.modules.svsetting, { name="ULX Logs", panel=plist, access=nil } )
 
 ---------------------Player Votemap Settings---------------------

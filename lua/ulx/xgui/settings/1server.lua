@@ -41,6 +41,7 @@ function server_settings.panel:slideFunc( anim, delta, data )
 			data.NewPanel:SetVisible( true )
 			data.NewPanel:SetZPos( 255 )
 			if data.OldPanel then data.OldPanel:SetZPos( 0 ) end
+			if data.NewPanel.OnOpened then data.NewPanel.OnOpened() end
 		end
 		if ( anim.Finished ) then
 			data.NewPanel:SetPos( 0, 0 )

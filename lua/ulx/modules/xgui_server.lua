@@ -26,11 +26,35 @@ end
 Msg( "// XGUI modules added!       //\n" )
 Msg( "///////////////////////////////\n" )
 
---Chat command for people who loooove chat commands!
+--Chat commands for people who loooove chat commands!
 local function xgui_chatCommand( ply, func, args )
 	ULib.clientRPC( ply, "xgui.show", args )
 end
 ULib.addSayCommand(	"!xgui", xgui_chatCommand, "ulx help" )
+
+local function xgui_banWindowChat( ply, func, args )
+	if args[1] and args[1] ~= "" then
+		local target = ULib.getUser( args[1] )
+		if target then
+			ULib.clientRPC( ply, "xgui.ShowBanWindow", target:Nick(), target:SteamID(), false )
+		end
+	else
+		ULib.clientRPC( ply, "xgui.ShowBanWindow" )
+	end
+end
+ULib.addSayCommand(	"!xban", xgui_banWindowChat, "ulx ban" )
+
+local function xgui_banWindowChatFreeze( ply, func, args )
+	if args[1] and args[1] ~= "" then
+		local target = ULib.getUser( args[1] )
+		if target then
+			ULib.clientRPC( ply, "xgui.ShowBanWindow", target:Nick(), target:SteamID(), true )
+		end
+	else
+		ULib.clientRPC( ply, "xgui.ShowBanWindow" )
+	end
+end
+ULib.addSayCommand(	"!fban", xgui_banWindowChatFreeze, "ulx ban" )
 
 --XGUI specific Accesses
 ULib.ucl.registerAccess( "xgui_gmsettings", "superadmin", "Allows changing of gamemode-specific settings on the settings tab in XGUI." )
@@ -128,13 +152,12 @@ function xgui.cmd( ply, func, args )
 	elseif branch == "refreshBans" then ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" )
 	elseif branch == "getInstalled" then ply:SendLua( "xgui.getInstalled()" ) xgui.sendData( ply, {} ) --Lets the client know that the server has XGUI, then begins sending data
 	elseif branch == "dataComplete" then xgui.chunksFinished( ply )
-	elseif branch == "restrictData" then xgui.dataRestrict( args )
 	end
 end
 concommand.Add( "_xgui", xgui.cmd )
 
 xgui.activeUsers = {}  --Set up a table to list users who are actively transferring data
-function xgui.sendData( ply, args )
+function xgui.sendData( ply, args, extdata )
 	--If no args are specified, then update everything!
 	if #args == 0 then 
 		args = { "gamemodes", "votemaps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits" } 
@@ -142,7 +165,7 @@ function xgui.sendData( ply, args )
 
 	--Perform a check to make see if the client is already being sent data OR data sending is currently restricted.
 	--If it is, then add the new values to be updated to the players "queue" (if they aren't already there)
-	if xgui.activeUsers[ply] ~= nil or xgui.restrictdata then
+	if xgui.activeUsers[ply] ~= nil then
 		for _,arg in ipairs(args) do
 			local exists = false
 			for _,existingArg in ipairs(xgui.activeUsers[ply]) do
@@ -220,6 +243,22 @@ function xgui.sendData( ply, args )
 					end
 				end
 				table.insert( chunks, { t, "sbans" } )
+			end
+		elseif u == "file_structure" then 
+			if ply:query( "xgui_svsettings") then
+				local i = 1
+				local t = {}
+				for k, v in pairs( extdata ) do
+					t[k] = v
+					i = i + 1
+					if i > 5 then 
+						table.insert( chunks, { t, "file_structure" } )
+						t = {}
+						i = 1
+					end
+				end
+				table.insert( chunks, { t, "file_structure" } )
+				table.insert( chunks, { nil, "file_structure" } )
 			end
 		end
 	end
@@ -507,10 +546,13 @@ function xgui.unbanTimer()
 end
 
 function xgui.UpdateBanName( ply, args )
-	if ply:query( "xgui_managebans" ) then 
-		for ID, baninfo in pairs( ULib.bans ) do
-			if ID == args[1] then
-				baninfo.name = args[2]
+	if ply:query( "xgui_managebans" ) then
+		if args[3] == "true" then 
+			xgui.tempBanName = args[2] --To prevent server sending duplicate data, we're going to store the name until the ban is processed.
+		else
+			local ID = args[1]
+			if ULib.bans[ID] then
+				ULib.bans[ID].name = args[2]
 				--Save the banfile
 				file.Write( ULib.BANS_FILE, ULib.makeKeyValues( ULib.bans ) )
 				--Call our function to refresh ban data for players
@@ -522,41 +564,24 @@ end
 
 function xgui.UpdateBanReason( ply, args )
 	if ply:query( "xgui_managebans" ) then 
-		for ID, baninfo in pairs( ULib.bans ) do
-			if ID == args[1] then
-				baninfo.reason = args[2]
-				--Save the banfile
-				file.Write( ULib.BANS_FILE, ULib.makeKeyValues( ULib.bans ) )
-				--Call our function to refresh ban data for players
-				xgui.ULXCommandCalled( nil, "ulx banid" )
-			end
-		end
+		local ID = args[1]
+		ULib.bans[ID].reason = args[2]
+		--Save the banfile
+		file.Write( ULib.BANS_FILE, ULib.makeKeyValues( ULib.bans ) )
+		--Call our function to refresh ban data for players
+		xgui.ULXCommandCalled( nil, "ulx banid" )
 	end
 end
 
---This will prevent data from being sent, Mostly used when a large set of ULX commands are about to be called (we don't want the server sending data multiple times)
-function xgui.dataRestrict( args )
-	if args[1] == "true" then
-		xgui.restrictdata = true
-		for _, ply in ipairs( player.GetAll() ) do --Give each player an empty queue to hold info that needs to be updated when restrict is turned off
-			if xgui.activeUsers[ply] == nil then
-				xgui.activeUsers[ply] = {}
-			end
-		end
-	elseif args[1] == "false" then
-		xgui.restrictdata = nil
-		--Run through each player and see if they have data in their queue that needs to be sent
-		for _, ply in ipairs( player.GetAll() ) do
-			if xgui.activeUsers[ply] then
-				ULib.clientRPC( ply, "xgui.forceDataCheck" )
-			end
-		end
-	end
-end
 --This will check for ULX functions and delegate appropriate actions based on which commands were called
 --Ex. When someone uses ulx ban, call the clients to refresh the appropriate data
 function xgui.ULXCommandCalled( ply, cmdName, args )
 	if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then xgui.splitbans() end -- Recheck the bans if a ban was added/removed
+	if cmdName == "ulx banid" and xgui.tempBanName then 
+		local ID = args[2]
+		ULib.bans[ID].name = xgui.tempBanName
+		xgui.tempBanName = nil
+	end
 	for _, v in ipairs( player.GetAll() ) do
 		if cmdName == "ulx ban" or cmdName == "ulx banid" then
 			xgui.sendData( v, {[1]="bans"} )

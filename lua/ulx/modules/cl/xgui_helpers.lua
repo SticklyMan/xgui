@@ -48,6 +48,7 @@ local function xgui_helpers()
 		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		if t.textcolor then xgui_temp:SetTextColor( t.textcolor ) end
 		if t.tooltip then xgui_temp:SetTooltip( t.tooltip ) end
+		if t.disabled then xgui_temp:SetDisabled( t.disabled ) end
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
@@ -131,16 +132,25 @@ local function xgui_helpers()
 		xgui_temp:SetWide( t.w )
 		xgui_temp:SetTall( t.h or 20 )
 		xgui_temp:SetEnterAllowed( true )
+		xgui_temp.enabled = true
 		if t.convar then xgui_temp:SetConVar( t.convar ) end
 		if t.text then xgui_temp:SetText( t.text ) end
 		if t.enableinput then xgui_temp:SetEnabled( t.enableinput ) end
 		xgui_temp:SetToolTip( t.tooltip )
 		
+		function xgui_temp:SetDisabled( val ) --Do some funky stuff to simulate enabling/disabling of a textbox
+			xgui_temp.enabled = not val
+			xgui_temp:SetEnabled( not val )
+			xgui_temp:SetPaintBackgroundEnabled( val )
+		end
+		
 		--For XGUI keyboard focus handling
 		if ( t.focuscontrol == true ) then
 			xgui_temp.OnGetFocus = function( self )
-				self:SelectAllText()
-				xgui.base:SetKeyboardInputEnabled( true )
+				if self.enabled == true then
+					self:SelectAllText()
+					xgui.base:SetKeyboardInputEnabled( true )
+				end
 			end
 			xgui_temp.OnLoseFocus = function( self )
 				xgui.base:SetKeyboardInputEnabled( false )
@@ -159,6 +169,9 @@ local function xgui_helpers()
 				end
 			end
 			hook.Add( "ULibReplicatedCvarChanged", "XGUI_" .. t.repconvar, xgui_temp.ConVarUpdated )
+			function xgui_temp:UpdateConvarValue()
+				RunConsoleCommand( t.repconvar, self:GetValue() )
+			end
 			function xgui_temp:OnEnter()
 				RunConsoleCommand( t.repconvar, self:GetValue() )
 			end
@@ -225,10 +238,12 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetEditable( t.enableinput )
+		local func = xgui_temp.OpenMenu
+		xgui_temp.OpenMenu = function( self, pControlOpener ) func( self, pControlOpener ) self:RequestFocus() end --Force the menu to request focus when opened, to prevent the menu being open, but the focus being to the controls behind it.
 		if ( t.focuscontrol == true ) then
 			xgui_temp.DropButton.OnMousePressed = function( button, mcode ) 
-				xgui_temp:OpenMenu( xgui_temp.DropButton )
 				xgui.base:SetKeyboardInputEnabled( false )
+				xgui_temp:OpenMenu( xgui_temp.DropButton )
 			end
 			xgui_temp.TextEntry.OnMousePressed = function( self )
 				self:SelectAllText()
@@ -245,6 +260,16 @@ local function xgui_helpers()
 				xgui_temp:AddChoice( v )
 			end
 		end
+		
+		xgui_temp.enabled = true
+		function xgui_temp:SetDisabled( val ) --Do some funky stuff to simulate enabling/disabling of a textbox
+			self.enabled = not val
+			self.TextEntry:SetEnabled( not val )
+			self.TextEntry:SetPaintBackgroundEnabled( val )
+			self.DropButton:SetDisabled( val )
+			self.DropButton:SetMouseInputEnabled( not val )
+		end
+
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
@@ -591,6 +616,16 @@ local function xgui_helpers()
 				self:SetValue( xgui_temp_fVal )
 			return end
 		end
+		
+		xgui_temp.enabled = true
+		xgui_temp.SetDisabled = function( self, bval )
+			self.enabled = not bval
+			self:SetMouseInputEnabled( not bval )
+			self.Slider.Knob:SetVisible( not bval )
+			self.Wang.TextEntry:SetPaintBackgroundEnabled( bval )
+		end
+		if t.disabled then xgui_temp:SetDisabled( t.disabled ) end
+		
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
@@ -613,7 +648,8 @@ local function xgui_helpers()
 		end
 		return xgui_temp
 	end
-	
+
+
 	--------------------------------------
 	--Used for the colorpicker above, this is Garry's DColorMixer with the alpha bar removed
 	--------------------------------------
@@ -697,7 +733,8 @@ local function xgui_helpers()
 		self:SetColor( color )	
 	end
 	vgui.Register( "XGUIColorMixerNoAlpha", PANEL, "DPanel" )
-	
+
+
 	-----------------------------------------
 	--A stripped-down customized DPanel allowing for textbox input!
 	-----------------------------------------

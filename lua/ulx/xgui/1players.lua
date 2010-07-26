@@ -135,21 +135,39 @@ function players.refreshArgslist( cmd )
 		end
 	end
 	if curitem and curitem.repeat_min then --This command repeats!
+		local panel = x_makepanel{ h=20 }
+		panel.numItems = 0
 		for i=2,curitem.repeat_min do --Start at 2 because the first one is already there
 			players.argslist:AddItem( curitem.type.x_getcontrol( curitem, argnum ) )
+			panel.numItems = panel.numItems + 1
 		end
-		local button = x_makebutton{ label="Add another choice...", parent=players.argslist.pnlCanvas }
-		button.argnum = argnum
-		button.xguiIgnore = true
-		button.arg = curitem
-		button.DoClick = function( self )
-			table.insert( players.argslist.Items, self.insertPos, self.arg.type.x_getcontrol( self.arg, self.argnum ) )
-			players.argslist.Items[self.insertPos]:SetParent( players.argslist.pnlCanvas )
+		panel.argnum = argnum
+		panel.xguiIgnore = true
+		panel.arg = curitem
+		panel.insertPos = #players.argslist.Items + 1
+		panel.button = x_makebutton{ label="Add", w=80, parent=panel }
+		panel.button.DoClick = function( self )
+			local parent = self:GetParent()
+			table.insert( players.argslist.Items, parent.insertPos, parent.arg.type.x_getcontrol( parent.arg, parent.argnum ) )
+			players.argslist.Items[parent.insertPos]:SetParent( players.argslist.pnlCanvas )
 			players.argslist:InvalidateLayout()
-			self.insertPos = self.insertPos + 1
+			panel.numItems = panel.numItems + 1
+			parent.insertPos = parent.insertPos + 1
+			if parent.arg.repeat_max and panel.numItems >= parent.arg.repeat_max - 1 then self:SetDisabled( true ) end
+			if panel.button2:GetDisabled() then panel.button2:SetDisabled( false ) end
 		end
-		button.insertPos = #players.argslist.Items + 1
-		players.argslist:AddItem( button )
+		panel.button2 = x_makebutton{ label="Remove", x=80, w=80, disabled=true, parent=panel }
+		panel.button2.DoClick = function( self )
+			local parent = self:GetParent()
+			players.argslist.Items[parent.insertPos-1]:Remove()
+			table.remove( players.argslist.Items, parent.insertPos - 1 )
+			players.argslist:InvalidateLayout()
+			panel.numItems = panel.numItems - 1
+			parent.insertPos = parent.insertPos - 1
+			if panel.numItems < parent.arg.repeat_min then self:SetDisabled( true ) end
+			if panel.button:GetDisabled() then panel.button:SetDisabled( false ) end
+		end
+		players.argslist:AddItem( panel )
 	elseif curitem and curitem.type == ULib.cmds.NumArg then
 		players.argslist.Items[#players.argslist.Items].Wang.TextEntry.OnEnter = function( self )
 			players.buildcmd( cmd.cmd )
@@ -210,7 +228,6 @@ function players.buildcmd( cmd )
 			table.insert( cmd, arg:GetValue() )
 		end
 	end
-	PrintTable( cmd )
 	RunConsoleCommand( unpack( cmd ) )
 end
 

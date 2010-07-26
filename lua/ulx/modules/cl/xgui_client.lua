@@ -3,7 +3,7 @@ xgui = {}
 --Set up a table for storing third party modules and information
 xgui.modules = { tab={}, gamemode={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
-xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
+xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={}, file_structure={} }
 
 local function xgui_init()
 	--Check if the server has XGUI installed
@@ -11,7 +11,7 @@ local function xgui_init()
 
 	--Data storing relevant information retrieved from server.
 	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, gamemodes = {}, sboxlimits = {} }
-
+	
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
 
@@ -208,16 +208,16 @@ function xgui.show( tabname )
 		end
 	end
 	
-	--Calls the functions requesting to hook when XGUI is opened
-	if xgui.hook["onOpen"] then
-		for _, func in ipairs( xgui.hook["onOpen"] ) do func() end
-	end
 	gui.EnableScreenClicker( true )
 	RestoreCursorPosition()
 	xgui.base:SetVisible( true )
 	if xgui.receivingdata then xgui.chunkbox:SetVisible( true ) end
-	
 	xgui.base.animFadeIn:Start( xgui.base:GetFadeTime(), xgui.base )
+	
+	--Calls the functions requesting to hook when XGUI is opened
+	if xgui.hook["onOpen"] then
+		for _, func in ipairs( xgui.hook["onOpen"] ) do func() end
+	end
 end
 
 function xgui.hide()
