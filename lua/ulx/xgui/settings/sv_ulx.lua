@@ -59,7 +59,7 @@ x_makelabel{ x=138, y=117, label="^-Creates a CSay advert-^", parent=adverts }
 local panel = x_makepanellist{ h=185, spacing=4, parent=adverts, autosize=false }
 adverts.display = x_makeslider{ label="Display Time (seconds)", min=1, max=60, value=10, tooltip="The time in seconds the CSay advert is displayed", adverts }
 panel:AddItem( adverts.display )
-panel:AddItem( x_makecolorpicker{ removealpha=true } )
+panel:AddItem( x_makecolorpicker{ focuscontrol=true, removealpha=true } )
 adverts.csay = x_makecat{ x=130, y=95, w=150, label="CSay Advert Options", contents=panel, parent=adverts, expanded=false }
 x_makebutton{ x=192, y=304, w=88, label="Create", parent=adverts }.DoClick = function()
 	local group = nil

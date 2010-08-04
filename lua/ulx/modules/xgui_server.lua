@@ -26,6 +26,11 @@ end
 Msg( "// XGUI modules added!       //\n" )
 Msg( "///////////////////////////////\n" )
 
+--This is for servers with scriptenforcer enabled.
+--It will force scriptenforcer to allow these files to be included on the client where they weren't included by default.
+AddCSLuaFile( "menu/progressbar.lua" )
+AddCSLuaFile( "sandbox/gamemode/spawnmenu/controls/CtrlColor.lua" )
+
 --Chat commands for people who loooove chat commands!
 local function xgui_chatCommand( ply, func, args )
 	ULib.clientRPC( ply, "xgui.show", args )
@@ -576,7 +581,7 @@ end
 --This will check for ULX functions and delegate appropriate actions based on which commands were called
 --Ex. When someone uses ulx ban, call the clients to refresh the appropriate data
 function xgui.ULXCommandCalled( ply, cmdName, args )
-	if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then xgui.splitbans() end -- Recheck the bans if a ban was added/removed
+	if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then xgui.splitbans() xgui.unbanTimer() end -- Recheck the bans if a ban was added/removed
 	if cmdName == "ulx banid" and xgui.tempBanName then 
 		local ID = args[2]
 		ULib.bans[ID].name = xgui.tempBanName
@@ -585,7 +590,6 @@ function xgui.ULXCommandCalled( ply, cmdName, args )
 	for _, v in ipairs( player.GetAll() ) do
 		if cmdName == "ulx ban" or cmdName == "ulx banid" then
 			xgui.sendData( v, {[1]="bans"} )
-			xgui.unbanTimer()
 		elseif cmdName == "ulx unban" then
 			if ply:query( "xgui_managebans" ) then
 				ULib.clientRPC( v, "xgui.callRefresh", "onUnban", args[2] )

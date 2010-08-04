@@ -290,14 +290,6 @@ function xgui_bans.populate( bantable )
 	end
 end
 
-function xgui_bans.checkTimes()
-	for ID, data in pairs( xgui.data.bans ) do
-		if tonumber( data.unban ) ~= 0 and tonumber( data.unban ) < os.time() then
-			RunConsoleCommand( "xgui", "refreshBans" )
-		end
-	end
-end
-
 function xgui_bans.updateBans( chunk )
 	--(For large banlists) Since XGUI sends the bantables in chunks, we can make use of this and process each chunk as they come
 	--If chunk is a table, then it contains a new chunk of data, so we should process it. If chunk is "clear", then clear the banlist for new chunks that will arrive soon.
@@ -325,4 +317,3 @@ table.insert( xgui.modules.tab, { name="Bans", panel=xgui_bans, icon="gui/silkic
 table.insert( xgui.hook["bans"], xgui_bans.updateBans )
 table.insert( xgui.hook["sbans"], xgui_bans.updateSBans )
 table.insert( xgui.hook["onUnban"], xgui_bans.banRemoved )
-table.insert( xgui.hook["onOpen"], xgui_bans.checkTimes )

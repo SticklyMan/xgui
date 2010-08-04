@@ -19,4 +19,23 @@ x_makeslider{ x=10, y=35, w=150, label="Fade transition time", min=0.01, max=2, 
 		end
 	end
 end
+x_makelabel{ x=10, y=77, label="Infobar color:", textcolor=color_black, parent=xgui_settings }
+xgui_settings.infocolor = x_makecolorpicker{ x=10, y=95, w=180, h=150, focuscontrol=true, parent=xgui_settings }
+RunConsoleCommand( "colour_r", xgui.infobar.color.r )
+RunConsoleCommand( "colour_g", xgui.infobar.color.g )
+RunConsoleCommand( "colour_b", xgui.infobar.color.b )
+RunConsoleCommand( "colour_a", xgui.infobar.color.a )
+xgui_settings.infocolor.Mixer.UpdateConVars = function( self, color )
+	self.NextConVarCheck = SysTime() + 0.1
+	xgui.infobar.color = color
+	self:UpdateConVar( self.m_ConVarR, 'r', color )
+	self:UpdateConVar( self.m_ConVarG, 'g', color )
+	self:UpdateConVar( self.m_ConVarB, 'b', color )
+	self:UpdateConVar( self.m_ConVarA, 'a', color )
+end
+xgui_settings.infocolor.Mixer.AlphaBar.OnChange = function( ctrl, alpha )
+	xgui_settings.infocolor.Mixer:SetColorAlpha( alpha )
+	xgui.infobar.color = { r=xgui.infobar.color.r, g=xgui.infobar.color.g, b=xgui.infobar.color.b, a=alpha }
+end
+
 table.insert( xgui.modules.setting, { name="XGUI", panel=xgui_settings, icon="gui/silkicons/page_white_wrench", tooltip=nil, access=nil } )

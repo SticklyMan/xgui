@@ -270,6 +270,32 @@ local function xgui_helpers()
 			self.DropButton:SetMouseInputEnabled( not val )
 		end
 
+		--Add support for Spacers
+		function xgui_temp:OpenMenu( pControlOpener ) --Garrys function with no comments, just adding a few things.
+			if ( pControlOpener ) then
+				if ( pControlOpener == self.TextEntry ) then
+					return
+				end
+			end
+			if ( #self.Choices == 0 ) then return end
+			if ( self.Menu ) then
+				self.Menu:Remove()
+				self.Menu = nil
+				return		
+			end
+			self.Menu = DermaMenu()
+				for k, v in pairs( self.Choices ) do
+					if v == "--*" then --This is the string to determine where to add the spacer
+						self.Menu:AddSpacer()
+					else
+						self.Menu:AddOption( v, function() self:ChooseOption( v, k ) end )
+					end
+				end
+				local x, y = self:LocalToScreen( 0, self:GetTall() )
+				self.Menu:SetMinimumWidth( self:GetWide() )
+				self.Menu:Open( x, y, false, self )		
+		end
+		
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
@@ -358,11 +384,49 @@ local function xgui_helpers()
 				--Remove the default mixer and replace with a mixer without the alpha bar
 				xgui_temp.Mixer = vgui.Create( "XGUIColorMixerNoAlpha", xgui_temp )
 			end
-			xgui_temp:SetConVarR( "colour_r" )
-			xgui_temp:SetConVarG( "colour_g" )
-			xgui_temp:SetConVarB( "colour_b" )
+			if not t.ignorecvars then
+				xgui_temp:SetConVarR( "colour_r" )
+				xgui_temp:SetConVarG( "colour_g" )
+				xgui_temp:SetConVarB( "colour_b" )
+			end
 			if not t.removealpha then
 				xgui_temp:SetConVarA( "colour_a" )
+			end
+			if t.focuscontrol then
+				xgui_temp.txtR.TextEntry.OnGetFocus = function( self )
+					self:SelectAllText()
+					xgui.base:SetKeyboardInputEnabled( true )
+				end
+				xgui_temp.txtR.TextEntry.OnLoseFocus = function( self )
+					xgui.base:SetKeyboardInputEnabled( false )
+					self:UpdateConvarValue()
+				end
+				xgui_temp.txtG.TextEntry.OnGetFocus = function( self )
+					self:SelectAllText()
+					xgui.base:SetKeyboardInputEnabled( true )
+				end
+				xgui_temp.txtG.TextEntry.OnLoseFocus = function( self )
+					xgui.base:SetKeyboardInputEnabled( false )
+					self:UpdateConvarValue()
+				end
+				xgui_temp.txtB.TextEntry.OnGetFocus = function( self )
+					self:SelectAllText()
+					xgui.base:SetKeyboardInputEnabled( true )
+				end
+				xgui_temp.txtB.TextEntry.OnLoseFocus = function( self )
+					xgui.base:SetKeyboardInputEnabled( false )
+					self:UpdateConvarValue()
+				end
+				if xgui_temp.txtA then
+					xgui_temp.txtA.TextEntry.OnGetFocus = function( self )
+						self:SelectAllText()
+						xgui.base:SetKeyboardInputEnabled( true )
+					end
+					xgui_temp.txtA.TextEntry.OnLoseFocus = function( self )
+						xgui.base:SetKeyboardInputEnabled( false )
+						self:UpdateConvarValue()
+					end
+				end
 			end
 			xgui_temp:SetPos( t.x, t.y )
 			xgui_temp:SetSize( t.w, t.h )

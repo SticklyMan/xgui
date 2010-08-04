@@ -3,7 +3,7 @@ xgui = {}
 --Set up a table for storing third party modules and information
 xgui.modules = { tab={}, gamemode={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
-xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={}, file_structure={} }
+xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
 
 local function xgui_init()
 	--Check if the server has XGUI installed
@@ -15,6 +15,24 @@ local function xgui_init()
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
 
+	--Create the bottom infobar
+	xgui.infobar = x_makepanel{ x=10, y=399, w=580, h=20, parent=xgui.base }
+	xgui.infobar.color = Color(100,255,255,128)
+	xgui.infobar:NoClipping( true )
+	xgui.infobar.Paint = function( self )
+		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.infobar.color, false, false, true, true )
+	end
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.03  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	--ulx.getVersion(), ULib.VERSION
+	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
+	xgui.thetime:NoClipping( true )
+	xgui.thetime.check = function()
+		xgui.thetime:SetText( os.date( "\n%I:%M:%S %p" ) )
+		xgui.thetime:SizeToContents()
+		timer.Simple( 1, xgui.thetime.check )
+	end
+	xgui.thetime.check()
+	
 	--Create an offscreen place to parent modules that the player can't access
 	xgui.null = x_makepanel{ x=-10, y=-10, w=0, h=0 }
 	xgui.null:SetVisible( false )
@@ -51,8 +69,10 @@ local function xgui_init()
 	
 	--Hold off adding the hook to reprocess modules on re-authentication to prevent being called on first auth.
 	ULib.queueFunctionCall( hook.Add, "UCLAuthed", "XGUI_PermissionsChanged", xgui.PermissionsChanged )
+
+	hook.Remove( "UCLAuthed", "InitXGUI" )
 end
-hook.Add( "ULibLocalPlayerReady", "InitXGUI", xgui_init, 20 )
+hook.Add( "UCLAuthed", "InitXGUI", xgui_init, 20 )
 
 function xgui.processModules( wasvisible, activetab )
 	local settings = nil
