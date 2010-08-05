@@ -5,7 +5,7 @@ xgui.modules = { tab={}, gamemode={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
 xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
 
-function xgui.init( authedply )
+local function xgui_init( authedply )
 	if authedply ~= LocalPlayer() then return end
 	
 	--Check if the server has XGUI installed
@@ -74,7 +74,7 @@ function xgui.init( authedply )
 
 	hook.Remove( "UCLAuthed", "InitXGUI" )
 end
-hook.Add( "UCLAuthed", "InitXGUI", xgui.init, 20 )
+hook.Add( "UCLAuthed", "InitXGUI", xgui_init, 20 )
 
 function xgui.processModules( wasvisible, activetab )
 	local settings = nil
