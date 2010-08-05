@@ -238,8 +238,7 @@ local function xgui_helpers()
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetEditable( t.enableinput )
-		local func = xgui_temp.OpenMenu
-		xgui_temp.OpenMenu = function( self, pControlOpener ) func( self, pControlOpener ) self:RequestFocus() end --Force the menu to request focus when opened, to prevent the menu being open, but the focus being to the controls behind it.
+
 		if ( t.focuscontrol == true ) then
 			xgui_temp.DropButton.OnMousePressed = function( button, mcode ) 
 				xgui.base:SetKeyboardInputEnabled( false )
@@ -281,7 +280,7 @@ local function xgui_helpers()
 			if ( self.Menu ) then
 				self.Menu:Remove()
 				self.Menu = nil
-				return		
+				return
 			end
 			self.Menu = DermaMenu()
 				for k, v in pairs( self.Choices ) do
@@ -293,7 +292,8 @@ local function xgui_helpers()
 				end
 				local x, y = self:LocalToScreen( 0, self:GetTall() )
 				self.Menu:SetMinimumWidth( self:GetWide() )
-				self.Menu:Open( x, y, false, self )		
+				self.Menu:Open( x, y, false, self )
+			ULib.queueFunctionCall( self.RequestFocus, self ) --Force the menu to request focus when opened, to prevent the menu being open, but the focus being to the controls behind it.
 		end
 		
 		--Replicated Convar Updating

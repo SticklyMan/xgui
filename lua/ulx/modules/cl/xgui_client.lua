@@ -5,7 +5,9 @@ xgui.modules = { tab={}, gamemode={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
 xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
 
-local function xgui_init()
+function xgui.init( authedply )
+	if authedply ~= LocalPlayer() then return end
+	
 	--Check if the server has XGUI installed
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
@@ -22,7 +24,7 @@ local function xgui_init()
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.infobar.color, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.03  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.04  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	--ulx.getVersion(), ULib.VERSION
 	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
@@ -72,7 +74,7 @@ local function xgui_init()
 
 	hook.Remove( "UCLAuthed", "InitXGUI" )
 end
-hook.Add( "UCLAuthed", "InitXGUI", xgui_init, 20 )
+hook.Add( "UCLAuthed", "InitXGUI", xgui.init, 20 )
 
 function xgui.processModules( wasvisible, activetab )
 	local settings = nil
@@ -283,7 +285,7 @@ function xgui.expectChunks( numofchunks, updated )
 		self.progress.Label:SetText( curtable .. " - " .. self.progress.Label:GetValue() )
 		self.progress:PerformLayout()
 		if self.progress:GetValue() == xgui.chunkbox.max then
-			RunConsoleCommand( "xgui", "dataComplete" )
+			RunConsoleCommand( "_xgui", "dataComplete" )
 			xgui.receivingdata = false
 			xgui.chunkbox:Remove()
 			xgui.chunkbox = nil
@@ -324,7 +326,7 @@ end
 --As long as we're not sending data, force a check on the server to see if there's more data to send.
 function xgui.forceDataCheck()
 	if not xgui.chunkbox then
-		RunConsoleCommand( "xgui", "dataComplete" )
+		RunConsoleCommand( "_xgui", "dataComplete" )
 	end
 end
 

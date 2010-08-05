@@ -2,6 +2,7 @@
 --Manages banned users and shows ban details
 
 local xgui_bans = x_makeXpanel{ parent=xgui.null }
+xgui_bans.isPopulating = 0
 xgui_bans.showperma = x_makecheckbox{ x=445, y=10, value=1, label="Show Permabans", textcolor=color_black, parent=xgui_bans }
 function xgui_bans.showperma:OnChange()
 	xgui_bans.updateBans( )
@@ -114,9 +115,9 @@ function xgui_bans.UpdateBannameWindow( ID )
 end
 
 function xgui_bans.UpdateBanreasonWindow( ID )
-	local xgui_updateBanReason = x_makeframepopup{ w=400, h=60, label="Update Reason of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true }
-	local xgui_newBanReason = x_maketextbox{ x=10, y=30, w=380, h=20, text=xgui.data.bans[ID].reason, parent=xgui_updateBanReason }
-	xgui_newBanReason.OnEnter = function()
+	local xgui_updateBanReason = x_makeframepopup{ w=300, h=80, label="Update Reason of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true }
+	local xgui_newBanReason = x_makemultichoice{ x=10, y=30, w=280, text=xgui.data.bans[ID].reason, parent=xgui_updateBanReason, enableinput=true, focuscontrol=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes }
+	x_makebutton{ x=125, y=55, w=50, label="OK", parent=xgui_updateBanReason }.DoClick = function()
 		RunConsoleCommand( "xgui", "updateBanReason", ID, ( xgui_newBanReason:GetValue() ~= "" and xgui_newBanReason:GetValue() or nil ) )
 		xgui_updateBanReason:Remove()
 	end
@@ -147,11 +148,18 @@ function xgui_bans.ShowBanDetailsWindow( ID )
 	
 	if timeleft:GetValue() ~= "N/A" then
 		function xgui_detailswindow.OnTimer()
-			if xgui_detailswindow:IsVisible() and xgui.data.bans[ID] then
-				timeleft:SetText( xgui.ConvertTime( xgui.data.bans[ID].unban - os.time() ) )
-				if ( xgui.data.bans[ID].unban - os.time() ) <= 0 then 
+			if xgui_detailswindow:IsVisible() then
+				if not xgui.data.bans[ID] then
 					xgui_detailswindow:Remove()
+					return
 				end
+				local bantime = xgui.data.bans[ID].unban - os.time()
+				if bantime <= 0 then
+					timeleft:SetText( xgui.ConvertTime( 0 ) .. "      (Waiting for server)" )
+				else
+					timeleft:SetText( xgui.ConvertTime( bantime ) )
+				end
+				timeleft:SizeToContents()
 				timer.Simple( 1, xgui_detailswindow.OnTimer )
 			end
 		end
@@ -210,19 +218,28 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 				elseif interval:GetValue() == "Hours" then calctime = calctime*60
 				elseif interval:GetValue() == "Days" then calctime = calctime*1440
 				elseif interval:GetValue() == "Years" then calctime = calctime*525600 end
-				--If the player is online, ban them by their name so it saves the players name...
-				for k, v in ipairs( player.GetAll() ) do
-					if v:SteamID() == steamID:GetValue() or v:Nick() == name:GetValue() then
-						RunConsoleCommand( "ulx", "ban", v:Nick(), calctime, reason:GetValue() )
-						xgui_banwindow:Remove()
-						return
+				
+				if ULib.isValidSteamID( steamID:GetValue() ) then
+					local isOnline = false
+					for k, v in ipairs( player.GetAll() ) do
+						if v:SteamID() == steamID:GetValue() then
+							isOnline = true
+							break
+						end
 					end
-				end
-				--...Otherwise ban by their ID (if valid), then call a function to set the banID name if specified.
-				if string.match( steamID:GetValue(), "STEAM_%w:%w:%w*" ) then
-					RunConsoleCommand( "xgui", "updateBanName", steamID:GetValue(), ( name:GetValue() ~= "" and name:GetValue() or nil ), "true" )
+					if not isOnline then
+						RunConsoleCommand( "xgui", "updateBanName", steamID:GetValue(), ( name:GetValue() ~= "" and name:GetValue() or nil ), "true" )
+					end
 					RunConsoleCommand( "ulx", "banid", steamID:GetValue(), calctime, reason:GetValue() )
 					xgui_banwindow:Remove()
+				else
+					for k, v in ipairs( player.GetAll() ) do
+						if v:Nick() == name:GetValue() then
+							RunConsoleCommand( "ulx", "ban", v:Nick(), calctime, reason:GetValue() )
+							xgui_banwindow:Remove()
+							break
+						end
+					end
 				end
 			end
 			
@@ -275,9 +292,10 @@ function xgui_bans.banRemoved( banid )
 end
 
 function xgui_bans.populate( bantable )
+	xgui_bans.showperma:SetDisabled( true )
+	xgui_bans.isPopulating = xgui_bans.isPopulating + 1
 	for steamID, baninfo in pairs( bantable ) do
 		if not ( xgui_bans.showperma:GetChecked() == false and tonumber( baninfo.unban ) == 0 ) then
-			if tonumber( baninfo.unban ) ~= 0 and baninfo.unban - os.time() <= 0 then RunConsoleCommand( "xgui", "refreshBans" ) end
 			local xgui_tempadmin = ( baninfo.admin ) and string.gsub( baninfo.admin, "%(STEAM_%w:%w:%w*%)", "" ) or ""
 			ULib.queueFunctionCall( xgui_bans.banlist.AddLine, xgui_bans.banlist,
 															   baninfo.name or steamID,
@@ -288,6 +306,8 @@ function xgui_bans.populate( bantable )
 															   tonumber( baninfo.unban ) ) --Queue this via ULib.queueFunctionCall to prevent lag
 		end
 	end
+	ULib.queueFunctionCall( function() xgui_bans.isPopulating = xgui_bans.isPopulating - 1 
+										if xgui_bans.isPopulating == 0 then xgui_bans.showperma:SetDisabled( false ) end end )
 end
 
 function xgui_bans.updateBans( chunk )

@@ -125,9 +125,14 @@ function cmds.refreshArgslist( cmd )
 	cmds.argslist:Clear()
 	local argnum = 0
 	local curitem
+	if cmd.args[2] then
+		expectingplayers = ( cmd.args[2].type == ULib.cmds.PlayersArg ) or ( cmd.args[2].type == ULib.cmds.PlayerArg )
+	else
+		expectingplayers = false
+	end
 	for _, arg in ipairs( cmd.args ) do
 		argnum = argnum + 1
-		if not ( argnum == 2 ) then
+		if not ( argnum == 2 and expectingplayers ) then
 			if arg.type.invisible ~= true and arg.invisible ~= true then
 				curitem = arg
 				cmds.argslist:AddItem( arg.type.x_getcontrol( arg, argnum ) )
