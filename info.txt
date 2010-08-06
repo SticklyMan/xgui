@@ -2,7 +2,7 @@
 {
 	"name"				"XGUI"
 	"version"			"Prerelease"
-	"up_date"			"August 4, 2010"
+	"up_date"			"August 5, 2010"
 	"author_name"			"Stickly Man! / Team Ulysses"
 	"author_email"			"teamulysses@ulyssesmod.net"
 	"author_url"			"http://www.ulyssesmod.net/"

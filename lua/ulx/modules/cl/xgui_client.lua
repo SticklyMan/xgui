@@ -24,7 +24,7 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.infobar.color, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.04  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.05  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	--ulx.getVersion(), ULib.VERSION
 	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )

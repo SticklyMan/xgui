@@ -152,8 +152,7 @@ function xgui.cmd( ply, func, args )
 	elseif branch == "updateAdvert" then xgui.updateAdvert( ply, args )
 	elseif branch == "addVotemaps" then xgui.addVotemaps( ply, args )
 	elseif branch == "removeVotemaps" then xgui.removeVotemaps( ply, args )
-	elseif branch == "updateBanName" then xgui.UpdateBanName( ply, args )
-	elseif branch == "updateBanReason" then xgui.UpdateBanReason( ply, args )
+	elseif branch == "updateBan" then xgui.updateBan( ply, args )
 	elseif branch == "refreshBans" then ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" )
 	elseif branch == "getInstalled" then ply:SendLua( "xgui.getInstalled()" ) xgui.sendData( ply, {} ) --Lets the client know that the server has XGUI, then begins sending data
 	elseif branch == "dataComplete" then xgui.chunksFinished( ply )
@@ -550,31 +549,30 @@ function xgui.unbanTimer()
 	end
 end
 
-function xgui.UpdateBanName( ply, args )
-	if ply:query( "xgui_managebans" ) then
-		if args[3] == "true" then 
-			xgui.tempBanName = args[2] --To prevent server sending duplicate data, we're going to store the name until the ban is processed.
-		else
-			local ID = args[1]
-			if ULib.bans[ID] then
-				ULib.bans[ID].name = args[2]
-				--Save the banfile
-				file.Write( ULib.BANS_FILE, ULib.makeKeyValues( ULib.bans ) )
-				--Call our function to refresh ban data for players
-				xgui.ULXCommandCalled( nil, "ulx banid" )
+function xgui.updateBan( ply, args )
+	if ply:query( "ulx ban" ) or ply:query( "ulx banid" ) then
+		local steamID = args[1]
+		if args[5] == "true" then --Is a sourceban conversion
+			xgui.ULXCommandCalled( nil, "ulx unban", { nil, steamID } ) --Call this to update the players' source ban lists.
+		end
+		local bantime = tonumber( args[2] )
+		if bantime == nil then
+			if ULib.bans[steamID].unban ~= 0 then
+				bantime = (ULib.bans[steamID].unban - ULib.bans[steamID].time)/60
+			else
+				bantime = 0
 			end
 		end
-	end
-end
-
-function xgui.UpdateBanReason( ply, args )
-	if ply:query( "xgui_managebans" ) then 
-		local ID = args[1]
-		ULib.bans[ID].reason = args[2]
-		--Save the banfile
-		file.Write( ULib.BANS_FILE, ULib.makeKeyValues( ULib.bans ) )
-		--Call our function to refresh ban data for players
-		xgui.ULXCommandCalled( nil, "ulx banid" )
+		local reason = args[3]
+		if reason == "" then
+			reason = ULib.bans[steamID].reason
+		end
+		local name = args[4]
+		if name == "" then
+			name = ULib.bans[steamID].name
+		end
+		ULib.addBan( steamID, bantime, reason, name, ply )
+		xgui.ULXCommandCalled( nil, "ulx ban" )
 	end
 end
 
@@ -582,16 +580,11 @@ end
 --Ex. When someone uses ulx ban, call the clients to refresh the appropriate data
 function xgui.ULXCommandCalled( ply, cmdName, args )
 	if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then xgui.splitbans() xgui.unbanTimer() end -- Recheck the bans if a ban was added/removed
-	if cmdName == "ulx banid" and xgui.tempBanName then 
-		local ID = args[2]
-		ULib.bans[ID].name = xgui.tempBanName
-		xgui.tempBanName = nil
-	end
 	for _, v in ipairs( player.GetAll() ) do
 		if cmdName == "ulx ban" or cmdName == "ulx banid" then
 			xgui.sendData( v, {[1]="bans"} )
 		elseif cmdName == "ulx unban" then
-			if ply:query( "xgui_managebans" ) then
+			if v:query( "xgui_managebans" ) then
 				ULib.clientRPC( v, "xgui.callRefresh", "onUnban", args[2] )
 				if timer.IsTimer( "xgui_unban" .. args[2] ) then
 					timer.Destroy( "xgui_unban" .. args[2] )
