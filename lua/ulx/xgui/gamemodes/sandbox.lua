@@ -27,5 +27,5 @@ function sbox_settings.processLimits()
 	end
 end
 
-table.insert( xgui.modules.gamemode, { name="Sandbox", panel=sbox_settings, icon="gui/silkicons/box", tooltip=nil, access="xgui_gmsettings" } )
+table.insert( xgui.modules.setting, { name="Sandbox", panel=sbox_settings, icon="gui/silkicons/box", tooltip=nil, access="xgui_gmsettings" } )
 table.insert( xgui.hook["sboxlimits"], sbox_settings.processLimits )

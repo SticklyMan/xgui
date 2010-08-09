@@ -17,7 +17,6 @@ x_makeslider{ x=10, y=90+offset, w=125, label="sv_gravity", min=-1000, max=1000,
 x_makeslider{ x=10, y=130+offset, w=125, label="phys_timescale", min=0, max=4, decimal=2, repconvar="rep_phys_timescale", parent=server_settings, textcolor=color_black }
 
 ------------------------ULX Category Menu------------------------
-server_settings.curPanel = nil
 server_settings.panel = x_makepanel{ x=300, y=5, w=285, h=327, parent=server_settings }
 
 server_settings.catList = x_makelistview{ x=145, y=5, w=150, h=327, parent=server_settings }
@@ -33,6 +32,7 @@ server_settings.catList.OnRowSelected=function()
 		server_settings.panel.slideAnim:Start( xgui.base:GetFadeTime(), { NewPanel = nPanel, OldPanel = server_settings.curPanel } )
 		server_settings.curPanel = nPanel
 	end
+	if nPanel.onOpen then nPanel.onOpen() end --If the panel has it, call a function when it's opened
 end
 --Frame animations!
 function server_settings.panel:slideFunc( anim, delta, data )
@@ -59,6 +59,7 @@ function server_settings.panel:Think()
 end
 --Process modular settings (Mostly loaded from sv_ulx.lua)
 function server_settings.processModules()
+	server_settings.curPanel = nil
 	server_settings.catList:Clear()
 	for i, module in ipairs( xgui.modules.svsetting ) do
 		if not module.access then

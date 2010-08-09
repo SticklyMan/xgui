@@ -14,7 +14,7 @@ x_makeslider{ x=10, y=35, w=150, label="Fade transition time", min=0.01, max=2, 
 		xgui.base:SetFadeTime( tonumber( val ) )
 		for k, v in pairs( xgui.modules.tab ) do
 			if v.name == "Settings" then
-				v.panel.tabs:SetFadeTime( tonumber( val ) )
+				xgui.settings_tabs:SetFadeTime( tonumber( val ) )
 			end
 		end
 	end

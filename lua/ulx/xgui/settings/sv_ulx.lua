@@ -9,7 +9,7 @@ plist:AddItem( x_makeslider{ label="Minimum votes for a successful mapchange", m
 table.insert( xgui.modules.svsetting, { name="ULX Admin Votemaps", panel=plist, access=nil } )
 
 -----------------------------Adverts-----------------------------
-adverts = x_makepanel{ w=285, h=327, parent=xgui.null }
+local adverts = x_makepanel{ w=285, h=327, parent=xgui.null }
 adverts.Paint = function( self )
 	draw.RoundedBox( 4, 0, 0, 285, 327, Color( 111, 111, 111, 255 ) )	
 end
@@ -158,6 +158,10 @@ function adverts.updateAdverts()
 			end
 		end
 	end
+	adverts.tree:InvalidateLayout()
+end
+function adverts.onOpen()
+	ULib.queueFunctionCall( adverts.tree.InvalidateLayout, adverts.tree )
 end
 table.insert( xgui.hook["adverts"], adverts.updateAdverts )
 table.insert( xgui.modules.svsetting, { name="ULX Adverts", panel=adverts, access=nil } )

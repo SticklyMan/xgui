@@ -117,8 +117,11 @@ function xgui.processCvars()
 				end
 			end
 		end
-		for _, v in ipairs( player.GetAll() ) do
-			xgui.sendData( v, {[1]="sboxlimits"} )
+		if xgui.sendLimits then
+			for _, v in ipairs( player.GetAll() ) do
+				xgui.sendData( v, {[1]="sboxlimits"} )
+			end
+			xgui.sendLimits = nil
 		end
 	end
 	hook.Remove( "ULibLocalPlayerReady", "xgui_processCvars" )
@@ -211,8 +214,12 @@ function xgui.sendData( ply, args, extdata )
 			end
 		elseif u == "sboxlimits" then --Update Sandbox Cvar Limits
 			if ply:query( "xgui_gmsettings" ) then
-				if xgui.sboxLimits ~= nil and ULib.isSandbox() then
-					table.insert( chunks, { xgui.sboxLimits, "sboxlimits" } )
+				if xgui.sboxLimits ~= nil then
+					if ULib.isSandbox() then
+						table.insert( chunks, { xgui.sboxLimits, "sboxlimits" } )
+					end
+				else
+					xgui.sendLimits = true --The sboxlimits haven't arrived yet, raise a flag for them to be sent when they do.
 				end
 			end
 		elseif u == "bans" then --Update ULX Bans
@@ -552,6 +559,7 @@ end
 function xgui.updateBan( ply, args )
 	if ply:query( "ulx ban" ) or ply:query( "ulx banid" ) then
 		local steamID = args[1]
+		if not ULib.bans[steamID] then return end
 		if args[5] == "true" then --Is a sourceban conversion
 			xgui.ULXCommandCalled( nil, "ulx unban", { nil, steamID } ) --Call this to update the players' source ban lists.
 		end

@@ -1,7 +1,7 @@
 --GUI for ULX -- by Stickly Man!
 xgui = {}
 --Set up a table for storing third party modules and information
-xgui.modules = { tab={}, gamemode={}, setting={}, svsetting={} }
+xgui.modules = { tab={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
 xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
 
@@ -12,7 +12,7 @@ local function xgui_init( authedply )
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
 	--Data storing relevant information retrieved from server.
-	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, maps = {}, gamemodes = {}, sboxlimits = {} }
+	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, gamemodes = {}, sboxlimits = {} }
 	
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
@@ -24,7 +24,7 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.infobar.color, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.05  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.08  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	--ulx.getVersion(), ULib.VERSION
 	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
@@ -69,102 +69,148 @@ local function xgui_init( authedply )
 	Msg( "// Modules Loaded!                   //\n" )
 	Msg( "///////////////////////////////////////\n\n" )
 	
+	--TODO: Load XGUI saved settings and whatnot here?
+	--Temporary settings table
+	xgui.settings = { moduleOrder = { "Cmds", "Groups", "Maps", "Settings", "Bans" }, settingOrder = { "Sandbox", "Server", "XGUI" } }
+	
+	--Find any existing modules that aren't listed in the requested order.
+	local function checkModulesOrder( moduleTable, sortTable )
+		for _, m in ipairs( moduleTable ) do
+			local notlisted = true
+			for _, existing in ipairs( sortTable ) do
+				if m.name == existing then
+					notlisted = false
+					break
+				end
+			end
+			if notlisted then
+				table.insert( sortTable, m.name )
+			end
+		end
+	end
+	checkModulesOrder( xgui.modules.tab, xgui.settings.moduleOrder )
+	checkModulesOrder( xgui.modules.setting, xgui.settings.settingOrder )
+	
 	--Hold off adding the hook to reprocess modules on re-authentication to prevent being called on first auth.
 	ULib.queueFunctionCall( hook.Add, "UCLAuthed", "XGUI_PermissionsChanged", xgui.PermissionsChanged )
 
 	hook.Remove( "UCLAuthed", "InitXGUI" )
+	xgui.initialized = true
 end
 hook.Add( "UCLAuthed", "InitXGUI", xgui_init, 20 )
 
-function xgui.processModules( wasvisible, activetab )
-	local settings = nil
+function xgui.checkModuleExists( modulename, moduletable )
+	for k, v in ipairs( moduletable ) do
+		if v.name == modulename then
+			return k
+		end
+	end
+	return false
+end
+
+function xgui.processModules( wasvisible )
+	--Temporarily "disable" animations
+	local tempfadetime = xgui.base:GetFadeTime()
+	xgui.base:SetFadeTime( 0.0000001 )
+	xgui.settings_tabs:SetFadeTime( 0.0000001 )
+	
+	local activetab = nil
+	if xgui.base:GetActiveTab() then
+		activetab = xgui.base:GetActiveTab():GetValue()
+	end
+	
+	local activesettingstab = nil
+	if xgui.settings_tabs:GetActiveTab() then
+		activesettingstab = xgui.settings_tabs:GetActiveTab():GetValue()
+	end
+	
 	xgui.base:Clear() --We need to remove any existing tabs in the GUI
-	for k, v in pairs( xgui.modules.tab ) do
-		if v.xbutton == nil then
-			v.xbutton = x_makesysbutton{ x=565, y=5, w=20, btype="close", parent=v.panel }
-			v.xbutton.DoClick = function()
-				xgui.hide()
+	for _, modname in ipairs( xgui.settings.moduleOrder ) do
+		local module = xgui.checkModuleExists( modname, xgui.modules.tab )
+		if module then
+			module = xgui.modules.tab[module]
+			if module.xbutton == nil then
+				module.xbutton = x_makesysbutton{ x=565, y=5, w=20, btype="close", parent=module.panel }
+				module.xbutton.DoClick = function()
+					xgui.hide()
+				end
 			end
-		end
-		if v.access then
-			if LocalPlayer():query( v.access ) then
-				xgui.base:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
-				xgui.modules.tab[k].tabpanel = xgui.base.Items[#xgui.base.Items].Tab
+			if module.access then
+				if LocalPlayer():query( module.access ) then
+					xgui.base:AddSheet( module.name, module.panel, module.icon, false, false, module.tooltip )
+					module.tabpanel = xgui.base.Items[#xgui.base.Items].Tab
+				else
+					module.tabpanel = nil
+					module.panel:SetParent( xgui.null )
+				end
 			else
-				xgui.modules.tab[k].tabpanel = nil
-				v.panel:SetParent( xgui.null )
+				xgui.base:AddSheet( module.name, module.panel, module.icon, false, false, module.tooltip )
+				module.tabpanel = xgui.base.Items[#xgui.base.Items].Tab
 			end
-		else
-			xgui.base:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
-			xgui.modules.tab[k].tabpanel = xgui.base.Items[#xgui.base.Items].Tab
-		end
-		if v.name == "Settings" then --Find the settings module to link other modules
-			settings = v.panel.tabs
 		end
 	end
 	
-	settings:Clear() --Clear out settings tabs for reprocessing
-	--Start by adding the gamemode module, if it exists
-	for k, v in pairs( xgui.modules.gamemode ) do
-		if v.access then
-			if LocalPlayer():query( v.access ) then
-				settings:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
-				xgui.modules.setting[k].tabpanel = settings.Items[#settings.Items].Tab
+	xgui.settings_tabs:Clear() --Clear out settings tabs for reprocessing
+	for _, modname in ipairs( xgui.settings.settingOrder ) do
+		local module = xgui.checkModuleExists( modname, xgui.modules.setting )
+		if module then
+			module = xgui.modules.setting[module]
+			if module.access then
+				if LocalPlayer():query( module.access ) then
+					xgui.settings_tabs:AddSheet( module.name, module.panel, module.icon, false, false, module.tooltip )
+					module.tabpanel = xgui.settings_tabs.Items[#xgui.settings_tabs.Items].Tab
+				else
+					module.tabpanel = nil
+					module.panel:SetParent( xgui.null )
+				end
 			else
-				xgui.modules.setting[k].tabpanel = nil
-				v.panel:SetParent( xgui.null )
+				xgui.settings_tabs:AddSheet( module.name, module.panel, module.icon, false, false, module.tooltip )
+				module.tabpanel = xgui.settings_tabs.Items[#xgui.settings_tabs.Items].Tab
 			end
-		else
-			settings:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
-			xgui.modules.tab[k].tabpanel = settings.Items[#settings.Items].Tab
-		end
-	end
-	
-	--Now add the rest of the settings modules
-	for k, v in pairs( xgui.modules.setting ) do
-		if v.access then
-			if LocalPlayer():query( v.access ) then
-				settings:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
-				xgui.modules.setting[k].tabpanel = settings.Items[#settings.Items].Tab
-			else
-				xgui.modules.setting[k].tabpanel = nil
-				v.panel:SetParent( xgui.null )
-			end
-		else
-			settings:AddSheet( v.name, v.panel, v.icon, false, false, v.tooltip )
-			xgui.modules.tab[k].tabpanel = settings.Items[#settings.Items].Tab
 		end
 	end
 	
 	--Call any functions that requested to be called when permissions change
 	for _, func in ipairs( xgui.hook["onProcessModules" ] ) do func() end
 	
-	if activetab then
-		for k, v in ipairs( xgui.modules.tab ) do
-			if v.name == table.concat( activetab, " " ) and v.panel:GetParent() ~= xgui.null then 
-				if wasvisible then xgui.show( activetab ) end
-				return
+	if activesettingstab then
+		if xgui.settings_tabs:GetActiveTab():GetValue() ~= activesettingstab then
+			for k, v in ipairs( xgui.modules.setting ) do
+				if v.name == activesettingstab and v.panel:GetParent() ~= xgui.null then 
+					xgui.settings_tabs:SetActiveTab( v.tabpanel )
+					break
+				end
 			end
 		end
-		--If the code here executes, that means the previous active tab is now hidden, so we set the active tab to the Players tab (which should always be visible)
-		if wasvisible then 
-			xgui.base:SetActiveTab( xgui.modules.tab[1].tabpanel )
-			xgui.base.animFade:Start( xgui.base:GetFadeTime(), { OldTab = xgui.base.m_pActiveTab, NewTab = xgui.base.m_pActiveTab } ) --Rerun the fade animation so it shows up properly
-		else
-			xgui.base:SetActiveTab( xgui.modules.tab[1].tabpanel )
+		xgui.settings_tabs.animFade:Run()
+	end
+
+	if activetab then
+		if xgui.base:GetActiveTab():GetValue() ~= activetab then --Don't do anything if it's already on the correct tab.
+			for k, v in ipairs( xgui.modules.tab ) do
+				if v.name == activetab and v.panel:GetParent() ~= xgui.null then 
+					if wasvisible then xgui.show( activetab ) end
+					xgui.base:SetFadeTime( tempfadetime )
+					xgui.settings_tabs:SetFadeTime( tempfadetime )
+					return
+				end
+			end
+			--If the code here executes, that means the previous active tab is now hidden, so we set the active tab to the first tab
+			xgui.base:SetActiveTab( xgui.base.Items[1].Tab )
+			if wasvisible then
+				xgui.base.animFade:Start( xgui.base:GetFadeTime(), { OldTab = xgui.base.m_pActiveTab, NewTab = xgui.base.m_pActiveTab } ) --Rerun the fade animation so it shows up properly
+			end
 		end
 	end
+	xgui.base:SetFadeTime( tempfadetime )
+	xgui.settings_tabs:SetFadeTime( tempfadetime )
 end
 
 --If the player's group is changed, reprocess the XGUI modules for permissions
 function xgui.PermissionsChanged( ply )
 	if ply == LocalPlayer() then
 		Msg( "Reprocessing XGUI modules- Player's permissions changed\n" )
-		local activetab = nil
-		if xgui.base:GetActiveTab() then
-			activetab = string.Explode( " ", xgui.base:GetActiveTab():GetValue() )
-		end
-		xgui.processModules( xgui.base:IsVisible(), activetab )
+		xgui.processModules( xgui.base:IsVisible() )
 		RunConsoleCommand( "xgui", "getdata" ) --Grab new server data
 	end
 end
@@ -191,6 +237,8 @@ function xgui.isNotInstalled( tabname )
 end
 
 function xgui.show( tabname )
+	if not xgui.initialized then return end
+	
 	--Check if XGUI is not installed, display the warning if hasn't been shown yet.
 	if xgui.wait then return end
 	if xgui.isInstalled == nil and xgui.notinstalled == nil then
@@ -296,7 +344,6 @@ end
 --Function called when data chunk is recieved from server
 function xgui.getChunk( data, curtable )
 	xgui.chunkbox:Progress( curtable )
-	--We need seperate cases for these to prevent data getting out-of-order (adverts), while supporting chunk'd tables
 	if curtable == "bans" then
 		for k, v in pairs( data ) do
 			xgui.data[curtable][k] = v
@@ -305,8 +352,9 @@ function xgui.getChunk( data, curtable )
 		for k, v in ipairs( data ) do
 			table.insert( xgui.data[curtable], v )
 		end
-	elseif curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update it's table of votemaps
+	elseif curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update its table of votemaps
 		ulx.populateClVotemaps( data )
+		xgui.data[curtable] = nil
 	else
 		xgui.data[curtable] = data
 	end

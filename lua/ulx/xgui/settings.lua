@@ -1,14 +1,14 @@
 --Settings module v2 for ULX GUI -- by Stickly Man!
 --Allows changing of various settings
 
-local xgui_settings2 = x_makepanel{ x=5, y=27, parent=xgui.null }
+local settings = x_makepanel{ x=5, y=27, parent=xgui.null }
 
-xgui_settings2.tabs = vgui.Create( "DPropertySheet", xgui_settings2 )
-xgui_settings2.tabs:SetSize( 600, 368 )
-xgui_settings2.tabs.CheckAlpha = true
-xgui_settings2.tabs:SetFadeTime( xgui.base:GetFadeTime() )
+xgui.settings_tabs = vgui.Create( "DPropertySheet", settings )
+xgui.settings_tabs:SetSize( 600, 368 )
+xgui.settings_tabs.CheckAlpha = true
+xgui.settings_tabs:SetFadeTime( xgui.base:GetFadeTime() )
 
-function xgui_settings2.tabs:PerformLayout()
+function xgui.settings_tabs:PerformLayout()
 	self:SetPos( 0, 5 )
 	local ActiveTab = self:GetActiveTab()
 	local Padding = self:GetPadding()
@@ -43,7 +43,7 @@ function xgui_settings2.tabs:PerformLayout()
 	self.animFade:Run()
 end
 
-function xgui_settings2.tabs:CrossFade( anim, delta, data )
+function xgui.settings_tabs:CrossFade( anim, delta, data )
 		local old = data.OldTab:GetPanel()
 		local new = data.NewTab:GetPanel()
 		
@@ -64,14 +64,14 @@ function xgui_settings2.tabs:CrossFade( anim, delta, data )
 			new:SetAlpha( 255*( ( delta-0.5 )*2 ) )
 		end
 	end
-xgui_settings2.tabs.animFade = Derma_Anim( "Fade", xgui_settings2.tabs, xgui_settings2.tabs.CrossFade )
+xgui.settings_tabs.animFade = Derma_Anim( "Fade", xgui.settings_tabs, xgui.settings_tabs.CrossFade )
 
-function xgui_settings2.tabs:Think()
-	xgui_settings2.tabs:SetFadeTime( xgui.base:GetFadeTime() )
+function xgui.settings_tabs:Think()
+	xgui.settings_tabs:SetFadeTime( xgui.base:GetFadeTime() )
 	self.animFade:Run()
 	if self.CheckAlpha then
 		self:GetActiveTab():GetPanel():SetAlpha( self:GetParent():GetAlpha() )
 	end
 end
 
-table.insert( xgui.modules.tab, { name="Settings", panel=xgui_settings2, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
+table.insert( xgui.modules.tab, { name="Settings", panel=settings, icon="gui/silkicons/wrench", tooltip=nil, access=nil } )
