@@ -3,7 +3,7 @@ xgui = {}
 --Set up a table for storing third party modules and information
 xgui.modules = { tab={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
-xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={} }
+xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={} }
 
 local function xgui_init( authedply )
 	if authedply ~= LocalPlayer() then return end
@@ -12,7 +12,7 @@ local function xgui_init( authedply )
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
 	--Data storing relevant information retrieved from server.
-	xgui.data = { sbans = {}, bans = {}, users = {}, adverts = {}, gimps = {}, gamemodes = {}, sboxlimits = {} }
+	xgui.data = { sbans={}, bans={}, users={}, adverts={}, gimps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={} }
 	
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
@@ -24,8 +24,8 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.infobar.color, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.10  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
-	--ulx.getVersion(), ULib.VERSION
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.20  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	--x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.20  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
@@ -54,12 +54,12 @@ local function xgui_init( authedply )
 		Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" )
 	end
 	Msg( "// Loading Gamemode Module(s)...     //\n" )
-	if ULib.isSandbox() and gmod.GetGamemode().Name ~= "Sandbox" then -- If the gamemode sandbox-derived (but not sandbox, that will get added later), then add the sandbox Module
+	if ULib.isSandbox() and GAMEMODE.FolderName ~= "sandbox" then -- If the gamemode sandbox-derived (but not sandbox, that will get added later), then add the sandbox Module
 		include( "ulx/xgui/gamemodes/sandbox.lua" )
 		Msg( "//   sandbox.lua                     //\n" )
 	end
 	for _, file in ipairs( file.FindInLua( "ulx/xgui/gamemodes/*.lua" ) ) do
-		if string.lower( file ) == string.lower( gmod.GetGamemode().Name .. ".lua" ) then
+		if string.lower( file ) == string.lower( GAMEMODE.FolderName .. ".lua" ) then
 			include( "ulx/xgui/gamemodes/" .. file )
 			Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" )
 			break
@@ -93,7 +93,7 @@ local function xgui_init( authedply )
 	
 	--Hold off adding the hook to reprocess modules on re-authentication to prevent being called on first auth.
 	ULib.queueFunctionCall( hook.Add, "UCLAuthed", "XGUI_PermissionsChanged", xgui.PermissionsChanged )
-
+	
 	hook.Remove( "UCLAuthed", "InitXGUI" )
 	xgui.initialized = true
 end
@@ -209,9 +209,37 @@ end
 --If the player's group is changed, reprocess the XGUI modules for permissions
 function xgui.PermissionsChanged( ply )
 	if ply == LocalPlayer() then
-		Msg( "Reprocessing XGUI modules- Player's permissions changed\n" )
 		xgui.processModules( xgui.base:IsVisible() )
-		RunConsoleCommand( "xgui", "getdata" ) --Grab new server data
+		
+		--Figure out what data "types" need updating
+		--Exclude the votemaps and gamemodes, since they're available to everybody anyways
+		local getstring = {}
+		if LocalPlayer():query( "xgui_svsettings" ) then
+			if table.Count( xgui.data.gimps ) == 0 then table.insert( getstring, "gimps" ) end
+			if table.Count( xgui.data.adverts ) == 0 then table.insert( getstring, "adverts" ) end
+		else
+			xgui.data.gimps = {}
+			xgui.data.adverts = {}
+		end
+		if LocalPlayer():query( "xgui_managegroups" ) then
+			if table.Count( xgui.data.users ) == 0 then table.insert( getstring, "users" ) end
+			if table.Count( xgui.data.teams ) == 0 then table.insert( getstring, "teams" ) end
+			if table.Count( xgui.data.playermodels ) == 0 then table.insert( getstring, "playermodels" ) end
+		else
+			xgui.data.users = {}
+			xgui.data.teams = {}
+			xgui.data.playermodels = {}
+		end
+		if LocalPlayer():query( "xgui_managebans" ) then
+			if table.Count( xgui.data.bans ) == 0 then table.insert( getstring, "bans" ) end
+			if table.Count( xgui.data.sbans ) == 0 then table.insert( getstring, "sbans" ) end
+		else
+			xgui.data.bans = {}
+			xgui.data.sbans = {}
+		end
+		if #getstring > 0 then
+			RunConsoleCommand( "xgui", "getdata", unpack( getstring ) )
+		end
 	end
 end
 

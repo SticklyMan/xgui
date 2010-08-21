@@ -7,7 +7,7 @@ x_makebutton{ x=10, y=10, w=150, label="Refresh XGUI/Server Data", parent=xgui_s
 		xgui.PermissionsChanged( LocalPlayer() )
 	end
 end
-x_makeslider{ x=10, y=35, w=150, label="Fade transition time", min=0.01, max=2, value=xgui.base:GetFadeTime(), decimal=2, parent=xgui_settings, textcolor=color_black }.OnValueChanged = function( self, val )
+x_makeslider{ x=10, y=35, w=150, label="Anim transition time", min=0.01, max=2, value=xgui.base:GetFadeTime(), decimal=2, parent=xgui_settings, textcolor=color_black }.OnValueChanged = function( self, val )
 	if tonumber( val ) < 0.01 then 
 		self:SetValue( 0.01 ) 
 	else

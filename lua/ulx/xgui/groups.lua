@@ -1,404 +1,629 @@
---Groups module for ULX GUI -- by Stickly Man!
---Manages groups and players within groups
+--Groups/Players module V2 for ULX GUI -- by Stickly Man!
+--Manages groups and players within groups, teams, and permissions/restrictions
 
-local xgui_restrict_color = Color( 255, 255, 255, 0 )
-xgui_group = x_makeXpanel{ parent=xgui.null }
-xgui_group.DefaultPaint = xgui_group.Paint
-xgui_group.Paint = function( self )
-	self:DefaultPaint()
-	draw.RoundedBox( 6, 135, 5, 450, 360, xgui_restrict_color )	
-end
-
-x_makelabel{ x=5, y=10, label="Groups", parent=xgui_group, textcolor=color_black }
-x_makelabel{ x=140, y=10, label="Command Access", parent=xgui_group, textcolor=color_black }
-x_makelabel{ x=290, y=10, w=135, label="Restrictions", parent=xgui_group, textcolor=color_black }
-x_makelabel{ x=435, y=10, label="Other Access", parent=xgui_group, textcolor=color_black }
-
-xgui_access_plist = x_makepanellist{ x=140, y=30, w=145, h=330, padding=1, spacing=1, parent=xgui_group }
-	xgui_access_list = x_makelistview{ multiselect=true, headerheight=0 }
-	xgui_access_list:AddColumn( "" )
-	xgui_access_list:AddColumn( "" ):SetFixedWidth( 10 )
-	xgui_inhaccess_list = x_makelistview{ multiselect=false, headerheight=0 }
-	xgui_inhaccess_list:AddColumn( "" )
-	xgui_inhaccess_list:AddColumn( "" ):SetFixedWidth( 10 )
-xgui_access_plist:AddItem( x_makecat{ label="Allowed", contents=xgui_access_list } )
-xgui_access_plist:AddItem( x_makecat{ label="Inherited", contents=xgui_inhaccess_list } )
-
-xgui_inhaccess_plist = x_makepanellist{ x=435, y=30, w=145, h=330, padding=1, spacing=1, parent=xgui_group }
-	xgui_access_otherlist = x_makelistview{ multiselect = true, headerheight=0 }
-	xgui_access_otherlist:AddColumn( "" )
-	xgui_inhaccess_otherlist = x_makelistview{ multiselect = false, headerheight=0 }
-	xgui_inhaccess_otherlist:AddColumn( "" )
-xgui_inhaccess_plist:AddItem( x_makecat{ label="Allowed", contents=xgui_access_otherlist } )
-xgui_inhaccess_plist:AddItem( x_makecat{ label="Inherited", contents=xgui_inhaccess_otherlist } )
-
-xgui_restrictions = x_makepanellist{ x=290, y=30, w=140, h=330, padding=1, spacing=1, parent=xgui_group }
-
-xgui_group_list = x_makelistview{ x=5, y=30, w=130, h=115, multiselect=false, parent=xgui_group, headerheight=0 }
-xgui_group_list:AddColumn( "" )
-xgui_group_list.OnRowSelected = function()
-	local group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
-	
-	xgui_restrict_color = Color( 100, 170, 220, 255 )
-	xgui_group_name:SetText( group )
-	
-	xgui_adduserbtn:SetDisabled( group == "user" )
-	xgui_groupremove:SetDisabled( group == "user" )
-	if ULib.ucl.groups[group].inherit_from then
-		xgui_group_inherit:SetText( ULib.ucl.groups[group].inherit_from )
+local groups = x_makeXpanel{ parent=xgui.null }
+groups.list = x_makemultichoice{ x=5, y=5, w=175, parent=groups }
+function groups.list:populate( isGroupManagement )
+	local prev_sel = self:GetValue()
+	if prev_sel == "" then prev_sel = "Select a group..." end
+	self:Clear()
+	if isGroupManagement then 
+		for _, v in ipairs( xgui.data.groups ) do
+			self:AddChoice( v )
+		end
+		self:AddChoice( "--*" )
+		self:AddChoice( "Manage Groups..." )
+		self:SetText( groups.lastOpenGroup or prev_sel )
+		if groups.lastOpenGroup then
+			if ULib.ucl.groups[groups.lastOpenGroup] then --Group still exists
+				groups.getGroupData( groups.lastOpenGroup )
+			else
+				groups.pnlG1:Close()
+				groups.animQueue_call()
+				self:SetText( "Select a group..." )
+			end
+		end
 	else
-		xgui_group_inherit:SetText( "user" )
+		for _, v in ipairs( player.GetAll() ) do
+			self:AddChoice( v:Nick() .. " - " .. v:GetUserGroup() )
+		end
+		self:SetText( "Select Player..." )
 	end
-	xgui_getGroupsUsers()
-	xgui_getGroupAccess( group )
 end
+groups.list.OnSelect = function( self, index, value, data )
+	if value ~= "Manage Groups..." then
+		if value ~= groups.lastOpenGroup then
+			groups.lastOpenGroup = value
+			groups.pnlG1:Open( value )
+		end
+	else
+		groups.lastOpenGroup = nil
+		groups.pnlG2:Open()
+	end
+end
+groups.isGroupManagement = true
+groups.lastOpenGroup = nil
 
-xgui_groupadd = x_makebutton{ x=5, y=145, w=20, h=20, label="+", parent=xgui_group }
-xgui_groupadd.DoClick = function()
-	local function newgroup( count )
-		local checkname
-		if count == 0 then
-			checkname = "newgroup"
-		else 
-			checkname = "newgroup" .. count
-		end
-		if xgui_group_list:GetLineByColumnText( checkname, 1 ) == nil then
-				RunConsoleCommand( "ulx", "addgroup", checkname )
-		else
-			newgroup( count+1 )
-		end
-	end
-	newgroup( 0 )
-end
+--[[groups.mode = x_makebutton{ x=180, y=5, w=150, label="Switch to player management", parent=groups }
+groups.mode.DoClick = function( self )
+	groups.isGroupManagement = not groups.isGroupManagement
+	self:SetText( groups.isGroupManagement and "Switch to player management" or "Switch to group management"  )
+	groups.list:populate( groups.isGroupManagement )
+end]]--
+groups.clippanela = x_makepanel{ x=5, y=30, w=580, h=335, parent=groups }
+groups.clippanela.Paint = function( self ) end
+groups.clippanelb = x_makepanel{ x=175, y=30, w=410, h=335, visible=false, parent=groups }
+groups.clippanelb.Paint = function( self ) end
 
-xgui_groupremove = x_makebutton{ x=25, y=145, w=20, h=20, label="-", parent=xgui_group }
-xgui_groupremove.DoClick = function()
-	if xgui_group_list:GetSelectedLine() then
-		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "superadmin" then
-			Derma_Query( "Are you sure you would like to remove the \"" .. xgui_group_list:GetSelected()[1]:GetColumnText(1) .. "\" group?", "XGUI WARNING", 
-					"Remove", function()
-						RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
-					"Cancel", function() end )
-		else
-			Derma_Query( "Removng superadmin is generally a bad idea. Are you sure you would like to remove it?", "XGUI WARNING", 
-					"Remove", function() 
-						RunConsoleCommand( "ulx", "removegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1) ) end,
-					"Cancel", function() end )
+------Groups Panel 1 (Users, Teams)
+groups.pnlG1 = x_makepanel{ w=170, h=335, parent=groups.clippanela }
+groups.pnlG1:SetVisible( false )
+function groups.pnlG1:Open( group )
+	if self:IsVisible() then --Is open, lets close it first.
+		self:Close()
+	elseif groups.pnlG2:IsVisible() then
+		groups.pnlG2:closeAnim()
+	end
+	self:openAnim( group )
+	groups.animQueue_call()
+end
+function groups.pnlG1:Close()
+	if groups.pnlG3:IsVisible() then
+		groups.pnlG3:closeAnim()
+	end
+	self:closeAnim()
+end
+x_makelabel{ x=5, y=5, label="Users in group:", parent=groups.pnlG1, textcolor=color_black }
+groups.players = x_makelistview{ x=5, y=20, w=160, h=190, parent=groups.pnlG1 }
+groups.players:AddColumn( "Name" )
+groups.players.OnRowSelected = function( self, LineID, Line )
+	groups.cplayer:SetDisabled( false )
+end
+groups.aplayer = x_makebutton{ x=5, y=210, w=80, label="Add...", parent=groups.pnlG1 }
+groups.aplayer.DoClick = function()
+	local menu = DermaMenu()
+	for k, v in ipairs( player.GetAll() ) do
+		if v:GetUserGroup() ~= groups.list:GetValue() then
+			menu:AddOption( v:Nick() .. "  |  " .. v:GetUserGroup(), function() groups.changeUserGroup( v:SteamID(), groups.list:GetValue() ) end )
 		end
 	end
+	menu:AddSpacer()
+	for ID, v in pairs( xgui.data.users ) do
+		if v.group ~= groups.list:GetValue() and not groups.isOnline( ID ) then
+			menu:AddOption( ( v.name or ID ) .. "  |  " .. v.group, function() groups.changeUserGroup( ID, groups.list:GetValue() ) end )
+		end
+	end
+	menu:AddSpacer()
+	menu:AddOption( "Add by SteamID...", function() groups.addBySteamID( groups.list:GetValue() ) end )
+	menu:Open()
 end
-		
-xgui_group_name = x_maketextbox{ x=45, y=145, w=90, focuscontrol=true, parent=xgui_group }
-xgui_group_name.OnEnter = function()
-	if xgui_group_list:GetSelectedLine() then
-		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
-			if xgui_group_name:GetValue() ~= "" then
-				if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "superadmin" then
-					if xgui_group_list:GetLineByColumnText( xgui_group_name:GetValue(), 1 ) == nil then
-						RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
-						hook.Call( "xgui_OnRenameGroup", GAMEMODE, xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
-					else
-						Derma_Message( "A group by that name already exists!", "XGUI NOTICE" )
-					end
-				else
-					Derma_Query( "Renaming superadmin is generally a bad idea. Are you sure you would like to rename it?", "XGUI WARNING", 
-							"Rename", function() 
-								if xgui_group_list:GetLineByColumnText( xgui_group_name:GetValue(), 1 ) == nil then
-									RunConsoleCommand( "ulx", "renamegroup", xgui_group_list:GetSelected()[1]:GetColumnText(1), string.lower( xgui_group_name:GetValue() ) )
-								else
-									Derma_Message( "A group by that name already exists!", "XGUI NOTICE" )
-								end
-							end, 
-							"Cancel", function() xgui_group_name:SetText( "superadmin" ) end )
-				end
-			else
-				Derma_Message( "Group name cannot be blank!", "XGUI NOTICE" )
+groups.cplayer = x_makebutton{ x=85, y=210, w=80, label="Change...", disabled=true, parent=groups.pnlG1 }
+groups.cplayer.DoClick = function()
+	if groups.players:GetSelectedLine() then
+		local ID = groups.players:GetSelected()[1]:GetColumnText(2)
+		local menu = DermaMenu()
+		for k, _ in pairs( ULib.ucl.groups ) do
+			if k ~= "user" and k ~= groups.list:GetValue() then
+				menu:AddOption( k, function() groups.changeUserGroup( ID, k ) end )
 			end
-		else
-			Derma_Message( "You are not allowed to rename the group \"user\"!", "XGUI NOTICE" )
-			xgui_group_name:SetText( "user" )
 		end
+		menu:AddSpacer()
+		menu:AddOption( "Remove User", function() groups.changeUserGroup( ID, "user" ) end )
+		menu:Open()
 	end
 end
-
-x_makelabel{ x=5, y=168, label="Inherits", parent=xgui_group, textcolor=color_black }
-x_makelabel{ x=5, y=188, label="Users in group", parent=xgui_group, textcolor=color_black }
-xgui_group_inherit = x_makemultichoice{ x=45, y=165, w=90, parent=xgui_group }
-xgui_group_inherit.OnSelect = function()
-	if xgui_group_list:GetSelectedLine() then
-		if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
-			if xgui_group_inherit:GetValue() ~= "<none>" then
-				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), xgui_group_inherit:GetValue() )
-			else
-				RunConsoleCommand( "xgui", "setinheritance", xgui_group_list:GetSelected()[1]:GetColumnText(1), ULib.ACCESS_ALL )
-			end
-		else
-			Derma_Message( "You are not allowed to change inheritance of the group \"user\"!", "XGUI NOTICE" )
-		end
-	end
+x_makelabel{ x=5, y=240, label="Team:", parent=groups.pnlG1, textcolor=color_black }
+groups.teams = x_makemultichoice{ x=5, y=255, w=160, parent=groups.pnlG1 }
+groups.teams.OnSelect = function( self, index, value, data )
+	if value == "<None>" then value = "" end
+	RunConsoleCommand( "xgui", "changeGroupTeam", groups.list:GetValue(), value )
 end
-
-xgui_group_users = x_makelistview{ x=5, y=205, w=130, h=140, multiselect=false, parent=xgui_group, headerheight=0 }
-xgui_group_users:AddColumn( "" )
-xgui_group_users.OnRowSelected = function( )
-	xgui_restrict_color = Color( 255, 128, 0, 255 )
-	xgui_changeuserbtn:SetDisabled( false )
-	xgui_getUserAccess( xgui_group_users:GetSelected()[1]:GetColumnText(1) )
+x_makebutton{ x=5, y=275, w=160, label="Manage Teams >>", parent=groups.pnlG1 }.DoClick = function()
+	groups.pnlG3:Open()
 end
-
-xgui_adduserbtn = x_makebutton{ x=5, y=345, w=65, label="Add..", parent=xgui_group }
-xgui_adduserbtn.DoClick = function()
-	xgui_list_players = DermaMenu()
-	for k, v in ipairs( player.GetAll() ) do	
-		if v:GetUserGroup() ~= xgui_group_list:GetSelected()[1]:GetColumnText(1) then
-			xgui_list_players:AddOption( v:Nick() .. " - " .. v:GetUserGroup(), function()
-							RunConsoleCommand( "ulx", "adduser", v:Nick(), xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-							for ID, ply in pairs( xgui.data.users ) do
-								if ply.name == v:Nick() then
-									xgui.data.users[ID].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
-								end
-							end
-							xgui_getGroupsUsers()
-							end)
-		end
-	end
-	xgui_list_players:AddSpacer()
+x_makebutton{ x=5, y=310, w=160, label="Manage Permissions >>", parent=groups.pnlG1 }.DoClick = function()
 	
-	for ID, user in pairs( xgui.data.users ) do
-		if not IsOnline( ID ) and user.group ~= xgui_group_list:GetSelected()[1]:GetColumnText(1) then
-			xgui_list_players:AddOption( user.name .. " - " .. user.group, function()
-				RunConsoleCommand( "ulx", "adduserid", ID,  xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-				xgui.data.users[ID].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
-				xgui_getGroupsUsers()
-				end)
-		end
-	end
-	xgui_list_players:AddSpacer()
-	xgui_list_players:AddOption( "Add by SteamID...", function()
-				local xgui_adduid = x_makeframepopup{ label="Add ID to group " .. xgui_group_list:GetSelected()[1]:GetColumnText(1), w=150, h=80, alwaysontop=true }
-				local xgui_theid = x_maketextbox{ x=5, y=30, w=140, parent=xgui_adduid, text="Enter STEAMID..." }
-				x_makebutton{ x=55, y=55, w=40, label="Add", parent=xgui_adduid }.DoClick = function()
-					RunConsoleCommand( "ulx", "adduserid", "\"" .. xgui_theid:GetValue() .. "\"", xgui_group_list:GetSelected()[1]:GetColumnText(1) )
-					xgui.data.users[xgui_theid:GetValue()].group = xgui_group_list:GetSelected()[1]:GetColumnText(1)
-					xgui_getGroupsUsers()
-				end
-				end)
-	xgui_list_players:Open()
 end
 
-xgui_changeuserbtn = x_makebutton{ x=70, y=345, w=65, label="Change..", parent=xgui_group }
-xgui_changeuserbtn.DoClick = function()
-	xgui_list_groups = DermaMenu()
-	for k, v in pairs( ULib.ucl.groups ) do
-		if k ~= xgui_group_list:GetSelected()[1]:GetColumnText(1) and k ~= "user" then
-			if xgui_group_users:GetSelected()[1]:GetColumnText(2) ~= "" and not IsOnline( xgui_group_users:GetSelected()[1]:GetColumnText(1), true ) then
-				xgui_list_groups:AddOption( k, function() 
-										LocalPlayer():ConCommand( "ulx adduserid \"" .. xgui_group_users:GetSelected()[1]:GetColumnText(2) .. "\" " .. k )
-										xgui.data.users[xgui_group_users:GetSelected()[1]:GetColumnText(2)].group = k
-										xgui_getGroupsUsers()
-										end )
+------Groups Panel 2 (Group Management)
+groups.pnlG2 = x_makepanel{ w=350, h=200, parent=groups.clippanela }
+groups.pnlG2:SetVisible( false )
+groups.glist = x_makelistview{ x=5, y=5, h=170, w=130, headerheight=0, parent=groups.pnlG2 }
+groups.glist:AddColumn( "Groups" )
+groups.glist.populate = function( self )
+	local previous_group = nil
+	local prev_inherit = groups.ginherit:GetValue()
+	if groups.glist:GetSelectedLine() then previous_group = groups.glist:GetSelected()[1]:GetColumnText(1) end
+	self:Clear()
+	groups.ginherit:Clear()
+	groups.ginherit:SetText( prev_inherit )
+	for _, v in ipairs( xgui.data.groups ) do
+		local l = self:AddLine( v )
+		groups.ginherit:AddChoice( v )
+		if v == previous_group then
+			previous_group = true
+			self:SelectItem( l )
+		end
+	end
+	if previous_group and previous_group ~= true then
+		groups.newgroup.DoClick()
+	end
+end
+groups.glist.OnRowSelected = function( self, LineID, Line )
+	local group = Line:GetColumnText(1)
+	groups.gname:SetValue( group )
+	groups.ginherit:SetText( ULib.ucl.groups[group].inherit_from or "user" )
+	if group ~= "user" then
+		groups.gdelete:SetDisabled( false )
+	else
+		groups.gdelete:SetDisabled( true )
+	end
+	groups.newgroup:SetDisabled( false )
+	groups.gupdate:SetText( "Update" )
+end
+groups.newgroup = x_makebutton{ x=5, y=175, w=130, disabled=true, label="Create New...", parent=groups.pnlG2 }
+groups.newgroup.DoClick = function()
+	groups.gname:SetText( "new_group" )
+	groups.ginherit:SetText( "user" )
+	groups.glist:ClearSelection()
+	groups.gdelete:SetDisabled( true )
+	groups.newgroup:SetDisabled( true )
+	groups.gupdate:SetText( "Create" )
+end
+x_makelabel{ x=145, y=8, label="Name:", textcolor=color_black, parent=groups.pnlG2 }
+x_makelabel{ x=145, y=33, label="Inherits from:", textcolor=color_black, parent=groups.pnlG2 }
+groups.gname = x_maketextbox{ x=180, y=5, w=165, text="new_group", focuscontrol=true, parent=groups.pnlG2 }
+groups.ginherit = x_makemultichoice{ x=215, y=30, w=130, text="user", parent=groups.pnlG2 }
+groups.gupdate = x_makebutton{ x=140, y=175, w=100, label="Create", parent=groups.pnlG2 }
+groups.gupdate.DoClick = function( self )
+	if self:GetValue() == "Update" then --Sanity check, make sure we're not trying to create a new group accidentally
+		local oldname = groups.glist:GetSelected()[1]:GetColumnText(1)
+		local oldinheritance = ULib.ucl.groups[oldname].inherit_from
+		local newinheritance = groups.ginherit:GetValue()
+		
+		if newinheritance == "user" then newinheritance = nil end
+		
+		if groups.gname:GetValue() ~= oldname then
+			if oldname == "superadmin" or oldname == "admin" then
+				Derma_Query( "Renaming the " .. oldname .. " group is generally a bad idea, and it could break some plugins. Are you sure?", "XGUI WARNING", 
+					"Rename to " .. groups.gname:GetValue(), function()
+						RunConsoleCommand( "ulx", "renamegroup", oldname, groups.gname:GetValue() )
+						oldname = groups.gname:GetValue() end,
+					"Cancel", function() end )
 			else
-				xgui_list_groups:AddOption( k, function() 
-										local name = xgui_group_users:GetSelected()[1]:GetColumnText(1)
-										RunConsoleCommand( "ulx", "adduser", name, k )
-										for ID, ply in pairs( xgui.data.users ) do
-											if ply.name == name then 
-												xgui.data.users[ID].group = k
-											end
-										end
-										xgui_getGroupsUsers()
-										end )
+				RunConsoleCommand( "ulx", "renamegroup", oldname, groups.gname:GetValue() )
+				oldname = groups.gname:GetValue()
 			end
 		end
-	end
-	xgui_list_groups:AddSpacer()
-	xgui_list_groups:AddOption( "Remove User", function() 
-						name = xgui_group_users:GetSelected()[1]:GetColumnText(1)
-						if IsOnline( name, true ) then
-							RunConsoleCommand( "ulx", "removeuser", name )
-						else
-							for ID, user in pairs( xgui.data.users ) do
-								if user.name == name then RunConsoleCommand( "ulx", "removeuser", user.name ) end
-							end
-						end
-						xgui.data.users[xgui_group_users:GetSelected()[1]:GetColumnText(2)] = nil
-						xgui_getGroupsUsers()
-						end )
-	xgui_list_groups:Open()
-end
-
-function xgui_SortGroups( t )
-	for k, v in pairs( t ) do
-		xgui_SortGroups( v )
-	end
-	for k, v in pairs( t ) do
-		xgui_group_list:AddLine( k )
-		xgui_group_inherit:AddChoice( k )
+		
+		if newinheritance ~= oldinheritance then
+			if newinheritance == nil then
+				ULib.queueFunctionCall( RunConsoleCommand, "xgui", "setinheritance", oldname, ULib.ACCESS_ALL )
+			else
+				ULib.queueFunctionCall( RunConsoleCommand, "xgui", "setinheritance", oldname, newinheritance )
+			end
+		end
+	else
+		RunConsoleCommand( "ulx", "addgroup", groups.gname:GetValue(), groups.ginherit:GetValue() )
 	end
 end
+groups.gdelete = x_makebutton{ x=245, y=175, w=100, label="Delete", disabled=true, parent=groups.pnlG2 }
+groups.gdelete.DoClick = function()
+	local group = groups.gname:GetValue()
+	if group == "superadmin" or group == "admin" then
+		Derma_Query( "Removing the " .. group .. " group is generally a bad idea, and it could break some plugins. Are you sure?", "XGUI WARNING", 
+			"Remove", function()
+				RunConsoleCommand( "ulx", "removegroup", group ) end,
+			"Cancel", function() end )
+	else
+		Derma_Query( "Are you sure you would like to remove the \"" .. group .. "\" group?", "XGUI WARNING", 
+			"Remove", function()
+				RunConsoleCommand( "ulx", "removegroup", group ) end,
+			"Cancel", function() end )
+	end
+end
+function groups.pnlG2:Open()
+	if not self:IsVisible() then			
+		if groups.pnlG1:IsVisible() then
+			groups.pnlG1:Close()
+		end
+		self:openAnim()
+		groups.animQueue_call()
+	end
+end
 
-function xgui_getGroupsUsers()
-	xgui_group_users:Clear()
-	xgui_changeuserbtn:SetDisabled( true )
-	if xgui_group_list:GetSelected()[1]:GetColumnText(1) ~= "user" then
-		for ID, user in pairs( xgui.data.users ) do
-			if user.group == xgui_group_list:GetSelected()[1]:GetColumnText(1) then
-				if user.name == nil or user.name == "" then user.name = ID end
-				xgui_group_users:AddLine( user.name, ID ).Paint = function( self )
-					local Col = nil
-					if ( self:IsSelected() ) then
-							Col = Color( 255, 128, 0, 255 )
-					elseif ( self.Hovered ) then
-							Col = Color( 70, 70, 70, 255 )
-					elseif ( self.m_bAlt ) then
-							Col = Color( 55, 55, 55, 255 )
-					else
-							return
+------Groups Panel 3 (Teams Management)
+groups.pnlG3 = x_makepanel{ y=130, w=405, h=205, parent=groups.clippanelb }
+groups.pnlG3:SetVisible( false )
+function groups.pnlG3:Open()
+	if not self:IsVisible() then
+		self:openAnim()
+		groups.animQueue_call()
+	end
+end
+groups.teamlist = x_makelistview{ x=5, y=5, w=100, h=155, headerheight=0, parent=groups.pnlG3 }
+groups.teamlist:AddColumn( "Teams" )
+groups.teamlist.OnRowSelected = function( self, LineID, Line )
+	local team = Line:GetColumnText(1)
+	groups.teamdelete:SetDisabled( false )
+	groups.upbtn:SetDisabled( LineID == 1 )
+	groups.downbtn:SetDisabled( LineID == #self.Lines )
+	groups.teammodadd:SetDisabled( false )
+	
+	local lastmod = groups.teammodifiers:GetSelectedLine() and groups.teammodifiers:GetSelected()[1]:GetColumnText(1)
+	groups.teammodifiers:Clear()
+	for _, chteam in pairs( xgui.data.teams ) do
+		if chteam.name == team then
+			for k, v in pairs( chteam ) do
+				if k ~= "index" and k ~= "order" and k ~= "groups" then
+					local value = v
+					if k == "color" then
+						value = v.r .. " " .. v.g .. " " .. v.b
 					end
-					surface.SetDrawColor( Col.r, Col.g, Col.b, Col.a )
-					surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+					local l = groups.teammodifiers:AddLine( k, value, type( value ) )
+					if k == lastmod then
+						groups.teammodifiers:SelectItem( l )
+						lastmod = true
+					end
 				end
+			end
+			break
+		end
+	end
+	if lastmod == true then --A row was found and selected
+		groups.teammodremove:SetDisabled( false )
+	else
+		groups.teammodremove:SetDisabled( true )
+	end
+	groups.teammodifiers:SortByColumn( 1, false )
+	if not groups.teammodifiers:GetSelectedLine() then
+		groups.teammodspace:Clear()
+	end
+end
+
+x_makebutton{ x=5, y=160, w=80, label="Create New", parent=groups.pnlG3 }.DoClick = function()
+	for _, v in ipairs( xgui.data.teams ) do
+		if v.name == "New_Team" then return end
+	end
+	RunConsoleCommand( "xgui", "createTeam", "New_Team", 255, 255, 255 )
+end
+groups.teamdelete = x_makebutton{ x=5, y=180, w=80, label="Delete", disabled=true, parent=groups.pnlG3 }
+groups.teamdelete.DoClick = function()
+	local team = groups.teamlist:GetSelected()[1]:GetColumnText(1)
+	Derma_Query( "Are you sure you would like to remove the \"" .. team .. "\" team?", "XGUI WARNING",
+		"Remove", function() RunConsoleCommand( "xgui", "removeTeam", team ) end,
+		"Cancel", function() end )
+end
+groups.upbtn = x_makesysbutton{ x=85, y=160, w=20, btype="up", disabled=true, parent=groups.pnlG3 }
+groups.upbtn.DoClick = function()
+	groups.upbtn:SetDisabled( true )
+	local lineID = groups.teamlist:GetSelectedLine()
+	RunConsoleCommand( "xgui", "updateTeamValue",  groups.teamlist.Lines[lineID]:GetColumnText(1), "order", lineID-1 )
+	RunConsoleCommand( "xgui", "updateTeamValue",  groups.teamlist.Lines[lineID-1]:GetColumnText(1), "order", lineID, "true" )
+end
+groups.downbtn = x_makesysbutton{ x=85, y=180, w=20, btype="down", disabled=true, parent=groups.pnlG3 }
+groups.downbtn.DoClick = function()
+	groups.downbtn:SetDisabled( true )
+	local lineID = groups.teamlist:GetSelectedLine()
+	RunConsoleCommand( "xgui", "updateTeamValue",  groups.teamlist.Lines[lineID]:GetColumnText(1), "order", lineID+1 )
+	RunConsoleCommand( "xgui", "updateTeamValue",  groups.teamlist.Lines[lineID+1]:GetColumnText(1), "order", lineID, "true" )
+end
+groups.teammodifiers = x_makelistview{ x=110, y=5, h=175, w=150, parent=groups.pnlG3 }
+groups.teammodifiers:AddColumn( "Modifiers" ).DoClick = function() end
+groups.teammodifiers:AddColumn( "Value" ).DoClick = function() end
+groups.teammodifiers.OnRowSelected = function( self, LineID, Line )
+	groups.teammodremove:SetDisabled( Line:GetColumnText(1) == "name" or Line:GetColumnText(1) == "color" )
+	groups.teammodspace:Clear()
+	local ctrl
+	local applybtn = x_makebutton{ label="Apply" }
+	if Line:GetColumnText(3) ~= "number" then
+		if Line:GetColumnText(1) == "name" then
+			ctrl = x_maketextbox{ focuscontrol=true, text=Line:GetColumnText(2) }
+			ctrl.OnEnter = function()
+				applybtn.DoClick()
+			end
+			groups.teammodspace:AddItem( ctrl )
+		elseif Line:GetColumnText(1) == "color" then
+			ctrl = x_makecolorpicker{ focuscontrol=true, removealpha=true }
+			local tempcolor = string.Explode( " ", Line:GetColumnText(2) )
+			ULib.queueFunctionCall( RunConsoleCommand, "colour_r", tempcolor[1] )
+			ULib.queueFunctionCall( RunConsoleCommand, "colour_g", tempcolor[2] )
+			ULib.queueFunctionCall( RunConsoleCommand, "colour_b", tempcolor[3] )
+			groups.teammodspace:AddItem( ctrl )
+		elseif Line:GetColumnText(1) == "model" then
+			ctrl = x_maketextbox{ focuscontrol=true, text=Line:GetColumnText(2) }
+			ctrl.OnEnter = function( self )
+				applybtn.DoClick()
+				for i, v in ipairs( groups.modelList.Items ) do
+					if v.name == self:GetValue() or v.model == self:GetValue() then
+						groups.modelList:SelectPanel( v )
+						break
+					end
+				end
+			end
+			groups.teammodspace:AddItem( ctrl )
+			groups.setTeamModel = function( name ) --This func is called when any of the spawnicons in the playerlist are pressed.
+				ctrl:SetText( name )
+				applybtn.DoClick()
+			end
+			for _, item in pairs( groups.modelList.Items ) do
+				if Line:GetColumnText(2) == item.name or Line:GetColumnText(2) == item.model then
+					groups.modelList:SelectPanel( item )
+					break
+				end
+			end
+			groups.teammodspace:AddItem( groups.modelList )
+		end
+	else
+		ctrl = x_makeslider{ min=0, max=2000, decimal=1, textcolor=color_black, value=tonumber( Line:GetColumnText(2) ), label=Line:GetColumnText(1) }
+		ctrl.Wang.TextEntry.OnEnter = function( self )
+			applybtn.DoClick()
+		end
+		groups.teammodspace:AddItem( ctrl )
+	end
+	applybtn.DoClick = function()
+		if Line:GetColumnText(1) == "color" then
+			RunConsoleCommand( "xgui", "updateTeamValue", groups.teamlist:GetSelected()[1]:GetColumnText(1), Line:GetColumnText(1), GetConVarNumber( "colour_r" ), GetConVarNumber( "colour_g" ), GetConVarNumber( "colour_b" ) )
+		else
+			if Line:GetColumnText(1) == "name" then --Check if a team by this name already exists!
+				for _, v in ipairs( xgui.data.teams ) do
+					if v.name == ctrl:GetValue() then return end
+				end
+			end
+			RunConsoleCommand( "xgui", "updateTeamValue", groups.teamlist:GetSelected()[1]:GetColumnText(1), Line:GetColumnText(1), ctrl:GetValue() )
+		end
+	end
+	if Line:GetColumnText(1) ~= "model" then groups.teammodspace:AddItem( applybtn ) end
+end
+
+groups.teammodadd = x_makebutton{ x=110, y=180, w=75, label="Add..", disabled=true, parent=groups.pnlG3 }
+groups.teammodadd.DoClick = function()
+	local team = groups.teamlist:GetSelected()[1]:GetColumnText(1)
+	local teamdata
+	for i, v in pairs( xgui.data.teams ) do
+		if v.name == team then teamdata = v end
+	end
+	local allowed = { 
+		armor = 0,
+		crouchedWalkSpeed = 0.6,
+		deaths = 0,
+		duckSpeed = 0.3,
+		frags = 0,
+		gravity = 1,
+		health = 100,
+		jumpPower = 160,
+		maxHealth = 100,
+		maxSpeed = 250,
+		model = "kleiner",
+		runSpeed = 500,
+		stepSize = 18,
+		unDuckSpeed = 0.2,
+		walkSpeed = 250 }
+	
+	local allowedSorted = {}
+    for k,_ in pairs(allowed) do table.insert(allowedSorted, k) end
+    table.sort( allowedSorted, function( a,b ) return string.lower( a ) < string.lower( b ) end )
+
+	local menu = DermaMenu()
+	for _, allowedname in pairs( allowedSorted ) do
+		local add = true
+		for name, data in pairs( teamdata ) do
+			if name == allowedname then
+				add = false
+				break
+			end
+		end
+		if add then 
+			menu:AddOption( allowedname, function() RunConsoleCommand( "xgui", "updateTeamValue", team, allowedname, allowed[allowedname] ) end )
+		end
+	end
+	menu:Open()
+end
+groups.teammodremove = x_makebutton{ x=185, y=180, w=75, label="Remove", disabled=true, parent=groups.pnlG3 }
+groups.teammodremove.DoClick = function()
+	local team = groups.teamlist:GetSelected()[1]:GetColumnText(1)
+	local modifier = groups.teammodifiers:GetSelected()[1]:GetColumnText(1)
+	RunConsoleCommand( "xgui", "updateTeamValue", team, modifier, "" )
+end
+groups.teammodspace = x_makepanellist{ x=265, y=5, w=140, h=195, padding=1, parent=groups.pnlG3 }
+groups.teammodspace.Paint = function() end
+
+---Data refresh/GUI functions
+function groups.SortGroups( t )
+	for k, v in pairs( t ) do
+		groups.SortGroups( v )
+		table.insert( xgui.data.groups, k )
+	end
+end
+
+function groups.getGroupData( group )
+	groups.refreshPlayerList( group )
+	if group == "user" then
+		groups.aplayer:SetDisabled( true )
+	else
+		groups.aplayer:SetDisabled( false )
+	end
+	groups.teams:SetText( groups.getGroupsTeam( groups.list:GetValue() ) )
+end
+
+function groups.refreshPlayerList( group )
+	groups.players:Clear()
+	groups.cplayer:SetDisabled( true )
+	if group ~= "user" then
+		for ID, user in pairs( xgui.data.users ) do
+			if user.group == group then
+				if user.name == nil or user.name == "" then user.name = ID end
+				groups.players:AddLine( user.name, ID )
 			end
 		end
 	else
 		for k, v in ipairs( player.GetAll() ) do
 			if v:GetUserGroup() == "user" then
-				xgui_group_users:AddLine( v:Nick() ).Paint = function( self )
-					local Col = nil
-					if ( self:IsSelected() ) then
-							Col = Color( 255, 128, 0, 255 )
-					elseif ( self.Hovered ) then
-							Col = Color( 70, 70, 70, 255 )
-					elseif ( self.m_bAlt ) then
-							Col = Color( 55, 55, 55, 255 )
-					else
-							return
-					end
-					surface.SetDrawColor( Col.r, Col.g, Col.b, Col.a )
-					surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
-				end
+				groups.players:AddLine( v:Nick(), v:SteamID() )
 			end
 		end
 	end
 end
 
-function xgui_getGroupAccess( objname )
-	xgui_clearInh()
-	for name, access in pairs( ULib.ucl.groups[objname].allow ) do
-		if type(name) == "number" then  --Determine if this command does not have restrictions
-			if ULib.cmds.translatedCmds[access] then  --Check if its a command or other access string
-				xgui_access_list:AddLine( access )
-			else
-				xgui_access_otherlist:AddLine( access )
-			end
-		else
-			xgui_access_list:AddLine( name, "R", access )
-		end
-		--Loop through the inherited groups
-		while ( ULib.ucl.groups[objname].inherit_from ) do
-			objname = ULib.ucl.groups[objname].inherit_from
-			for name, access in pairs( ULib.ucl.groups[objname].allow ) do
-				if type(name) == "number" then  --Determine if this command does not have restrictions
-					if ULib.cmds.translatedCmds[access] then --Check if its a command or other access string
-						xgui_inhaccess_list:AddLine( access )
-					else
-						xgui_inhaccess_otherlist:AddLine( access )
-					end
-				else
-					xgui_inhaccess_list:AddLine( name, "R", access )
-				end
-			end
+function groups.updateTeams()
+	local last_selected = groups.teamlist:GetSelectedLine() and groups.teamlist:GetSelected()[1]:GetColumnText(1)	
+	groups.teams:Clear()
+	groups.teams:AddChoice( "<None>" )
+	groups.teams:AddChoice( "--*" )
+	groups.teamlist:Clear()
+	local updateLine = nil
+	for k, v in pairs( xgui.data.teams ) do
+		groups.teams:AddChoice( v.name )
+		local l = groups.teamlist:AddLine( v.name )
+		if v.name == last_selected then
+			updateLine = l
 		end
 	end
-	xgui_layoutLists()
-end
-
-function xgui_getUserAccess( objname )
-	xgui_clearInh()
-	local group = nil
-	for ID, ply in pairs( xgui.data.users ) do
-		if ply.name == objname then
-			objname = ID
-			group = ply.group
-		end
-	end
-	for name, access in pairs( xgui.data.users[objname].allow ) do
-		if type(name) == "number" then  --Determine if this command does not have restrictions
-			if ULib.cmds.translatedCmds[access] then --Check if its a command or other access string
-				xgui_access_list:AddLine( access )
-			else
-				xgui_access_otherlist:AddLine( access )
-			end
-		else
-			xgui_access_list:AddLine( name, "R", access )
-		end
-	end
-	while ( ULib.ucl.groups[group].inherit_from ) do
-		for name, access in pairs( ULib.ucl.groups[group].allow ) do
-			if type(name) == "number" then  --Determine if this command does not have restrictions
-				if ULib.cmds.translatedCmds[access] then --Check if its a command or other access string
-					xgui_inhaccess_list:AddLine( access )
-				else
-					xgui_inhaccess_otherlist:AddLine( access )
-				end
-			else
-				xgui_inhaccess_list:AddLine( name, "R", access )
-			end
-		end
-		group = ULib.ucl.groups[group].inherit_from
-	end
-	xgui_layoutLists()
-end
-
-function xgui_layoutLists()
-	xgui_inhaccess_otherlist:SetHeight( 17*#xgui_inhaccess_otherlist:GetLines() )
-	xgui_access_otherlist:SetHeight( 17*#xgui_access_otherlist:GetLines() )
-	xgui_access_list:SetHeight( 17*#xgui_access_list:GetLines() )
-	xgui_inhaccess_list:SetHeight( 17*#xgui_inhaccess_list:GetLines() )
-	xgui_access_plist:PerformLayout()
-	xgui_inhaccess_plist:PerformLayout()
-	xgui_access_list:SortByColumn( 1 )
-	xgui_inhaccess_list:SortByColumn( 1 )
-end
-
-function xgui_clearInh()
-	xgui_access_list:Clear()
-	xgui_inhaccess_list:Clear()
-	xgui_inhaccess_otherlist:Clear()
-	xgui_access_otherlist:Clear()
-end
-
-function IsOnline( ID, checkName )
-	if not checkName then
-		for _, v in ipairs( player.GetAll() ) do
-			if xgui.data.users[ID].name == v:Nick() then
-				return true
-			end
-		end
+	if updateLine then
+		groups.teamlist:SelectItem( updateLine )
 	else
-		for _, v in ipairs( player.GetAll() ) do
-			if ID == v:Nick() then
-				return true
-			end
+		groups.teammodifiers:Clear()
+		groups.teammodspace:Clear()
+		groups.upbtn:SetDisabled( true )
+		groups.downbtn:SetDisabled( true )
+		groups.teamdelete:SetDisabled( true )
+	end	
+	groups.teams:SetText( groups.getGroupsTeam( groups.list:GetValue() ) )
+end
+
+function groups.updateUsers()
+	xgui.data.groups = {}
+	groups.SortGroups( ULib.ucl.getInheritanceTree() )
+	groups.list:populate( groups.isGroupManagement )
+	groups.glist:populate()
+end
+
+--Misc. functions
+function groups.addBySteamID( group )
+	local frame = x_makeframepopup{ label="Add ID to group " .. group, w=190, h=60, alwaysontop=true }
+	x_maketextbox{ x=5, y=30, w=180, parent=frame, focuscontrol=true, text="Enter STEAMID..." }.OnEnterPressed = function( self )
+		if ULib.isValidSteamID( self:GetValue() ) then
+			RunConsoleCommand( "ulx", "adduserid", self:GetValue(), group )
+		end
+	end
+end
+
+function groups.changeUserGroup( SteamID, group )
+	if group == "user" then
+		RunConsoleCommand( "ulx", "removeuserid", SteamID, group )
+	else
+		RunConsoleCommand( "ulx", "adduserid", SteamID, group )
+	end
+end
+
+function groups.isOnline( steamID )
+	for _, v in ipairs( player.GetAll() ) do
+		if v:SteamID() == steamID then
+			return true
 		end
 	end
 	return false
 end
 
-xgui_group.updateUsers = function()
-	xgui_restrict_color = Color( 255, 255, 255, 0 )
-	xgui_group_list:Clear()
-	xgui_group_users:Clear()
-	xgui_group_name:SetText( "" )
-	xgui_group_inherit:Clear()
-	xgui_group_inherit:SetText( "user" )
-	xgui_clearInh()
-	xgui_SortGroups( ULib.ucl.getInheritanceTree() )
-	xgui_changeuserbtn:SetDisabled( true )
-	xgui_adduserbtn:SetDisabled( true )
-	xgui_groupremove:SetDisabled( true )
-	xgui_layoutLists()
+function groups.getGroupsTeam( check_group )
+	--Since ULX doesn't refresh its groups data to clients when team stuff changes, we have to go the long way round to get the info.
+	for _, team in ipairs( xgui.data.teams ) do
+		for _, group in ipairs( team.groups ) do
+			if group == check_group then
+				return team.name
+			end
+		end
+	end
+	return "<None>"
+end
+groups.updateTeams()
+
+groups.modelList = vgui.Create( "DPanelSelect", xgui.null )
+groups.modelList:SetHeight( 168 )
+function groups.updateModelPanel()
+	groups.modelList:Clear()
+	local modelsSorted = {}
+    for k,_ in pairs( xgui.data.playermodels ) do table.insert( modelsSorted, k ) end
+    table.sort( modelsSorted, function( a,b ) return string.lower( a ) < string.lower( b ) end )
+	
+	for _, name in ipairs( modelsSorted ) do
+		local icon = vgui.Create( "SpawnIcon", xgui.null )
+		icon:SetModel( xgui.data.playermodels[name] )
+		icon:SetSize( 64, 64 )
+		icon:SetTooltip( name )
+		icon.name = name
+		icon.model = xgui.data.playermodels[name]
+		icon.DoClick = function( self ) groups.modelList:SelectPanel( self ) groups.setTeamModel( icon.name ) end
+		ULib.queueFunctionCall( groups.modelList.AddItem, groups.modelList, icon )
+		--groups.modelList:AddItem( icon )
+	end
+end
+function groups.setTeamModel( model ) end --Create a dummy function that will be created with proper settings later.
+
+table.insert( xgui.hook["teams"], groups.updateTeams )
+table.insert( xgui.hook["users"], groups.updateUsers )
+table.insert( xgui.hook["playermodels"], groups.updateModelPanel )
+table.insert( xgui.modules.tab, { name="Groups", panel=groups, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
+
+
+--------------
+--ANIMATIONS--
+--------------
+function groups:slideAnim( anim, delta, data )
+	--data.panel, data.startx, data.starty, data.endx, data.endy, data.setvisible
+	data.panel:SetPos( data.startx+((data.endx-data.startx)*delta), data.starty+((data.endy-data.starty)*delta) )
+
+	if ( anim.Started ) then
+		if data.setvisible == true then
+			data.panel:SetVisible( true )
+		end
+		data.panel:SetPos( data.startx, data.starty )
+	elseif ( anim.Finished ) then
+		data.panel:SetPos( data.endx, data.endy )
+		if data.setvisible == false then
+			data.panel:SetVisible( false )
+		end
+		groups.animQueue_call()
+	end
+end
+groups.doAnim = Derma_Anim( "Fade", groups.doAnim, groups.slideAnim )
+
+function groups:Think()
+	groups.doAnim:Run()
 end
 
-table.insert( xgui.modules.tab, { name="Groups", panel=xgui_group, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
-table.insert( xgui.hook["users"], xgui_group.updateUsers )
+---Individual Panel animations
+groups.pnlG1.openAnim = function( self, group )
+	table.insert( groups.animQueue, function() groups.getGroupData( group ) groups.animQueue_call() end )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG1, startx=0, starty=-335, endx=0, endy=0, setvisible=true } ) end )
+end
+groups.pnlG1.closeAnim = function( self )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG1, startx=0, starty=0, endx=0, endy=-335, setvisible=false } ) end )
+end
+
+groups.pnlG2.openAnim = function( self )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG2, startx=0, starty=-200, endx=0, endy=0, setvisible=true } ) end )
+end
+groups.pnlG2.closeAnim = function( self )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG2, startx=0, starty=0, endx=0, endy=-200, setvisible=false } ) end )
+end
+
+groups.pnlG3.openAnim = function( self )
+	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( true ) groups.animQueue_call() end )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG3, startx=-405, starty=130, endx=5, endy=130, setvisible=true } ) end )
+end
+groups.pnlG3.closeAnim = function( self )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG3, startx=5, starty=130, endx=-405, endy=130, setvisible=false } ) end )
+	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( false ) groups.animQueue_call() end )
+end
+
+---Animation queue stuff
+groups.animQueue = {}
+groups.animQueue_call = function()
+	if #groups.animQueue > 0 then
+		local func = groups.animQueue[1]
+		table.remove( groups.animQueue, 1 )
+		--ULib.queueFunctionCall( func )
+		timer.Simple( 0, func ) --Delay calling the function for a frame
+	end
+end

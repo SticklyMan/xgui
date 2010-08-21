@@ -189,7 +189,7 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 					self.steamIDbox:SetText( data )
 				end
 			else
-				name = x_maketextbox{ x=75, y=30, w=200, parent=xgui_banwindow, enableinput=true, focuscontrol=true }
+				name = x_maketextbox{ x=75, y=30, w=200, parent=xgui_banwindow, focuscontrol=true }
 			end
 			local steamID = x_maketextbox{ x=75, y=55, w=200, parent=xgui_banwindow }
 			name.steamIDbox = steamID --Make a pointer to the steamID textbox so it can change the value easily without referencing a global variable

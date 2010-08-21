@@ -22,7 +22,6 @@ for _, file in ipairs( file.FindInLua( "ulx/xgui/gamemodes/*.lua" ) ) do
 	AddCSLuaFile( "ulx/xgui/gamemodes/" .. file )
 	Msg( "//  " .. file .. string.rep( " ", 25 - file:len() ) .. "//\n" )
 end
-
 Msg( "// XGUI modules added!       //\n" )
 Msg( "///////////////////////////////\n" )
 
@@ -130,7 +129,7 @@ function xgui.init()
 		hook.Remove( "ULibLocalPlayerReady", "xgui_processCvars" )
 	end
 	hook.Add( "ULibLocalPlayerReady", "xgui_processCvars", xgui.processCvars )
-
+	
 	function xgui.splitbans()
 		xgui.sourcebans = {}
 		xgui.ulxbans = {}
@@ -142,7 +141,38 @@ function xgui.init()
 			end
 		end
 	end
-
+	
+	--Duplicate ULX's UTeam table (required for how Megiddo stores team data within the groups data)
+	xgui.teams = table.Copy( ulx.teams )
+	
+	--Load empty teams saved by XGUI (if any)
+	if file.Exists( "ulx/empty_teams.txt" ) then
+		local input = file.Read( "ulx/empty_teams.txt" )
+		input = input:match( "^.-\n(.*)$" ) --Uhhh, thanks Megiddo!
+		local emptyteams = ULib.parseKeyValues( input )
+		for _, teamdata in ipairs( emptyteams ) do
+			table.insert( xgui.teams, teamdata.order, teamdata )
+		end
+	end
+	
+	--Check and make sure the teams have an order
+	function xgui.setTeamsOrder()
+		for i, v in ipairs( xgui.teams ) do
+			v.order = i --Assign based on their index, which should be in order set by the file
+		end
+	end
+	
+	--Uteams doesn't load the shortname for playermodels, so to make it easier for the GUI, check for model paths and see if we can use a shortname instead.
+	for _, v in ipairs( xgui.teams ) do
+		if v.model then
+			for shortname,modelpath in pairs( player_manager.AllValidModels() ) do
+				if v.model == modelpath then v.model = shortname break end
+			end
+		end
+	end
+	
+	xgui.DATA_TYPES = { "gamemodes", "votemaps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits", "teams", "playermodels" } 
+	
 	--Function hub! All server functions can be called via concommand xgui!
 	function xgui.cmd( ply, func, args )
 		local branch=args[1]
@@ -160,17 +190,21 @@ function xgui.init()
 		elseif branch == "removeVotemaps" then xgui.removeVotemaps( ply, args )
 		elseif branch == "updateBan" then xgui.updateBan( ply, args )
 		elseif branch == "refreshBans" then ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" )
+		elseif branch == "updateTeamValue" then xgui.updateTeamValue( ply, args )
+		elseif branch == "createTeam" then xgui.createTeam( ply, args )
+		elseif branch == "removeTeam" then xgui.removeTeam( ply, args )
+		elseif branch == "changeGroupTeam" then xgui.changeGroupTeam( ply, args )
 		elseif branch == "getInstalled" then ply:SendLua( "xgui.getInstalled()" ) xgui.sendData( ply, {} ) --Lets the client know that the server has XGUI, then begins sending data
 		elseif branch == "dataComplete" then xgui.chunksFinished( ply )
 		end
 	end
 	concommand.Add( "_xgui", xgui.cmd )
-
+	
 	xgui.activeUsers = {}  --Set up a table to list users who are actively transferring data
 	function xgui.sendData( ply, args, extdata )
 		--If no args are specified, then update everything!
 		if #args == 0 then 
-			args = { "gamemodes", "votemaps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits" } 
+			args = xgui.DATA_TYPES
 		end
 
 		--Perform a check to make see if the client is already being sent data OR data sending is currently restricted.
@@ -225,6 +259,14 @@ function xgui.init()
 						xgui.sendLimits = true --The sboxlimits haven't arrived yet, raise a flag for them to be sent when they do.
 					end
 				end
+			elseif u == "teams" then --Update XGUI's team info.
+				if ply:query( "xgui_managegroups" ) then
+					table.insert( chunks, { xgui.teams, "teams" } )
+				end
+			elseif u == "playermodels" then
+				if ply:query( "xgui_managegroups" ) then
+					table.insert( chunks, { player_manager.AllValidModels(), "playermodels" } )
+				end
 			elseif u == "bans" then --Update ULX Bans
 				if ply:query( "xgui_managebans" ) then
 					--Send 50 bans per chunk
@@ -257,22 +299,6 @@ function xgui.init()
 						end
 					end
 					table.insert( chunks, { t, "sbans" } )
-				end
-			elseif u == "file_structure" then 
-				if ply:query( "xgui_svsettings") then
-					local i = 1
-					local t = {}
-					for k, v in pairs( extdata ) do
-						t[k] = v
-						i = i + 1
-						if i > 5 then 
-							table.insert( chunks, { t, "file_structure" } )
-							t = {}
-							i = 1
-						end
-					end
-					table.insert( chunks, { t, "file_structure" } )
-					table.insert( chunks, { nil, "file_structure" } )
 				end
 			end
 		end
@@ -537,14 +563,156 @@ function xgui.init()
 		
 		file.Write( "ulx/votemaps.txt", new_file )
 	end
+	
+	function xgui.removeTeam( ply, args )
+		if ply:query( "xgui_managegroups" ) then
+			for i, v in ipairs( xgui.teams ) do
+				if v.name == args[1] then
+					for _,group in ipairs( v.groups ) do --Unassign groups in team being deleted
+						xgui.changeGroupTeam( ply, { group, "" }, true )
+					end
+					table.remove( xgui.teams, i )
+					xgui.setTeamsOrder()
+					xgui.refreshTeams()
+					break
+				end
+			end
+		end
+	end
+	
+	function xgui.createTeam( ply, args )
+		if ply:query( "xgui_managegroups" ) then
+			local team = {}
+			team.name = args[1]
+			team.color = Color( args[2], args[3], args[4], 255 )
+			team.order = #xgui.teams+1
+			team.groups = {}
+			table.insert( xgui.teams, team )
+			xgui.refreshTeams()
+		end
+	end
+	
+	function xgui.changeGroupTeam( ply, args, norefresh )
+		if ply:query( "xgui_managegroups" ) then
+			local group = args[1]
+			local newteam = args[2]
+			local resettable = {}
+			for _,teamdata in ipairs( xgui.teams ) do
+				for i,groupname in ipairs( teamdata.groups ) do
+					if group == groupname then --Found the previous team the group belonged to, remove it now!
+						table.remove( teamdata.groups, i )
+						--Grab old modifier info while we're here
+						for modifier, _ in pairs( teamdata ) do
+							if modifier ~= "order" and modifier ~= "index" and modifier ~= "groups" and modifier ~= "name" and modifier ~= "color" then
+								table.insert( resettable, modifier )
+							end
+						end						
+						break
+					end
+				end
+				if teamdata.name == newteam then --If the team requested was found, then add it to the new team.
+					table.insert( teamdata.groups, group )
+				end
+			end
+			--Reset modifiers for affected players, then let UTeam set the new modifiers
+			xgui.resetTeamValue( group, resettable )
+			if not norefresh then
+				xgui.refreshTeams()
+			end
+		end
+	end
+	
+	function xgui.updateTeamValue( ply, args )
+		if ply:query( "xgui_managegroups" ) then
+			args[3] = tonumber( args[3] ) or args[3] --If args[3] is a number, turn it into one.
+			for k, v in ipairs( xgui.teams ) do
+				if v.name == args[1] then
+					if args[2] == "color" then
+						v.color = { r=tonumber(args[3]), g=tonumber(args[4]), b=tonumber(args[5]), a=255 }
+					else
+						if args[3] ~= "" then
+							v[args[2]] = args[3]
+						else
+							v[args[2]] = nil
+							--Set the players back to the original value
+							for _, group in ipairs( v.groups ) do
+								xgui.resetTeamValue( group, { args[2] } )
+							end
+						end
+					end
+					--Check for order updates, only refresh the teams when args[4] flag is set to prevent multiple data sendings
+					if v[args[2]] ~= "order" or args[4] == "true" then
+						xgui.refreshTeams()
+					end
+					break
+				end
+			end
+		end
+	end
+	
+	function xgui.refreshTeams()
+		ulx.teams = table.Copy( xgui.teams )
+		ulx.saveTeams() --Let ULX reprocess the teams (Empty/new teams would be lost here)
+		ulx.refreshTeams()
+		table.sort( xgui.teams, function(a, b) return a.order < b.order end ) --Sort table by order.
+		for _, v in ipairs( player.GetAll() ) do
+			xgui.sendData( v, {[1]="teams"} )
+		end
+		--Save any teams that don't have a group assigned to it to a special file. (They'll be removed on changelevel if we don't)
+		local emptyteams = {}
+		for _, teamdata in ipairs( xgui.teams ) do
+			if #teamdata.groups == 0 then
+				table.insert( emptyteams, teamdata )
+			end
+		end
+		if #emptyteams > 0 then
+			local output = "//This file stores teams that do not have any groups assigned to it (Since ULX would discard them). Do not edit this file!\n"
+			output = output .. ULib.makeKeyValues( emptyteams )
+			file.Write( "ulx/empty_teams.txt", output )
+		else
+			if file.Exists( "ulx/empty_teams.txt" ) then
+				file.Delete( "ulx/empty_teams.txt" )
+			end
+		end
+	end
+	
+	xgui.teamDefaults = { 
+		armor = 0,
+		crouchedWalkSpeed = 0.6,
+		deaths = 0,
+		duckSpeed = 0.3,
+		frags = 0,
+		gravity = 1,
+		health = 100,
+		jumpPower = 160,
+		maxHealth = 100,
+		maxSpeed = 250,
+		model = "kleiner",
+		runSpeed = 500,
+		stepSize = 18,
+		unDuckSpeed = 0.2,
+		walkSpeed = 250 }
 
+	--This function will locate all players affected by team modifier(s) being unset (or team being changed)
+	--and will reset any related modifiers to their defaults.
+	function xgui.resetTeamValue( group, values )
+		for _, ply in ipairs( player.GetAll() ) do
+			if ply:GetUserGroup() == group then 
+				for _, modifier in ipairs( values ) do
+					--Code from UTeam
+					ply[ "Set" .. modifier:sub( 1, 1 ):upper() .. modifier:sub( 2 ) ]( ply, xgui.teamDefaults[modifier] )
+				end
+			end
+		end
+	end
+	
 	function xgui.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 		if cl_cvar == "ulx_cl_votemapMapmode" then
 			xgui.saveVotemaps( tonumber( new_val ) )
 		end
 	end
 	hook.Add( "ULibReplicatedCvarChanged", "XGUI_ServerCatchCvar", xgui.ConVarUpdated )
-
+	
 	--Create timers that will automatically refresh clent's banlists when a users ban runs out. Polls hourly.
 	function xgui.unbanTimer()
 		timer.Simple( 3600, xgui.unbanTimer )
@@ -629,7 +797,8 @@ function xgui.init()
 	end
 
 	xgui.splitbans() --Once the functions are loaded, call functions that need to be run
-	xgui.unbanTimer() --(Prevents XGUI being partially loaded in case of an error)
+	xgui.unbanTimer() --(Prevents XGUI from being partially loaded in case of an error)
+	xgui.setTeamsOrder()
 end
 --Init the code after ULX is done loading, to prevent strange errors
 hook.Add( ulx.HOOK_ULXDONELOADING, "XGUI_InitServer", xgui.init )

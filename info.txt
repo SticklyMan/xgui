@@ -1,8 +1,8 @@
 "AddonInfo"
 {
 	"name"				"XGUI"
-	"version"			"Prerelease"
-	"up_date"			"August 10, 2010"
+	"version"			"10.08.20 beta"
+	"up_date"			"August 20, 2010"
 	"author_name"			"Stickly Man! / Team Ulysses"
 	"author_email"			"teamulysses@ulyssesmod.net"
 	"author_url"			"http://www.ulyssesmod.net/"

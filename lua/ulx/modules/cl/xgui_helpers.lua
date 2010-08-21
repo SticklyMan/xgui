@@ -111,6 +111,7 @@ local function xgui_helpers()
 		xgui_temp:SetType( t.btype )
 		xgui_temp:SetSize( t.w, t.h or 20 )
 		xgui_temp:SetPos( t.x, t.y )
+		xgui_temp:SetDisabled( t.disabled )
 		return xgui_temp
 	end
 	
@@ -206,6 +207,7 @@ local function xgui_helpers()
 		local xgui_temp = vgui.Create( "DPanel", t.parent )
 		xgui_temp:SetPos( t.x, t.y )
 		xgui_temp:SetSize( t.w, t.h )
+		if t.visible ~= nil then xgui_temp:SetVisible( t.visible ) end
 		return xgui_temp
 	end
 
