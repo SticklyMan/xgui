@@ -103,6 +103,11 @@ cmds.setselected = function( selcat, LineID )
 end
 
 function cmds.refreshPlist( arg, argnum )
+	local lastplys = {}
+	for k, Line in pairs( cmds.plist.Lines ) do
+		if ( Line:GetSelected() ) then table.insert( lastplys, cmds.plist.Lines[k]:GetColumnText(1) ) end
+	end
+	
 	cmds.plist:Clear()
 	local access, tag = LocalPlayer():query( arg.cmd )
 	local restrictions = {}
@@ -114,11 +119,17 @@ function cmds.refreshPlist( arg, argnum )
 	elseif targets == nil then -- Everyone allowed
 		targets = player.GetAll()
 	end
-
-	for _, ply in ipairs( targets ) do
-		cmds.plist:AddLine( ply:Nick(), ply:GetUserGroup() )
-	end
 	cmds.plist:SetMultiSelect( arg.type == ULib.cmds.PlayersArg )
+
+	--Select previously selected Lines
+	for _, ply in ipairs( targets ) do
+		local line = cmds.plist:AddLine( ply:Nick(), ply:GetUserGroup() )
+		for _, v in ipairs( lastplys ) do
+			if v == ply:Nick() then
+				cmds.plist:SelectItem( line )
+			end
+		end
+	end
 end
 
 function cmds.refreshArgslist( cmd )
@@ -182,13 +193,15 @@ function cmds.refreshArgslist( cmd )
 			cmds.buildcmd( cmd.cmd )
 		end
 	end
-	local xgui_temp = x_makebutton{ label=cmd.cmd }
-	xgui_temp.xguiIgnore = true
-	xgui_temp.DoClick = function()
-		cmds.buildcmd( cmd.cmd )
+	if LocalPlayer():query( cmd.cmd ) then
+		local xgui_temp = x_makebutton{ label=cmd.cmd }
+		xgui_temp.xguiIgnore = true
+		xgui_temp.DoClick = function()
+			cmds.buildcmd( cmd.cmd )
+		end
+		cmds.argslist:AddItem( xgui_temp )
 	end
-	cmds.argslist:AddItem( xgui_temp )
-	if cmd.opposite then
+	if cmd.opposite and LocalPlayer():query( cmd.opposite ) then
 		local xgui_temp = x_makebutton{ label=cmd.opposite }
 		xgui_temp.DoClick = function()
 			cmds.buildcmd( cmd.opposite )
@@ -284,6 +297,7 @@ function cmds.argslist:animate( cmd, pos, func, factor )
 end
 
 cmds.refresh = function()
+	local lastcmd = cmds.selcmd
 	cmds.cmds:Clear()
 	cmds.cmd_cats = {}
 	cmds.expandedcat = nil
@@ -292,7 +306,8 @@ cmds.refresh = function()
 	cmds.plist:SetVisible( false )
 	
 	for cmd, data in pairs( ULib.cmds.translatedCmds ) do
-		if data.opposite ~= cmd && ULib.ucl.query( LocalPlayer(), cmd ) then
+		local opposite = data.opposite or ""
+		if opposite ~= cmd and ( LocalPlayer():query( data.cmd ) or LocalPlayer():query( opposite ) ) then
 			local catname = data.category
 			if catname == nil or catname == "" then catname = "Uncategorized" end
 			if not cmds.cmd_cats[catname] then
@@ -319,7 +334,12 @@ cmds.refresh = function()
 				end
 				cmds.cmds:AddItem( cat )
 			end
-			cmds.cmd_cats[catname]:AddLine( string.gsub( cmd, "ulx ", "" ), cmd )
+			local line = cmds.cmd_cats[catname]:AddLine( string.gsub( data.cmd, "ulx ", "" ), data.cmd )
+			if data.cmd == lastcmd then
+				cmds.cmd_cats[catname]:SelectItem( line )
+				cmds.expandedcat = cmds.cmd_cats[catname]:GetParent()
+				cmds.expandedcat:SetExpanded( true )
+			end
 		end
 	end
 	table.sort( cmds.cmds.Items, function( a,b ) return a.Header:GetValue() < b.Header:GetValue() end )

@@ -6,7 +6,7 @@ local settings = x_makepanel{ x=5, y=27, parent=xgui.null }
 xgui.settings_tabs = vgui.Create( "DPropertySheet", settings )
 xgui.settings_tabs:SetSize( 600, 368 )
 xgui.settings_tabs.CheckAlpha = true
-xgui.settings_tabs:SetFadeTime( xgui.base:GetFadeTime() )
+xgui.settings_tabs:SetFadeTime( xgui.settings.animTime )
 
 function xgui.settings_tabs:PerformLayout()
 	self:SetPos( 0, 5 )
@@ -67,7 +67,6 @@ function xgui.settings_tabs:CrossFade( anim, delta, data )
 xgui.settings_tabs.animFade = Derma_Anim( "Fade", xgui.settings_tabs, xgui.settings_tabs.CrossFade )
 
 function xgui.settings_tabs:Think()
-	xgui.settings_tabs:SetFadeTime( xgui.base:GetFadeTime() )
 	self.animFade:Run()
 	if self.CheckAlpha then
 		self:GetActiveTab():GetPanel():SetAlpha( self:GetParent():GetAlpha() )

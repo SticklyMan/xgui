@@ -3,7 +3,7 @@ xgui = {}
 --Set up a table for storing third party modules and information
 xgui.modules = { tab={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
-xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={} }
+xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
 
 local function xgui_init( authedply )
 	if authedply ~= LocalPlayer() then return end
@@ -12,20 +12,33 @@ local function xgui_init( authedply )
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
 	--Data storing relevant information retrieved from server.
-	xgui.data = { sbans={}, bans={}, users={}, adverts={}, gimps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={} }
+	xgui.data = { sbans={}, bans={}, users={}, adverts={}, gimps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
+	
+	--Set up XGUI clientside settings, load settings from file if it exists
+	xgui.settings = {}
+	if file.Exists( "ulx/xgui_settings.txt" ) then
+		local input = file.Read( "ulx/xgui_settings.txt" )
+		input = input:match( "^.-\n(.*)$" )
+		xgui.settings = ULib.parseKeyValues( input )
+	end
+	--Set default settings if they didn't get loaded
+	if not xgui.settings.moduleOrder then xgui.settings.moduleOrder = { "Cmds", "Groups", "Maps", "Settings", "Bans" } end
+	if not xgui.settings.settingOrder then xgui.settings.settingOrder = { "Sandbox", "Server", "XGUI" } end
+	if not xgui.settings.animTime then xgui.settings.animTime = 0.2 else xgui.settings.animTime = tonumber( xgui.settings.animTime ) end
+	if not xgui.settings.infoColor then xgui.settings.infoColor = Color(100,255,255,128) end
+	if not xgui.settings.showLoadMsgs then xgui.settings.showLoadMsgs = true else xgui.settings.showLoadMsgs = tobool( xgui.settings.showLoadMsgs ) end
 	
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
 
 	--Create the bottom infobar
 	xgui.infobar = x_makepanel{ x=10, y=399, w=580, h=20, parent=xgui.base }
-	xgui.infobar.color = Color(100,255,255,128)
 	xgui.infobar:NoClipping( true )
 	xgui.infobar.Paint = function( self )
-		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.infobar.color, false, false, true, true )
+		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.20  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
-	--x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.20  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.22  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	--x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.22  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
@@ -40,38 +53,37 @@ local function xgui_init( authedply )
 	xgui.null:SetVisible( false )
 	
 	--Load modules
-	Msg( "\n///////////////////////////////////////\n" )
-	Msg( "//  ULX GUI -- Made by Stickly Man!  //\n" )
-	Msg( "///////////////////////////////////////\n" )
-	Msg( "// Loading GUI Modules...            //\n" )
+	local sm = xgui.settings.showLoadMsgs
+	if sm then
+		Msg( "\n///////////////////////////////////////\n" )
+		Msg( "//  ULX GUI -- Made by Stickly Man!  //\n" )
+		Msg( "///////////////////////////////////////\n" )
+		Msg( "// Loading GUI Modules...            //\n" )
+	end
 	for _, file in ipairs( file.FindInLua( "ulx/xgui/*.lua" ) ) do
 		include( "ulx/xgui/" .. file )
-		Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" )
+		if sm then Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" ) end
 	end
-	Msg( "// Loading Setting Modules...        //\n" )	
+	if sm then Msg( "// Loading Setting Modules...        //\n" ) end
 	for _, file in ipairs( file.FindInLua( "ulx/xgui/settings/*.lua" ) ) do
 		include( "ulx/xgui/settings/" .. file )
-		Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" )
+		if sm then Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" ) end
 	end
-	Msg( "// Loading Gamemode Module(s)...     //\n" )
+	if sm then Msg( "// Loading Gamemode Module(s)...     //\n" ) end
 	if ULib.isSandbox() and GAMEMODE.FolderName ~= "sandbox" then -- If the gamemode sandbox-derived (but not sandbox, that will get added later), then add the sandbox Module
 		include( "ulx/xgui/gamemodes/sandbox.lua" )
-		Msg( "//   sandbox.lua                     //\n" )
+		if sm then Msg( "//   sandbox.lua                     //\n" ) end
 	end
 	for _, file in ipairs( file.FindInLua( "ulx/xgui/gamemodes/*.lua" ) ) do
 		if string.lower( file ) == string.lower( GAMEMODE.FolderName .. ".lua" ) then
 			include( "ulx/xgui/gamemodes/" .. file )
-			Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" )
+			if sm then Msg( "//   " .. file .. string.rep( " ", 32 - file:len() ) .. "//\n" ) end
 			break
 		end
-		Msg( "//   No module found!                //\n" )
+		if sm then Msg( "//   No module found!                //\n" ) end
 	end
-	Msg( "// Modules Loaded!                   //\n" )
-	Msg( "///////////////////////////////////////\n\n" )
-	
-	--TODO: Load XGUI saved settings and whatnot here?
-	--Temporary settings table
-	xgui.settings = { moduleOrder = { "Cmds", "Groups", "Maps", "Settings", "Bans" }, settingOrder = { "Sandbox", "Server", "XGUI" } }
+	if sm then Msg( "// Modules Loaded!                   //\n" ) end
+	if sm then Msg( "///////////////////////////////////////\n\n" ) end
 	
 	--Find any existing modules that aren't listed in the requested order.
 	local function checkModulesOrder( moduleTable, sortTable )
@@ -98,6 +110,12 @@ local function xgui_init( authedply )
 	xgui.initialized = true
 end
 hook.Add( "UCLAuthed", "InitXGUI", xgui_init, 20 )
+
+function xgui.saveClientSettings()
+	local output = "// This file stores clientside settings for XGUI.\n"
+	output = output .. ULib.makeKeyValues( xgui.settings )
+	file.Write( "ulx/xgui_settings.txt", output )
+end
 
 function xgui.checkModuleExists( modulename, moduletable )
 	for k, v in ipairs( moduletable ) do
@@ -225,10 +243,12 @@ function xgui.PermissionsChanged( ply )
 			if table.Count( xgui.data.users ) == 0 then table.insert( getstring, "users" ) end
 			if table.Count( xgui.data.teams ) == 0 then table.insert( getstring, "teams" ) end
 			if table.Count( xgui.data.playermodels ) == 0 then table.insert( getstring, "playermodels" ) end
+			if table.Count( xgui.data.accesses ) == 0 then table.insert( getstring, "accesses" ) end
 		else
 			xgui.data.users = {}
 			xgui.data.teams = {}
 			xgui.data.playermodels = {}
+			xgui.data.accesses = {}
 		end
 		if LocalPlayer():query( "xgui_managebans" ) then
 			if table.Count( xgui.data.bans ) == 0 then table.insert( getstring, "bans" ) end
@@ -236,6 +256,11 @@ function xgui.PermissionsChanged( ply )
 		else
 			xgui.data.bans = {}
 			xgui.data.sbans = {}
+		end
+		if LocalPlayer():query( "xgui_gmsettings" ) then
+			if table.Count( xgui.data.sboxlimits ) == 0 then table.insert( getstring, "sboxlimits" ) end
+		else
+			xgui.data.sboxlimits = {}
 		end
 		if #getstring > 0 then
 			RunConsoleCommand( "xgui", "getdata", unpack( getstring ) )
@@ -341,6 +366,12 @@ function xgui.expectChunks( numofchunks, updated )
 	xgui.chunkbox.progress.Label:SetText( "Waiting for server" .. " - " .. xgui.chunkbox.progress.Label:GetValue() )
 	xgui.chunkbox.progress:PerformLayout()
 	xgui.chunkbox:SetVisible( xgui.base:IsVisible() )
+	function xgui.chunkbox:CloseFunc()
+		RunConsoleCommand( "_xgui", "dataComplete" )
+		xgui.receivingdata = false
+		self:Remove()
+		self = nil 
+	end
 	--Clear the tables that are going to be updated
 	for _, v in ipairs( updated ) do
 		xgui.data[v] = {}
@@ -359,19 +390,16 @@ function xgui.expectChunks( numofchunks, updated )
 	function xgui.chunkbox:Progress( curtable )
 		self.progress:SetValue( self.progress:GetValue() + 1 )
 		self.progress.Label:SetText( curtable .. " - " .. self.progress.Label:GetValue() )
-		self.progress:PerformLayout()
 		if self.progress:GetValue() == xgui.chunkbox.max then
-			RunConsoleCommand( "_xgui", "dataComplete" )
-			xgui.receivingdata = false
-			xgui.chunkbox:Remove()
-			xgui.chunkbox = nil
+			self.progress.Label:SetText( "Waiting for clientside processing" )
+			ULib.queueFunctionCall( xgui.chunkbox.CloseFunc, xgui.chunkbox )
 		end
+		self.progress:PerformLayout()
 	end
 end
 
 --Function called when data chunk is recieved from server
 function xgui.getChunk( data, curtable )
-	xgui.chunkbox:Progress( curtable )
 	if curtable == "bans" then
 		for k, v in pairs( data ) do
 			xgui.data[curtable][k] = v
@@ -387,6 +415,7 @@ function xgui.getChunk( data, curtable )
 		xgui.data[curtable] = data
 	end
 	xgui.callRefresh( curtable, data )
+	xgui.chunkbox:Progress( curtable )
 end
 
 function xgui.callRefresh( cmd, data )

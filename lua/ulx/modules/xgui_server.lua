@@ -37,7 +37,8 @@ function xgui.init()
 		ULib.clientRPC( ply, "xgui.show", args )
 	end
 	ULib.addSayCommand(	"!xgui", xgui_chatCommand, "ulx help" )
-
+	ULib.addSayCommand(	"!menu", xgui_chatCommand, "ulx help" )
+	
 	local function xgui_banWindowChat( ply, func, args )
 		if args[1] and args[1] ~= "" then
 			local target = ULib.getUser( args[1] )
@@ -63,10 +64,10 @@ function xgui.init()
 	ULib.addSayCommand(	"!fban", xgui_banWindowChatFreeze, "ulx ban" )
 
 	--XGUI specific Accesses
-	ULib.ucl.registerAccess( "xgui_gmsettings", "superadmin", "Allows changing of gamemode-specific settings on the settings tab in XGUI." )
-	ULib.ucl.registerAccess( "xgui_svsettings", "superadmin", "Allows changing of server and ULX-specific settings on the settings tab in XGUI." )
-	ULib.ucl.registerAccess( "xgui_managegroups", "superadmin", "Allows managing of groups, users, and access strings via the groups tab in XGUI." )
-	ULib.ucl.registerAccess( "xgui_managebans", "superadmin", "Allows addition, removal, and viewing of bans in XGUI." )
+	ULib.ucl.registerAccess( "xgui_gmsettings", "superadmin", "Allows changing of gamemode-specific settings on the settings tab in XGUI.", "XGUI" )
+	ULib.ucl.registerAccess( "xgui_svsettings", "superadmin", "Allows changing of server and ULX-specific settings on the settings tab in XGUI.", "XGUI" )
+	ULib.ucl.registerAccess( "xgui_managegroups", "superadmin", "Allows managing of groups, users, and access strings via the groups tab in XGUI.", "XGUI" )
+	ULib.ucl.registerAccess( "xgui_managebans", "superadmin", "Allows addition, removal, and viewing of bans in XGUI.", "XGUI" )
 
 	--Here we will use ULib to replicate the server settings so that anyone with access can change them (not just listen server host or rcon!)
 	ULib.replicatedWritableCvar( "sv_voiceenable", "rep_sv_voiceenable", GetConVarNumber( "sv_voiceenable" ), false, false, "xgui_svsettings" )
@@ -148,7 +149,7 @@ function xgui.init()
 	--Load empty teams saved by XGUI (if any)
 	if file.Exists( "ulx/empty_teams.txt" ) then
 		local input = file.Read( "ulx/empty_teams.txt" )
-		input = input:match( "^.-\n(.*)$" ) --Uhhh, thanks Megiddo!
+		input = input:match( "^.-\n(.*)$" )
 		local emptyteams = ULib.parseKeyValues( input )
 		for _, teamdata in ipairs( emptyteams ) do
 			table.insert( xgui.teams, teamdata.order, teamdata )
@@ -162,7 +163,7 @@ function xgui.init()
 		end
 	end
 	
-	--Uteams doesn't load the shortname for playermodels, so to make it easier for the GUI, check for model paths and see if we can use a shortname instead.
+	--Uteam doesn't load the shortname for playermodels, so to make it easier for the GUI, check for model paths and see if we can use a shortname instead.
 	for _, v in ipairs( xgui.teams ) do
 		if v.model then
 			for shortname,modelpath in pairs( player_manager.AllValidModels() ) do
@@ -171,7 +172,17 @@ function xgui.init()
 		end
 	end
 	
-	xgui.DATA_TYPES = { "gamemodes", "votemaps", "gimps", "adverts", "users", "bans", "sbans", "sboxlimits", "teams", "playermodels" } 
+	--Combine access data into one table.
+	xgui.accesses = {}
+	for k, v in pairs( ULib.ucl.accessStrings ) do
+		xgui.accesses[k] = {}
+		xgui.accesses[k].hStr = v
+	end
+	for k, v in pairs( ULib.ucl.accessCategories ) do
+		xgui.accesses[k].cat = v
+	end
+	
+	xgui.DATA_TYPES = { "sboxlimits", "bans", "sbans", "gamemodes", "votemaps", "adverts", "gimps", "users", "teams", "accesses", "playermodels" } 
 	
 	--Function hub! All server functions can be called via concommand xgui!
 	function xgui.cmd( ply, func, args )
@@ -219,7 +230,7 @@ function xgui.init()
 			end
 			return
 		end
-		
+
 		local chunks = {}
 		for _, u in ipairs( args ) do
 			if u == "gamemodes" then --Update Gamemodes 
@@ -259,13 +270,17 @@ function xgui.init()
 						xgui.sendLimits = true --The sboxlimits haven't arrived yet, raise a flag for them to be sent when they do.
 					end
 				end
+			elseif u == "playermodels" then
+				if ply:query( "xgui_managegroups" ) then
+					table.insert( chunks, { player_manager.AllValidModels(), "playermodels" } )
+				end
 			elseif u == "teams" then --Update XGUI's team info.
 				if ply:query( "xgui_managegroups" ) then
 					table.insert( chunks, { xgui.teams, "teams" } )
 				end
-			elseif u == "playermodels" then
+				elseif u == "accesses" then --Update ULib's Access String information
 				if ply:query( "xgui_managegroups" ) then
-					table.insert( chunks, { player_manager.AllValidModels(), "playermodels" } )
+					table.insert( chunks, { xgui.accesses, "accesses" } )
 				end
 			elseif u == "bans" then --Update ULX Bans
 				if ply:query( "xgui_managebans" ) then
@@ -582,13 +597,22 @@ function xgui.init()
 	
 	function xgui.createTeam( ply, args )
 		if ply:query( "xgui_managegroups" ) then
-			local team = {}
-			team.name = args[1]
-			team.color = Color( args[2], args[3], args[4], 255 )
-			team.order = #xgui.teams+1
-			team.groups = {}
-			table.insert( xgui.teams, team )
-			xgui.refreshTeams()
+			--Check and make sure the team doesn't exist first
+			local exists = false
+			for i, v in ipairs( xgui.teams ) do
+				if v.name == args[1] then
+					exists = true
+				end
+			end
+			if not exists then
+				local team = {}
+				team.name = args[1]
+				team.color = Color( args[2], args[3], args[4], 255 )
+				team.order = #xgui.teams+1
+				team.groups = {}
+				table.insert( xgui.teams, team )
+				xgui.refreshTeams()
+			end
 		end
 	end
 	

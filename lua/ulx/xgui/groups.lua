@@ -71,6 +71,9 @@ function groups.pnlG1:Close()
 	if groups.pnlG3:IsVisible() then
 		groups.pnlG3:closeAnim()
 	end
+	if groups.pnlG4:IsVisible() then
+		groups.pnlG4:Close()
+	end
 	self:closeAnim()
 end
 x_makelabel{ x=5, y=5, label="Users in group:", parent=groups.pnlG1, textcolor=color_black }
@@ -122,7 +125,7 @@ x_makebutton{ x=5, y=275, w=160, label="Manage Teams >>", parent=groups.pnlG1 }.
 	groups.pnlG3:Open()
 end
 x_makebutton{ x=5, y=310, w=160, label="Manage Permissions >>", parent=groups.pnlG1 }.DoClick = function()
-	
+	groups.pnlG4:Open()
 end
 
 ------Groups Panel 2 (Group Management)
@@ -237,6 +240,9 @@ groups.pnlG3 = x_makepanel{ y=130, w=405, h=205, parent=groups.clippanelb }
 groups.pnlG3:SetVisible( false )
 function groups.pnlG3:Open()
 	if not self:IsVisible() then
+		if groups.pnlG4:IsVisible() then
+			groups.pnlG4:Close()
+		end
 		self:openAnim()
 		groups.animQueue_call()
 	end
@@ -428,6 +434,56 @@ end
 groups.teammodspace = x_makepanellist{ x=265, y=5, w=140, h=195, padding=1, parent=groups.pnlG3 }
 groups.teammodspace.Paint = function() end
 
+------Groups Panel 4 (Access Management)
+groups.pnlG4 = x_makepanel{ y=130, w=200, h=335, parent=groups.clippanelb }
+groups.pnlG4:SetVisible( false )
+function groups.pnlG4:Open()
+	if not self:IsVisible() then
+		if groups.pnlG3:IsVisible() then
+			groups.pnlG3:closeAnim()
+		end
+		self:openAnim()
+		groups.animQueue_call()
+	end
+end
+function groups.pnlG4:Close()
+	self.closeAnim()
+end
+x_makelabel{ x=5, y=5, label="Has access to:  (Disabled = inherited)", textcolor=color_black, parent=groups.pnlG4 }
+groups.accesses = x_makepanellist{ x=5, y=20, w=190, h=310, padding=1, spacing=1, parent=groups.pnlG4 }
+function groups.populateAccesses()
+	if ULib.ucl.groups[groups.list:GetValue()] then
+		local group = groups.list:GetValue()
+		for _, line in pairs( groups.access_lines ) do
+			line.Columns[2]:SetDisabled( false )
+			line.Columns[2]:SetValue( false )
+			line.Columns[1]:SetTextColor( Color( 255,255,255,90 ) )
+		end
+		for _, grouphas in ipairs( ULib.ucl.groups[group].allow ) do
+			if groups.access_lines[grouphas] then
+				groups.access_lines[grouphas].Columns[2]:SetValue( true )
+				groups.access_lines[grouphas].Columns[1]:SetTextColor( Color( 255,255,255,255 ) )
+			end
+		end
+		if ULib.ucl.groups[group].inherit_from then
+			groups.popuplateInheritedAccesses( ULib.ucl.groups[group].inherit_from )
+		end
+	end
+end
+
+function groups.popuplateInheritedAccesses( group )
+	for _, grouphas in ipairs( ULib.ucl.groups[group].allow ) do
+		if groups.access_lines[grouphas] then
+			groups.access_lines[grouphas].Columns[2]:SetValue( true )
+			groups.access_lines[grouphas].Columns[1]:SetTextColor( Color( 255,255,255,255 ) )
+			groups.access_lines[grouphas].Columns[2]:SetDisabled( true )
+		end
+	end
+	if ULib.ucl.groups[group].inherit_from then
+		groups.popuplateInheritedAccesses( ULib.ucl.groups[group].inherit_from )
+	end
+end
+
 ---Data refresh/GUI functions
 function groups.SortGroups( t )
 	for k, v in pairs( t ) do
@@ -438,6 +494,7 @@ end
 
 function groups.getGroupData( group )
 	groups.refreshPlayerList( group )
+	groups.populateAccesses()
 	if group == "user" then
 		groups.aplayer:SetDisabled( true )
 	else
@@ -538,6 +595,91 @@ function groups.getGroupsTeam( check_group )
 end
 groups.updateTeams()
 
+function groups.updateAccessPanel()
+	groups.accesses:Clear()
+	groups.access_cats = {}
+	groups.access_lines = {}
+
+	local function processAccess( access, data )
+		if data.cat == nil then data.cat = "Uncategorized" end
+		
+		if not groups.access_cats[data.cat] then
+			--Make a new category
+			local list = x_makelistview{ headerheight=0, multiselect=false, h=136 }
+			list:AddColumn( "Tag" )
+			local col = list:AddColumn( "Checkbox" )
+			col:SetMaxWidth( 15 )
+			col:SetMinWidth( 15 )
+			list.OnRowSelected = function( self, LineID ) groups.accessSelected( self, LineID ) end
+			--Hijack the DataLayout function to manually set the position of the checkboxes.
+			local tempfunc = list.DataLayout
+			list.DataLayout = function( list )
+				local rety = tempfunc( list )
+				for _, Line in ipairs( list.Lines ) do
+					local x,y = Line:GetColumnText(2):GetPos()
+					Line:GetColumnText(2):SetPos( x, y+1 )
+				end
+				return rety
+			end
+			groups.access_cats[data.cat] = list
+			local cat = x_makecat{ label=data.cat, contents=list, expanded=false }
+			groups.accesses:AddItem( cat )
+			function cat.Header:OnMousePressed( mcode )
+				if ( mcode == MOUSE_LEFT ) then
+					self:GetParent():Toggle()
+					--Since derma is special, we can't disable buttons unless they've been drawn on the screen once.
+					--When a category is opened, it will first check if we've reset values for this cat, and if it hasn't, it will refresh them after a frame.
+					if not cat.wasFirstDrawn then
+						cat.wasFirstDrawn = true
+						ULib.queueFunctionCall( groups.populateAccesses )
+					end
+				end
+				return self:GetParent():OnMousePressed( mcode )
+			end
+		end
+		local checkbox = x_makecheckbox{}
+		checkbox.Button.DoClick = function( self )
+			groups.accessChanged( access, not self:GetChecked() )
+		end
+		local line = groups.access_cats[data.cat]:AddLine( access, checkbox )
+		line:SetToolTip( data.hStr )
+		groups.access_lines[access] = line
+	end
+	
+	for access, data in pairs( xgui.data.accesses ) do	
+		ULib.queueFunctionCall( processAccess, access, data )
+	end
+	--Why so many queueFunctionCalls? Mainly to prevent large lags when performing a bunch of derma AddLine()s at once. queueFunctionCall will spread the load for each line, usually one per frame.
+	--This results in the possibility of the end user seeing lines appearing as he's looking at the menus, but I believe that < 1 second of lines appearing is better than 150+ms of freeze time.
+	
+	local function finalSort()
+		table.sort( groups.accesses.Items, function( a,b ) return a.Header:GetValue() < b.Header:GetValue() end )
+		for _, cat in pairs( groups.access_cats ) do
+			cat:SortByColumn( 1 )
+			cat:SetHeight( 17*#cat:GetLines() )
+		end
+		groups.accesses:InvalidateLayout()
+		groups.populateAccesses()
+	end
+	ULib.queueFunctionCall( finalSort )
+end
+
+function groups.accessChanged( access, newVal )
+	if newVal == true then
+		RunConsoleCommand( "ulx", "groupallow", groups.list:GetValue(), access )
+	else
+		RunConsoleCommand( "ulx", "groupdeny", groups.list:GetValue(), access )
+	end
+end
+
+function groups.accessSelected( catlist, LineID )
+	for _, cat in pairs( groups.access_cats ) do
+		if cat ~= catlist then
+			cat:ClearSelection()
+		end
+	end	
+end
+
 groups.modelList = vgui.Create( "DPanelSelect", xgui.null )
 groups.modelList:SetHeight( 168 )
 function groups.updateModelPanel()
@@ -547,21 +689,26 @@ function groups.updateModelPanel()
     table.sort( modelsSorted, function( a,b ) return string.lower( a ) < string.lower( b ) end )
 	
 	for _, name in ipairs( modelsSorted ) do
-		local icon = vgui.Create( "SpawnIcon", xgui.null )
-		icon:SetModel( xgui.data.playermodels[name] )
-		icon:SetSize( 64, 64 )
-		icon:SetTooltip( name )
-		icon.name = name
-		icon.model = xgui.data.playermodels[name]
-		icon.DoClick = function( self ) groups.modelList:SelectPanel( self ) groups.setTeamModel( icon.name ) end
-		ULib.queueFunctionCall( groups.modelList.AddItem, groups.modelList, icon )
-		--groups.modelList:AddItem( icon )
+		ULib.queueFunctionCall( groups.addToModelPanel, name )
 	end
 end
 function groups.setTeamModel( model ) end --Create a dummy function that will be created with proper settings later.
+function groups.addToModelPanel( name )
+	local icon = vgui.Create( "SpawnIcon", xgui.null )
+	icon:SetModel( xgui.data.playermodels[name] )
+	icon:SetSize( 64, 64 )
+	icon:SetTooltip( name )
+	icon.name = name
+	icon.model = xgui.data.playermodels[name]
+	icon.DoClick = function( self ) groups.modelList:SelectPanel( self ) groups.setTeamModel( icon.name ) end
+	groups.modelList:AddItem( icon )
+end
 
+
+hook.Add( "UCLChanged", "xgui_RefreshGroupPermissions", groups.populateAccesses )
 table.insert( xgui.hook["teams"], groups.updateTeams )
 table.insert( xgui.hook["users"], groups.updateUsers )
+table.insert( xgui.hook["accesses"], groups.updateAccessPanel )
 table.insert( xgui.hook["playermodels"], groups.updateModelPanel )
 table.insert( xgui.modules.tab, { name="Groups", panel=groups, icon="gui/silkicons/group", tooltip=nil, access="xgui_managegroups" } )
 
@@ -610,10 +757,19 @@ end
 
 groups.pnlG3.openAnim = function( self )
 	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( true ) groups.animQueue_call() end )
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG3, startx=-405, starty=130, endx=5, endy=130, setvisible=true } ) end )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG3, startx=-410, starty=130, endx=5, endy=130, setvisible=true } ) end )
 end
 groups.pnlG3.closeAnim = function( self )
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG3, startx=5, starty=130, endx=-405, endy=130, setvisible=false } ) end )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG3, startx=5, starty=130, endx=-410, endy=130, setvisible=false } ) end )
+	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( false ) groups.animQueue_call() end )
+end
+
+groups.pnlG4.openAnim = function( self )
+	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( true ) groups.animQueue_call() end )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG4, startx=-210, starty=0, endx=5, endy=0, setvisible=true } ) end )
+end
+groups.pnlG4.closeAnim = function( self )
+	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime(), { panel=groups.pnlG4, startx=5, starty=0, endx=-210, endy=0, setvisible=false } ) end )
 	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( false ) groups.animQueue_call() end )
 end
 
