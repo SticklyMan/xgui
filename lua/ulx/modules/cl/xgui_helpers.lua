@@ -124,6 +124,7 @@ local function xgui_helpers()
 		if t.nopopup ~= true then xgui_temp:MakePopup() end
 		if t.showclose ~= nil then xgui_temp:ShowCloseButton( t.showclose ) end
 		if t.alwaysontop ~= nil then xgui_temp:SetDrawOnTop( t.alwaysontop ) end
+		xgui_temp:SetSkin( xgui.settings.skin )
 		return xgui_temp
 	end
 
@@ -269,6 +270,7 @@ local function xgui_helpers()
 			self.TextEntry:SetPaintBackgroundEnabled( val )
 			self.DropButton:SetDisabled( val )
 			self.DropButton:SetMouseInputEnabled( not val )
+			self:SetMouseInputEnabled( not val )
 		end
 
 		--Add support for Spacers
@@ -573,6 +575,8 @@ local function xgui_helpers()
 			if ( anim.Finished ) then
 				panel:SetAlpha( 255 )
 				panel:SetVisible( false )
+				RememberCursorPosition()
+				gui.EnableScreenClicker( false )
 			end
 			panel:SetAlpha( 255-( delta*255 ) )
 			panel:GetActiveTab():GetPanel():SetAlpha( 255-( delta*255 ) )
@@ -584,7 +588,7 @@ local function xgui_helpers()
 			self.animFadeIn:Run()
 			self.animFadeOut:Run()
 		end
-
+	
 		return xgui_base
 	end
 	
@@ -825,7 +829,7 @@ local function xgui_helpers()
 		return tag and string.Explode( " ", tag )[argnum]
 	end
 
-	--Load control interpretations for Ulib argument types
+	--Load control interpretations for ULib argument types
 	function ULib.cmds.BaseArg.x_getcontrol( arg, argnum )
 		return x_makelabel{ label="Not Supported" }
 	end

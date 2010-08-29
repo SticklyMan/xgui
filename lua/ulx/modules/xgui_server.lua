@@ -182,7 +182,7 @@ function xgui.init()
 		xgui.accesses[k].cat = v
 	end
 	
-	xgui.DATA_TYPES = { "sboxlimits", "bans", "sbans", "gamemodes", "votemaps", "adverts", "gimps", "users", "teams", "accesses", "playermodels" } 
+	xgui.DATA_TYPES = { "votemaps", "sboxlimits", "adverts", "gimps", "users", "teams", "accesses", "bans", "sbans", "playermodels" } 
 	
 	--Function hub! All server functions can be called via concommand xgui!
 	function xgui.cmd( ply, func, args )
@@ -199,6 +199,7 @@ function xgui.init()
 		elseif branch == "updateAdvert" then xgui.updateAdvert( ply, args )
 		elseif branch == "addVotemaps" then xgui.addVotemaps( ply, args )
 		elseif branch == "removeVotemaps" then xgui.removeVotemaps( ply, args )
+		elseif branch == "getVetoState" then xgui.getVetoState( ply, args )
 		elseif branch == "updateBan" then xgui.updateBan( ply, args )
 		elseif branch == "refreshBans" then ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" )
 		elseif branch == "updateTeamValue" then xgui.updateTeamValue( ply, args )
@@ -233,16 +234,7 @@ function xgui.init()
 
 		local chunks = {}
 		for _, u in ipairs( args ) do
-			if u == "gamemodes" then --Update Gamemodes 
-				local t = {}
-				local dirs = file.FindDir( "../gamemodes/*" )
-				for _, dir in pairs( dirs ) do
-					if file.Exists( "../gamemodes/" .. dir .. "/info.txt" ) and not util.tobool( util.KeyValuesToTable( file.Read( "../gamemodes/" .. dir .. "/info.txt" ) ).hide ) then
-						table.insert( t, dir )
-					end
-				end
-				table.insert( chunks, { t, "gamemodes" } )
-			elseif u == "votemaps" then --Update Votemaps
+			if u == "votemaps" then --Update Votemaps
 				local t = {}
 				for _, v in ipairs( ulx.votemaps ) do
 					table.insert( t, v )
@@ -284,13 +276,13 @@ function xgui.init()
 				end
 			elseif u == "bans" then --Update ULX Bans
 				if ply:query( "xgui_managebans" ) then
-					--Send 50 bans per chunk
+					--Send 25 bans per chunk
 					local i = 1
 					local t = {}
 					for ID, data in pairs( xgui.ulxbans ) do
 						t[ID] = data
 						i = i + 1
-						if i > 50 then 
+						if i > 25 then 
 							table.insert( chunks, { t, "bans" } )
 							t = {}
 							i = 1
@@ -300,14 +292,14 @@ function xgui.init()
 				end
 			elseif u == "sbans" then --Update SOURCE Bans
 				if ply:query( "xgui_managebans" ) then
-					--Send 50 sbans per chunk
+					--Send 25 sbans per chunk
 					--Since source doesn't save any bans that have a timelimit, the only valuable information we need per ban is the STEAMID.
 					local i = 1
 					local t = {}
 					for ID, _ in pairs( xgui.sourcebans ) do
 						table.insert( t, ID )
 						i = i + 1
-						if i > 50 then 
+						if i > 25 then 
 							table.insert( chunks, { t, "sbans" } )
 							t = {}
 							i = 1
@@ -579,6 +571,21 @@ function xgui.init()
 		file.Write( "ulx/votemaps.txt", new_file )
 	end
 	
+	function xgui.getVetoState( ply, args )
+		if ply:query( "ulx veto" ) then
+			local enabled = "false"
+			if ulx.timedVeto then enabled = "true" end
+			ply:SendLua( "xgui.updateVetoButton( " .. enabled .. ")" )
+		end
+	end
+	
+	function xgui.updateVetoState()
+		for _, v in ipairs( player.GetAll() ) do
+			xgui.getVetoState( v )
+		end
+	end
+	hook.Add( "ULXVetoChanged", "XGUI_ServerCatchVeto", xgui.updateVetoState )
+	
 	function xgui.removeTeam( ply, args )
 		if ply:query( "xgui_managegroups" ) then
 			for i, v in ipairs( xgui.teams ) do
@@ -782,11 +789,12 @@ function xgui.init()
 	--This will check for ULX functions and delegate appropriate actions based on which commands were called
 	--Ex. When someone uses ulx ban, call the clients to refresh the appropriate data
 	function xgui.ULXCommandCalled( ply, cmdName, args )
-		if cmdName == "ulx ban" or cmdName == "ulx banid" or cmdName == "ulx unban" then xgui.splitbans() xgui.unbanTimer() end -- Recheck the bans if a ban was added/removed
+		-- Recheck the bans if a ban was removed
+		if cmdName == "ulx unban" then xgui.splitbans() end
+		
+		--Resend data based on commands called
 		for _, v in ipairs( player.GetAll() ) do
-			if cmdName == "ulx ban" or cmdName == "ulx banid" then
-				xgui.sendData( v, {[1]="bans"} )
-			elseif cmdName == "ulx unban" then
+			if cmdName == "ulx unban" then
 				if v:query( "xgui_managebans" ) then
 					ULib.clientRPC( v, "xgui.callRefresh", "onUnban", args[2] )
 					if timer.IsTimer( "xgui_unban" .. args[2] ) then
@@ -801,7 +809,50 @@ function xgui.init()
 		end
 	end
 	hook.Add( "ULibPostTranslatedCommand", "XGUI_HookULXCommand", xgui.ULXCommandCalled )
-
+	
+	--Hijack the addBan function to send new ban information to players.
+	local banfunc = ULib.addBan
+	ULib.addBan = function( steamid, time, reason, name, admin )
+		banfunc( steamid, time, reason, name, admin )
+		xgui.splitbans()
+		xgui.unbanTimer()
+		for _, v in ipairs( player.GetAll() ) do
+			if v:query( "xgui_managebans" ) then
+				ULib.clientRPC( v, "xgui.callRefresh", "updateBan", { [steamid] = ULib.bans[steamid] } )
+			end
+		end
+	end
+	
+	--Hijack the renameGroup and removeGroup ULib functions to properly update team information when these are called.
+	local tempfunc = ULib.ucl.renameGroup
+	ULib.ucl.renameGroup = function( orig, new )
+		for _, teamdata in ipairs( xgui.teams ) do
+			for i, groupname in ipairs( teamdata.groups ) do
+				if groupname == orig then
+					teamdata.groups[i] = new
+				end
+				break
+			end
+		end
+		tempfunc( orig, new )
+		xgui.refreshTeams()
+	end
+	
+	local otherfunc = ULib.ucl.removeGroup
+	ULib.ucl.removeGroup = function( name )
+		for _, teamdata in ipairs( xgui.teams ) do
+			for i, groupname in ipairs( teamdata.groups ) do
+				if groupname == name then
+					table.remove( teamdata.groups, i )
+				end
+				break
+			end
+		end
+		otherfunc( name )
+		xgui.refreshTeams()
+	end
+	
+	--Misc Stuff
 	function xgui.getCommentHeader( data, comment_char )
 		comment_char = comment_char or ";"
 		local lines = ULib.explode( "\n", data )

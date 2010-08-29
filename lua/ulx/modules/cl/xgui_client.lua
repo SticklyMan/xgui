@@ -3,7 +3,7 @@ xgui = {}
 --Set up a table for storing third party modules and information
 xgui.modules = { tab={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
-xgui.hook = { onUnban={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
+xgui.hook = { onUnban={}, updateBan={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
 
 local function xgui_init( authedply )
 	if authedply ~= LocalPlayer() then return end
@@ -27,6 +27,7 @@ local function xgui_init( authedply )
 	if not xgui.settings.animTime then xgui.settings.animTime = 0.2 else xgui.settings.animTime = tonumber( xgui.settings.animTime ) end
 	if not xgui.settings.infoColor then xgui.settings.infoColor = Color(100,255,255,128) end
 	if not xgui.settings.showLoadMsgs then xgui.settings.showLoadMsgs = true else xgui.settings.showLoadMsgs = tobool( xgui.settings.showLoadMsgs ) end
+	if not xgui.settings.skin then xgui.settings.skin = "Default" end	
 	
 	--Initiate the base window (see xgui_helpers.lua for code)
 	xgui.base = x_makeXGUIbase{}
@@ -37,8 +38,8 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.22  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
-	--x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.22  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.29  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	--x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.29  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
@@ -108,6 +109,8 @@ local function xgui_init( authedply )
 	
 	hook.Remove( "UCLAuthed", "InitXGUI" )
 	xgui.initialized = true
+	
+	xgui.processModules()
 end
 hook.Add( "UCLAuthed", "InitXGUI", xgui_init, 20 )
 
@@ -189,7 +192,7 @@ function xgui.processModules( wasvisible )
 	end
 	
 	--Call any functions that requested to be called when permissions change
-	for _, func in ipairs( xgui.hook["onProcessModules" ] ) do func() end
+	xgui.callRefresh( "onProcessModules" )
 	
 	if activesettingstab then
 		if xgui.settings_tabs:GetActiveTab():GetValue() ~= activesettingstab then
@@ -337,15 +340,18 @@ function xgui.show( tabname )
 	if xgui.receivingdata then xgui.chunkbox:SetVisible( true ) end
 	xgui.base.animFadeIn:Start( xgui.base:GetFadeTime(), xgui.base )
 	
+	if xgui.base.refreshSkin then
+		xgui.base:SetSkin( xgui.settings.skin )	
+		xgui.base.refreshSkin = nil
+	end
+	
 	--Calls the functions requesting to hook when XGUI is opened
 	if xgui.hook["onOpen"] then
-		for _, func in ipairs( xgui.hook["onOpen"] ) do func() end
+		xgui.callRefresh( "onOpen" )
 	end
 end
 
 function xgui.hide()
-	RememberCursorPosition()
-	gui.EnableScreenClicker( false )
 	xgui.base.animFadeOut:Start( xgui.base:GetFadeTime(), xgui.base )
 end
 
@@ -360,6 +366,12 @@ end
 --Called by server when data is ready to recieve
 function xgui.expectChunks( numofchunks, updated )
 	xgui.receivingdata = true
+	
+	if xgui.chunkbox then
+		xgui.chunkbox:Remove()
+		xgui.flushQueue( "chunkbox" ) --Remove the queue entry that would remove the chunkbox
+	end
+	
 	xgui.chunkbox = x_makeframepopup{ label="XGUI is receiving data!", w=200, h=60, y=ScrH()/2-265, nopopup=true, draggable=false, showclose=false }
 	xgui.chunkbox.max = numofchunks
 	xgui.chunkbox.progress = x_makeprogressbar{ x=10, y=30, w=180, h=20, min=0, max=numofchunks, percent=true, parent=xgui.chunkbox }
@@ -367,7 +379,6 @@ function xgui.expectChunks( numofchunks, updated )
 	xgui.chunkbox.progress:PerformLayout()
 	xgui.chunkbox:SetVisible( xgui.base:IsVisible() )
 	function xgui.chunkbox:CloseFunc()
-		RunConsoleCommand( "_xgui", "dataComplete" )
 		xgui.receivingdata = false
 		self:Remove()
 		self = nil 
@@ -375,6 +386,7 @@ function xgui.expectChunks( numofchunks, updated )
 	--Clear the tables that are going to be updated
 	for _, v in ipairs( updated ) do
 		xgui.data[v] = {}
+		xgui.flushQueue( v ) --Flush any current clientside processing stuff from previous chunk retrievals.
 		--Since bans are sent in chunks, lets call the functions that rely on ban changes with a "clear" command.
 		if v == "bans" then 
 			xgui.callRefresh( "bans", "clear" )
@@ -382,7 +394,6 @@ function xgui.expectChunks( numofchunks, updated )
 			xgui.callRefresh( "sbans", "clear" )
 		end
 	end
-	
 	function xgui.chunkbox:Think()
 		self:SetAlpha( xgui.base:GetAlpha() )
 	end
@@ -391,8 +402,9 @@ function xgui.expectChunks( numofchunks, updated )
 		self.progress:SetValue( self.progress:GetValue() + 1 )
 		self.progress.Label:SetText( curtable .. " - " .. self.progress.Label:GetValue() )
 		if self.progress:GetValue() == xgui.chunkbox.max then
-			self.progress.Label:SetText( "Waiting for clientside processing" )
-			ULib.queueFunctionCall( xgui.chunkbox.CloseFunc, xgui.chunkbox )
+			self.progress.Label:SetText( "Waiting for clientside processing" )	
+			xgui.queueFunctionCall( xgui.chunkbox.CloseFunc, "chunkbox", xgui.chunkbox )
+			RunConsoleCommand( "_xgui", "dataComplete" )
 		end
 		self.progress:PerformLayout()
 	end
@@ -400,19 +412,10 @@ end
 
 --Function called when data chunk is recieved from server
 function xgui.getChunk( data, curtable )
-	if curtable == "bans" then
-		for k, v in pairs( data ) do
-			xgui.data[curtable][k] = v
-		end
-	elseif curtable == "sbans" then
-		for k, v in ipairs( data ) do
-			table.insert( xgui.data[curtable], v )
-		end
-	elseif curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update its table of votemaps
+	if curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update its table of votemaps
 		ulx.populateClVotemaps( data )
-		xgui.data[curtable] = nil
 	else
-		xgui.data[curtable] = data
+		table.Merge( xgui.data[curtable], data )
 	end
 	xgui.callRefresh( curtable, data )
 	xgui.chunkbox:Progress( curtable )
@@ -420,11 +423,55 @@ end
 
 function xgui.callRefresh( cmd, data )
 	--Run any functions that request to be called when "curtable" is updated
-	---Since bans are split into chunks, send the chunktable for updating.
-	if cmd == "bans" or cmd == "sbans" or cmd == "onUnban" then
-		for _, func in ipairs( xgui.hook[cmd] ) do func( data ) end
+	for _, func in ipairs( xgui.hook[cmd] ) do func( data ) end
+end
+
+--This is essentially a straight copy of Megiddo's queueFunctionCall; Since XGUI tends to use it quite a lot, I decided to keep it seperate to prevent delays in ULib's stuff
+--I also now get to add a method of flushing the queue based on a tag in the event that new data needs to be updated.
+local stack = {}
+local think_enabled = false
+local function onThink()
+	if not think_enabled then
+		if hook.isInHook( "Think" ) then
+			think_enabled = true
+		end
+	end
+	
+	local num = #stack
+	if num > 0 then
+		for i=1,3 do --Run 3 lines per frame
+			if stack[1] ~= nil then
+				local b, e = pcall( stack[ 1 ].fn, unpack( stack[ 1 ], 1, stack[ 1 ].n ) )
+				if not b then
+					ErrorNoHalt( "ULib queue error: " .. tostring( e ) .. "\n" )
+				end
+			end
+		table.remove( stack, 1 ) -- Remove the first inserted item. This is FIFO
+		end
 	else
-		for _, func in ipairs( xgui.hook[cmd] ) do func() end
+		hook.Remove( "Think", "XGUIQueueThink" )
+	end
+end
+
+function xgui.queueFunctionCall( fn, tag, ... )
+	if type( fn ) ~= "function" then
+		error( "queueFunctionCall received a bad function", 2 )
+		return
+	end
+
+	table.insert( stack, { fn=fn, tag=tag, n=select( "#", ... ), ... } )
+	hook.Add( "Think", "XGUIQueueThink", onThink, -20 )
+end
+
+function xgui.flushQueue( tag )
+	local removeIndecies = {}
+	for i, fncall in ipairs( stack ) do
+		if fncall.tag == tag then
+			table.insert( removeIndecies, i )
+		end
+	end
+	for i=#removeIndecies,1,-1 do --Remove the queue functions backwards to prevent desynchronization of pairs
+		table.remove( stack, removeIndecies[i] )
 	end
 end
 

@@ -307,23 +307,46 @@ function xgui_bans.banRemoved( banid )
 	end
 end
 
+function xgui_bans.banUpdated( bantable )
+	for SteamID, data in pairs( bantable ) do
+		if xgui.data.bans[SteamID] then
+			for i, v in ipairs( xgui_bans.banlist.Lines ) do
+				if v.Columns[5]:GetValue() == SteamID then
+					v:SetColumnText( 1, data.name or SteamID )
+					v:SetColumnText( 2, data.admin and string.gsub( data.admin, "%(STEAM_%w:%w:%w*%)", "" ) or "" )
+					v:SetColumnText( 3, (( tonumber( data.unban ) ~= 0 ) and os.date( "%c", data.unban )) or "Never" )
+					v:SetColumnText( 4, data.reason )
+					v:SetColumnText( 5, SteamID )
+					v:SetColumnText( 6, tonumber( data.unban ) )
+					break
+				end				
+			end
+		else
+			xgui_bans.populate( bantable )
+		end
+		xgui.data.bans[SteamID] = data
+	end
+end
+
 function xgui_bans.populate( bantable )
 	xgui_bans.showperma:SetDisabled( true )
 	xgui_bans.isPopulating = xgui_bans.isPopulating + 1
 	for steamID, baninfo in pairs( bantable ) do
 		if not ( xgui_bans.showperma:GetChecked() == false and tonumber( baninfo.unban ) == 0 ) then
-			local xgui_tempadmin = ( baninfo.admin ) and string.gsub( baninfo.admin, "%(STEAM_%w:%w:%w*%)", "" ) or ""
-			ULib.queueFunctionCall( xgui_bans.banlist.AddLine, xgui_bans.banlist,
-															   baninfo.name or steamID,
-															   xgui_tempadmin,
-															(( tonumber( baninfo.unban ) ~= 0 ) and os.date( "%c", baninfo.unban )) or "Never",
-															   baninfo.reason,
-															   steamID,
-															   tonumber( baninfo.unban ) ) --Queue this via ULib.queueFunctionCall to prevent lag
+			xgui.queueFunctionCall( xgui_bans.addbanline, "bans", baninfo, steamID ) --Queue this via xgui.queueFunctionCall to prevent lag
 		end
 	end
-	ULib.queueFunctionCall( function() xgui_bans.isPopulating = xgui_bans.isPopulating - 1 
-										if xgui_bans.isPopulating == 0 then xgui_bans.showperma:SetDisabled( false ) end end )
+	xgui.queueFunctionCall( function() xgui_bans.isPopulating = xgui_bans.isPopulating - 1 
+										if xgui_bans.isPopulating == 0 then xgui_bans.showperma:SetDisabled( false ) end end, nil )
+end
+
+function xgui_bans.addbanline( baninfo, steamID )
+	xgui_bans.banlist:AddLine(	baninfo.name or steamID,
+								( baninfo.admin ) and string.gsub( baninfo.admin, "%(STEAM_%w:%w:%w*%)", "" ) or "",
+								(( tonumber( baninfo.unban ) ~= 0 ) and os.date( "%c", baninfo.unban )) or "Never",
+								baninfo.reason,
+								steamID,
+								tonumber( baninfo.unban ) )
 end
 
 function xgui_bans.updateBans( chunk )
@@ -353,3 +376,4 @@ table.insert( xgui.modules.tab, { name="Bans", panel=xgui_bans, icon="gui/silkic
 table.insert( xgui.hook["bans"], xgui_bans.updateBans )
 table.insert( xgui.hook["sbans"], xgui_bans.updateSBans )
 table.insert( xgui.hook["onUnban"], xgui_bans.banRemoved )
+table.insert( xgui.hook["updateBan"], xgui_bans.banUpdated )

@@ -1,85 +1,170 @@
 --Maps module for ULX GUI -- by Stickly Man!
 --Lists maps on server, allows for map voting, changing levels, etc.
 
-xgui_gamemodes = { "<default>" }
+local maps = x_makeXpanel{ parent=xgui.null }
 
-local xgui_maps = x_makeXpanel{ parent=xgui.null }
+maps.maplabel = x_makelabel{ x=10, y=13, w=200, label="Server Votemaps", parent=maps, textcolor=color_black }
+x_makelabel{ x=10, y=348, label="Gamemode:", parent=maps, textcolor=color_black }
+maps.curmap = x_makelabel{ x=187, y=223, w=500, label="No Map Selected", parent=maps, textcolor=color_black }
 
-x_makelabel{ x=10, y=10, label="Server Maps", parent=xgui_maps, textcolor=color_black }
-x_makelabel{ x=10, y=348, label="Gamemode:", parent=xgui_maps, textcolor=color_black }
-xgui_maps.curmap = x_makelabel{ x=185, y=225, label="No Map Selected", parent=xgui_maps, textcolor=color_black }
-
-xgui_maps.list = x_makelistview{ x=5, y=30, w=175, h=315, multiselect=true, parent=xgui_maps, headerheight=0 } --Remember to enable/disable multiselect based on admin status?
-xgui_maps.list:AddColumn( "Map Name" )
-xgui_maps.list.OnRowSelected = function()
-	if ( file.Exists( "../materials/maps/" .. xgui_maps.list:GetSelected()[1]:GetColumnText(1) .. ".vmt" ) ) then 
-		xgui_maps.disp:SetImage( "maps/" .. xgui_maps.list:GetSelected()[1]:GetColumnText(1) )
+maps.list = x_makelistview{ x=5, y=30, w=175, h=315, multiselect=true, parent=maps, headerheight=0 } --Remember to enable/disable multiselect based on admin status?
+maps.list:AddColumn( "Map Name" )
+maps.list.OnRowSelected = function()
+	if ( file.Exists( "../materials/maps/" .. maps.list:GetSelected()[1]:GetColumnText(1) .. ".vmt" ) ) then 
+		maps.disp:SetImage( "maps/" .. maps.list:GetSelected()[1]:GetColumnText(1) )
 	else 
-		xgui_maps.disp:SetImage( "maps/noicon.vmt" )
+		maps.disp:SetImage( "maps/noicon.vmt" )
 	end
-	xgui_maps.curmap:SetText( xgui_maps.list:GetSelected()[1]:GetColumnText(1) )
-	xgui_maps.curmap:SizeToContents()
+	maps.curmap:SetText( maps.list:GetSelected()[1]:GetColumnText(1) )
+	maps.updateButtonStates()
+end
+maps.list.Think = function()
+	if maps.list.checkVotemaps then
+		for _,line in ipairs( maps.list.Lines ) do
+			if line.isNotVotemap then
+				timer.Simple( 0.01, function() line.Columns[1]:SetTextColor( Color( 255,255,255,90 ) ) end ) --Srsly, wtf derma? This doesn't show properly unless it has been delayed AND on a think function?
+				--ULib.queueFunctionCall( line.Columns[1].SetTextColor, line.Columns[1], Color( 255,255,255,90 ) )
+				--line.Columns[1]:SetTextColor( Color( 255,255,255,90 ) )
+			end
+		end
+		maps.list.checkVotemaps = nil
+	end
 end
 
-xgui_maps.disp = vgui.Create( "DImage", xgui_maps )
-xgui_maps.disp:SetPos( 185, 30 )
-xgui_maps.disp:SetImage( "maps/noicon.vmt" )
-xgui_maps.disp:SetSize( 192, 192 )
+maps.disp = vgui.Create( "DImage", maps )
+maps.disp:SetPos( 185, 30 )
+maps.disp:SetImage( "maps/noicon.vmt" )
+maps.disp:SetSize( 192, 192 )
 
-xgui_maps.gamemode = x_makemultichoice{ x=70, y=345, w=110, h=20, parent=xgui_maps }
+maps.gamemode = x_makemultichoice{ x=70, y=345, w=110, h=20, text="<default>", parent=maps }
 
-x_makebutton{ x=185, y=245, w=192, h=20, label="Vote to play this map!", parent=xgui_maps }.DoClick = function()
-	if xgui_maps.curmap:GetValue() ~= "No Map Selected" then
-		RunConsoleCommand( "ulx", "votemap", xgui_maps.curmap:GetValue() )
+maps.vote = x_makebutton{ x=185, y=245, w=192, h=20, label="Vote to play this map!", parent=maps }
+maps.vote.DoClick = function()
+	if maps.curmap:GetValue() ~= "No Map Selected" then
+		RunConsoleCommand( "ulx", "votemap", maps.curmap:GetValue() )
 	end
 end
 
-x_makebutton{ x=185, y=270, w=192, h=20, label="Server-wide vote of selected map(s)", parent=xgui_maps }.DoClick = function()
-	if xgui_maps.curmap:GetValue() ~= "No Map Selected" then
+maps.svote = x_makebutton{ x=185, y=270, w=192, h=20, label="Server-wide vote of selected map(s)", parent=maps }
+maps.svote.DoClick = function()
+	if maps.curmap:GetValue() ~= "No Map Selected" then
 		local xgui_temp = {}
-		for k, v in ipairs( xgui_maps.list:GetSelected() ) do
-			table.insert( xgui_temp, xgui_maps.list:GetSelected()[k]:GetColumnText(1))
+		for k, v in ipairs( maps.list:GetSelected() ) do
+			table.insert( xgui_temp, maps.list:GetSelected()[k]:GetColumnText(1))
 		end
 		RunConsoleCommand( "ulx", "votemap2", unpack( xgui_temp ) )
 	end
 end
 
-x_makebutton{ x=185, y=295, w=192, h=20, label="Force changelevel to this map", parent=xgui_maps }.DoClick = function()
-	if xgui_maps.curmap:GetValue() ~= "No Map Selected" then
-		if xgui_maps.gamemode:GetValue() == "<default>" then
-			RunConsoleCommand( "ulx", "map", xgui_maps.curmap:GetValue() )
-		else
-			RunConsoleCommand( "ulx", "map", xgui_maps.curmap:GetValue(), xgui_maps.gamemode:GetValue() )
-		end
+maps.changemap = x_makebutton{ x=185, y=295, w=192, h=20, disabled=true, label="Force changelevel to this map", parent=maps }
+maps.changemap.DoClick = function()
+	if maps.curmap:GetValue() ~= "No Map Selected" then
+		Derma_Query( "Are you sure you would like to change the level to \"" .. maps.curmap:GetValue() .. "\"?", "XGUI WARNING",
+		"Change Level", function()
+			RunConsoleCommand( "ulx", "map", maps.curmap:GetValue(), ( maps.gamemode:GetValue() ~= "<default>" ) and maps.gamemode:GetValue() or nil ) end,
+		"Cancel", function() end )
 	end
 end
 
-x_makebutton{ x=185, y=320, w=192, label="Veto a map vote", parent=xgui_maps }.DoClick = function()
+maps.vetomap = x_makebutton{ x=185, y=320, w=192, label="Veto a map vote", parent=maps }
+maps.vetomap.DoClick = function()
 	RunConsoleCommand( "ulx", "veto" )
 end
 
-xgui_maps.updateVoteMaps = function()
-	xgui_maps.list:Clear()
-	if LocalPlayer():query( "ulx map" ) then --Show all maps for superadmins
+function maps.addMaptoList( mapname, lastselected )
+	local line = maps.list:AddLine( mapname )
+	if table.HasValue( lastselected, mapname ) then
+		maps.list:SelectItem( line )
+	end
+	line.isNotVotemap = nil
+	if not table.HasValue( ulx.votemaps, mapname ) then
+		line.isNotVotemap = true
+	end
+end
+
+function maps.updateVoteMaps()
+	local lastselected = {}
+	for k, Line in pairs( maps.list.Lines ) do
+		if ( Line:GetSelected() ) then table.insert( lastselected, Line:GetColumnText(1) ) end
+	end
+	
+	maps.list:Clear()
+	xgui.flushQueue( "votemaps" )
+	
+	if LocalPlayer():query( "ulx map" ) then --Show all maps for admins who have access to change the level
+		maps.maplabel:SetText( "Server Maps (Votemaps are highlighted)" )
 		for _,v in ipairs( ulx.maps ) do
-			xgui_maps.list:AddLine( v )
+			xgui.queueFunctionCall( maps.addMaptoList, "votemaps", v, lastselected )
 		end
+		xgui.queueFunctionCall( function() maps.list.checkVotemaps = true end, "votemaps" ) --This will grey out votemaps as soon as maps.list Think function is called.
 	else
+		maps.maplabel:SetText( "Server Votemaps" )
 		for _,v in ipairs( ulx.votemaps ) do --Show the list of votemaps for users without access to "ulx map"
-			xgui_maps.list:AddLine( v )
+			xgui.queueFunctionCall( maps.addMaptoList, "votemaps", v, lastselected )
 		end
 	end
+	if not maps.accessVotemap2 then  --Only select the first map if they don't have access to votemap2
+		xgui.queueFunctionCall( function()  local l = maps.list:GetSelected()[1]
+											maps.list:ClearSelection()
+											maps.list:SelectItem( l ) end, "votemaps" )
+	end
+	maps.updateButtonStates()
 end
 
-xgui_maps.updateGamemodes = function()
-	xgui_maps.gamemode:Clear()
-	xgui_maps.gamemode:AddChoice( "<default>" )
-	xgui_maps.gamemode:SetText( "<default>" )
-	for _, v in ipairs( xgui.data.gamemodes ) do
-		xgui_maps.gamemode:AddChoice( v )
+function maps.updateGamemodes()
+	local lastselected = maps.gamemode:GetValue()
+	maps.gamemode:Clear()
+	maps.gamemode:SetText( lastselected )
+	maps.gamemode:AddChoice( "<default>" )
+	for _, v in ipairs( ulx.gamemodes ) do
+		maps.gamemode:AddChoice( v )
 	end
 end
 
-table.insert( xgui.modules.tab, { name="Maps", panel=xgui_maps, icon="gui/silkicons/world", tooltip=nil, access=nil } )
-table.insert( xgui.hook["votemaps"], xgui_maps.updateVoteMaps )
-table.insert( xgui.hook["gamemodes"], xgui_maps.updateGamemodes )
+function maps.updatePermissions()
+	maps.vetomap:SetDisabled( true )
+	RunConsoleCommand( "xgui", "getVetoState" ) --Get the proper enabled/disabled state of the veto button.
+	maps.accessVotemap = ( GetConVarNumber( "ulx_votemapEnabled" ) == 1 ) and true or false
+	maps.accessVotemap2 = LocalPlayer():query( "ulx votemap2" )
+	maps.accessMap = LocalPlayer():query( "ulx map" )
+	maps.updateGamemodes()
+	maps.updateVoteMaps()
+	maps.updateButtonStates()
+end
+
+function xgui.updateVetoButton( value )
+	maps.vetomap:SetDisabled( not value )
+end
+
+function maps.updateButtonStates()
+	maps.gamemode:SetDisabled( not maps.accessMap )
+	maps.list:SetMultiSelect( maps.accessVotemap2 )
+	if maps.list:GetSelectedLine() then
+		maps.vote:SetDisabled( maps.list:GetSelected()[1].isNotVotemap or not maps.accessVotemap )
+		maps.svote:SetDisabled( not maps.accessVotemap2 )
+		maps.changemap:SetDisabled( not maps.accessMap )
+	else --No lines are selected
+		maps.vote:SetDisabled( true )
+		maps.svote:SetDisabled( true )
+		maps.changemap:SetDisabled( true )
+		maps.curmap:SetText( "No Map Selected" )
+		maps.disp:SetImage( "maps/noicon.vmt" )
+	end
+end
+
+--Enable/Disable the votemap button when ulx_votemapEnabled changes
+function maps.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
+	if cl_cvar == "ulx_cl_votemapEnabled" then
+		if tonumber( new_val ) == 1 then
+			maps.accessVotemap = true
+		else
+			maps.accessVotemap = false
+		end
+		maps.updateButtonStates()
+	end
+end
+hook.Add( "ULibReplicatedCvarChanged", "XGUI_mapsUpdateVotemapEnabled", maps.ConVarUpdated )
+
+table.insert( xgui.hook["onProcessModules"], maps.updatePermissions )
+table.insert( xgui.modules.tab, { name="Maps", panel=maps, icon="gui/silkicons/world", tooltip=nil, access=nil } )
+table.insert( xgui.hook["votemaps"], maps.updateVoteMaps )

@@ -105,7 +105,7 @@ end
 function cmds.refreshPlist( arg, argnum )
 	local lastplys = {}
 	for k, Line in pairs( cmds.plist.Lines ) do
-		if ( Line:GetSelected() ) then table.insert( lastplys, cmds.plist.Lines[k]:GetColumnText(1) ) end
+		if ( Line:GetSelected() ) then table.insert( lastplys, Line:GetColumnText(1) ) end
 	end
 	
 	cmds.plist:Clear()
@@ -121,13 +121,11 @@ function cmds.refreshPlist( arg, argnum )
 	end
 	cmds.plist:SetMultiSelect( arg.type == ULib.cmds.PlayersArg )
 
-	--Select previously selected Lines
 	for _, ply in ipairs( targets ) do
 		local line = cmds.plist:AddLine( ply:Nick(), ply:GetUserGroup() )
-		for _, v in ipairs( lastplys ) do
-			if v == ply:Nick() then
-				cmds.plist:SelectItem( line )
-			end
+		--Select previously selected Lines
+		if table.HasValue( lastplys, ply:Nick() ) then
+			cmds.plist:SelectItem( line )
 		end
 	end
 end

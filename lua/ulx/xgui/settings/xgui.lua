@@ -43,8 +43,32 @@ xgui_settings.infocolor.Mixer.AlphaBar.OnChange = function( ctrl, alpha )
 	xgui_settings.infocolor.Mixer:SetColorAlpha( alpha )
 	xgui.settings.infoColor = { r=xgui.settings.infoColor.r, g=xgui.settings.infoColor.g, b=xgui.settings.infoColor.b, a=alpha }
 end
-x_makebutton{ x=10, y=250, w=150, label="Save Clientside Settings", parent=xgui_settings }.DoClick=function()
+x_makebutton{ x=10, y=295, w=150, label="Save Clientside Settings", parent=xgui_settings }.DoClick=function()
 	xgui.saveClientSettings()
+end
+
+----------------
+--SKIN MANAGER--
+----------------
+--Include the extra skins in case nothing else has included them.
+for _, file in ipairs( file.FindInLua( "skins/*.lua" ) ) do
+	include( "skins/" .. file )
+end
+x_makelabel{ x=10, y=253, label="Derma Theme:", parent=xgui_settings }
+xgui_settings.skinselect = x_makemultichoice{ x=10, y=270, w=150, parent=xgui_settings }
+if not derma.SkinList[xgui.settings.skin] then
+	xgui.settings.skin = "Default"
+	xgui_settings.skinselect:SetText( derma.SkinList.Default.PrintName )
+else
+	xgui_settings.skinselect:SetText( derma.SkinList[xgui.settings.skin].PrintName )
+end
+xgui.base.refreshSkin = true
+xgui_settings.skinselect.OnSelect = function( self, index, value, data )
+	xgui.settings.skin = data
+	xgui.base:SetSkin( data )
+end
+for skin, skindata in pairs( derma.SkinList ) do
+	xgui_settings.skinselect:AddChoice( skindata.PrintName, skin )
 end
 
 table.insert( xgui.modules.setting, { name="XGUI", panel=xgui_settings, icon="gui/silkicons/page_white_wrench", tooltip=nil, access=nil } )

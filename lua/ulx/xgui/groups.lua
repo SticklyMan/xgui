@@ -93,7 +93,7 @@ groups.aplayer.DoClick = function()
 	menu:AddSpacer()
 	for ID, v in pairs( xgui.data.users ) do
 		if v.group ~= groups.list:GetValue() and not groups.isOnline( ID ) then
-			menu:AddOption( ( v.name or ID ) .. "  |  " .. v.group, function() groups.changeUserGroup( ID, groups.list:GetValue() ) end )
+			menu:AddOption( ( v.name or ID ) .. "  |  " .. v.group or "<none?>", function() groups.changeUserGroup( ID, groups.list:GetValue() ) end )
 		end
 	end
 	menu:AddSpacer()
@@ -154,12 +154,17 @@ groups.glist.populate = function( self )
 end
 groups.glist.OnRowSelected = function( self, LineID, Line )
 	local group = Line:GetColumnText(1)
-	groups.gname:SetValue( group )
+	groups.gname:SetText( group )
 	groups.ginherit:SetText( ULib.ucl.groups[group].inherit_from or "user" )
+	groups.gcantarget:SetText( ULib.ucl.groups[group].can_target or "*" )
 	if group ~= "user" then
 		groups.gdelete:SetDisabled( false )
+		groups.gname:SetDisabled( false )
+		groups.ginherit:SetDisabled( false )
 	else
 		groups.gdelete:SetDisabled( true )
+		groups.gname:SetDisabled( true )
+		groups.ginherit:SetDisabled( true )
 	end
 	groups.newgroup:SetDisabled( false )
 	groups.gupdate:SetText( "Update" )
@@ -168,43 +173,50 @@ groups.newgroup = x_makebutton{ x=5, y=175, w=130, disabled=true, label="Create 
 groups.newgroup.DoClick = function()
 	groups.gname:SetText( "new_group" )
 	groups.ginherit:SetText( "user" )
+	groups.gcantarget:SetText( "*" )
 	groups.glist:ClearSelection()
 	groups.gdelete:SetDisabled( true )
 	groups.newgroup:SetDisabled( true )
+	groups.gname:SetDisabled( false )
+	groups.ginherit:SetDisabled( false )
 	groups.gupdate:SetText( "Create" )
 end
 x_makelabel{ x=145, y=8, label="Name:", textcolor=color_black, parent=groups.pnlG2 }
 x_makelabel{ x=145, y=33, label="Inherits from:", textcolor=color_black, parent=groups.pnlG2 }
+x_makelabel{ x=145, y=58, label="Can Target:", textcolor=color_black, parent=groups.pnlG2 }
 groups.gname = x_maketextbox{ x=180, y=5, w=165, text="new_group", focuscontrol=true, parent=groups.pnlG2 }
 groups.ginherit = x_makemultichoice{ x=215, y=30, w=130, text="user", parent=groups.pnlG2 }
+groups.gcantarget = x_maketextbox{ x=205, y=55, w=140, text="", focuscontrol=true, parent=groups.pnlG2 }
 groups.gupdate = x_makebutton{ x=140, y=175, w=100, label="Create", parent=groups.pnlG2 }
 groups.gupdate.DoClick = function( self )
 	if self:GetValue() == "Update" then --Sanity check, make sure we're not trying to create a new group accidentally
-		local oldname = groups.glist:GetSelected()[1]:GetColumnText(1)
-		local oldinheritance = ULib.ucl.groups[oldname].inherit_from
+		local groupname = groups.glist:GetSelected()[1]:GetColumnText(1)
+		local oldinheritance = ULib.ucl.groups[groupname].inherit_from
 		local newinheritance = groups.ginherit:GetValue()
+		local cantarget = ULib.ucl.groups[groupname].can_target
 		
 		if newinheritance == "user" then newinheritance = nil end
+		if not cantarget then cantarget = "*" end
 		
-		if groups.gname:GetValue() ~= oldname then
-			if oldname == "superadmin" or oldname == "admin" then
-				Derma_Query( "Renaming the " .. oldname .. " group is generally a bad idea, and it could break some plugins. Are you sure?", "XGUI WARNING", 
+		if groups.gname:GetValue() ~= groupname then
+			if groupname == "superadmin" or groupname == "admin" then
+				Derma_Query( "Renaming the " .. groupname .. " group is generally a bad idea, and it could break some plugins. Are you sure?", "XGUI WARNING", 
 					"Rename to " .. groups.gname:GetValue(), function()
-						RunConsoleCommand( "ulx", "renamegroup", oldname, groups.gname:GetValue() )
-						oldname = groups.gname:GetValue() end,
+						RunConsoleCommand( "ulx", "renamegroup", groupname, groups.gname:GetValue() )
+						groupname = groups.gname:GetValue() end,
 					"Cancel", function() end )
 			else
-				RunConsoleCommand( "ulx", "renamegroup", oldname, groups.gname:GetValue() )
-				oldname = groups.gname:GetValue()
+				RunConsoleCommand( "ulx", "renamegroup", groupname, groups.gname:GetValue() )
+				groupname = groups.gname:GetValue()
 			end
 		end
 		
 		if newinheritance ~= oldinheritance then
-			if newinheritance == nil then
-				ULib.queueFunctionCall( RunConsoleCommand, "xgui", "setinheritance", oldname, ULib.ACCESS_ALL )
-			else
-				ULib.queueFunctionCall( RunConsoleCommand, "xgui", "setinheritance", oldname, newinheritance )
-			end
+			ULib.queueFunctionCall( RunConsoleCommand, "xgui", "setinheritance", groupname, newinheritance or ULib.ACCESS_ALL )
+		end
+		
+		if cantarget ~= groups.gcantarget:GetValue() then
+			ULib.queueFunctionCall( RunConsoleCommand, "ulx", "setgroupcantarget", groupname, groups.gcantarget:GetValue() )
 		end
 	else
 		RunConsoleCommand( "ulx", "addgroup", groups.gname:GetValue(), groups.ginherit:GetValue() )
@@ -647,7 +659,7 @@ function groups.updateAccessPanel()
 	end
 	
 	for access, data in pairs( xgui.data.accesses ) do	
-		ULib.queueFunctionCall( processAccess, access, data )
+		xgui.queueFunctionCall( processAccess, "accesses", access, data )
 	end
 	--Why so many queueFunctionCalls? Mainly to prevent large lags when performing a bunch of derma AddLine()s at once. queueFunctionCall will spread the load for each line, usually one per frame.
 	--This results in the possibility of the end user seeing lines appearing as he's looking at the menus, but I believe that < 1 second of lines appearing is better than 150+ms of freeze time.
@@ -661,7 +673,7 @@ function groups.updateAccessPanel()
 		groups.accesses:InvalidateLayout()
 		groups.populateAccesses()
 	end
-	ULib.queueFunctionCall( finalSort )
+	xgui.queueFunctionCall( finalSort, "accesses" )
 end
 
 function groups.accessChanged( access, newVal )
@@ -689,7 +701,7 @@ function groups.updateModelPanel()
     table.sort( modelsSorted, function( a,b ) return string.lower( a ) < string.lower( b ) end )
 	
 	for _, name in ipairs( modelsSorted ) do
-		ULib.queueFunctionCall( groups.addToModelPanel, name )
+		xgui.queueFunctionCall( groups.addToModelPanel, "playermodels", name )
 	end
 end
 function groups.setTeamModel( model ) end --Create a dummy function that will be created with proper settings later.
@@ -779,7 +791,6 @@ groups.animQueue_call = function()
 	if #groups.animQueue > 0 then
 		local func = groups.animQueue[1]
 		table.remove( groups.animQueue, 1 )
-		--ULib.queueFunctionCall( func )
 		timer.Simple( 0, func ) --Delay calling the function for a frame
 	end
 end
