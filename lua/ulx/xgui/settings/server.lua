@@ -1,25 +1,25 @@
 --Server settings module for ULX GUI -- by Stickly Man!
 --Modify server and ULX based settings.
 
-local server_settings = x_makeXpanel{ parent=xgui.null }
+local server_settings = xlib.makeXpanel{ parent=xgui.null }
 
 --------------------------GMOD Settings--------------------------
-x_makecheckbox{ x=10, y=10, label="Enable Voice Chat", repconvar="rep_sv_voiceenable", parent=server_settings, textcolor=color_black }
-x_makecheckbox{ x=10, y=30, label="Enable Alltalk", repconvar="rep_sv_alltalk", parent=server_settings, textcolor=color_black }
-x_makecheckbox{ x=10, y=50, label="Disable AI", repconvar="rep_ai_disabled", parent=server_settings, textcolor=color_black }
-x_makecheckbox{ x=10, y=70, label="AI Ignore Players", repconvar="rep_ai_ignoreplayers", parent=server_settings, textcolor=color_black }
+xlib.makecheckbox{ x=10, y=10, label="Enable Voice Chat", repconvar="rep_sv_voiceenable", parent=server_settings, textcolor=color_black }
+xlib.makecheckbox{ x=10, y=30, label="Enable Alltalk", repconvar="rep_sv_alltalk", parent=server_settings, textcolor=color_black }
+xlib.makecheckbox{ x=10, y=50, label="Disable AI", repconvar="rep_ai_disabled", parent=server_settings, textcolor=color_black }
+xlib.makecheckbox{ x=10, y=70, label="AI Ignore Players", repconvar="rep_ai_ignoreplayers", parent=server_settings, textcolor=color_black }
 local offset = 0
 if SinglePlayer() then
 	offset = 20
-	x_makecheckbox{ x=10, y=90, label="Keep AI Ragdolls", repconvar="rep_ai_keepragdolls", parent=server_settings, textcolor=color_black }
+	xlib.makecheckbox{ x=10, y=90, label="Keep AI Ragdolls", repconvar="rep_ai_keepragdolls", parent=server_settings, textcolor=color_black }
 end
-x_makeslider{ x=10, y=90+offset, w=125, label="sv_gravity", min=-1000, max=1000, repconvar="rep_sv_gravity", parent=server_settings, textcolor=color_black }
-x_makeslider{ x=10, y=130+offset, w=125, label="phys_timescale", min=0, max=4, decimal=2, repconvar="rep_phys_timescale", parent=server_settings, textcolor=color_black }
+xlib.makeslider{ x=10, y=90+offset, w=125, label="sv_gravity", min=-1000, max=1000, repconvar="rep_sv_gravity", parent=server_settings, textcolor=color_black }
+xlib.makeslider{ x=10, y=130+offset, w=125, label="phys_timescale", min=0, max=4, decimal=2, repconvar="rep_phys_timescale", parent=server_settings, textcolor=color_black }
 
 ------------------------ULX Category Menu------------------------
-server_settings.panel = x_makepanel{ x=300, y=5, w=285, h=327, parent=server_settings }
+server_settings.panel = xlib.makepanel{ x=300, y=5, w=285, h=327, parent=server_settings }
 
-server_settings.catList = x_makelistview{ x=145, y=5, w=150, h=327, parent=server_settings }
+server_settings.catList = xlib.makelistview{ x=145, y=5, w=150, h=327, parent=server_settings }
 server_settings.catList:AddColumn( "Server Settings" )
 server_settings.catList.Columns[1].DoClick = function() end
 server_settings.catList.OnRowSelected=function()
@@ -43,17 +43,19 @@ function server_settings.panel:slideFunc( anim, delta, data )
 			if data.OldPanel then data.OldPanel:SetZPos( 0 ) end
 			if data.NewPanel.OnOpened then data.NewPanel.OnOpened() end
 		end
+		
+		if data.OldPanel then data.OldPanel:SetPos( 0, 327*math.sin( delta*math.pi/2 ) ) end
+		data.NewPanel:SetPos( -295 + (295*math.sin( delta*math.pi/2 )), 0 )
+		
 		if ( anim.Finished ) then
 			data.NewPanel:SetPos( 0, 0 )
 			if data.OldPanel then 
 				data.OldPanel:SetVisible( false )
 			end
 		end
-		
-		if data.OldPanel then data.OldPanel:SetPos( 0, 327*math.sin( delta*math.pi/2 ) ) end
-		data.NewPanel:SetPos( -295 + (295*math.sin( delta*math.pi/2 )), 0 )
 end
 server_settings.panel.slideAnim = Derma_Anim( "Fade", server_settings.panel, server_settings.panel.slideFunc )
+server_settings.panel.slideAnim.Start = x_anim_Start
 function server_settings.panel:Think()
 		self.slideAnim:Run()
 end

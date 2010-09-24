@@ -1,11 +1,11 @@
 "AddonInfo"
 {
 	"name"				"XGUI"
-	"version"			"10.08.29 beta"
-	"up_date"			"August 29, 2010"
+	"version"			"10.09.23"
+	"up_date"			"September 23, 2010"
 	"author_name"			"Stickly Man! / Team Ulysses"
 	"author_email"			"teamulysses@ulyssesmod.net"
 	"author_url"			"http://www.ulyssesmod.net/"
-	"info"				"GUI for ULX"
+	"info"				"GUI for ULX -- Beta (SVN)"
 	"override"			"0"
 }

@@ -1,12 +1,12 @@
 --Commands module (formerly players module) v2 for ULX GUI -- by Stickly Man!
 --Handles all user-based commands, such as kick, slay, ban, etc.
 
-local cmds = x_makeXpanel{ parent=xgui.null }
+local cmds = xlib.makeXpanel{ parent=xgui.null }
 cmds.selcmd = nil
-cmds.mask = x_makepanel{ x=160, y=30, w=425, h=335, parent=cmds }
-cmds.argslist = x_makepanellist{ w=170, h=335, parent=cmds.mask }
+cmds.mask = xlib.makepanel{ x=160, y=30, w=425, h=335, parent=cmds }
+cmds.argslist = xlib.makepanellist{ w=170, h=335, parent=cmds.mask }
 cmds.argslist:SetVisible( false )
-cmds.plist = x_makelistview{ w=250, h=335, multiselect=true, parent=cmds.mask }
+cmds.plist = xlib.makelistview{ w=250, h=335, multiselect=true, parent=cmds.mask }
 cmds.plist:SetVisible( false )
 cmds.plist:AddColumn( "Name" )
 cmds.plist:AddColumn( "Group" )
@@ -24,7 +24,7 @@ cmds.plist.OnRowSelected = function( self, LineID, Line ) --TODO: Double-click d
 		end
 	end
 end
-cmds.cmds = x_makepanellist{ x=5, y=30, w=150, h=335, parent=cmds, padding=1, spacing=1 }
+cmds.cmds = xlib.makepanellist{ x=5, y=30, w=150, h=335, parent=cmds, padding=1, spacing=1 }
 cmds.setselected = function( selcat, LineID )
 	if selcat.Lines[LineID]:GetColumnText(2) == cmds.selcmd then return end
 	
@@ -149,7 +149,7 @@ function cmds.refreshArgslist( cmd )
 		end
 	end
 	if curitem and curitem.repeat_min then --This command repeats!
-		local panel = x_makepanel{ h=20 }
+		local panel = xlib.makepanel{ h=20 }
 		panel.numItems = 0
 		for i=2,curitem.repeat_min do --Start at 2 because the first one is already there
 			cmds.argslist:AddItem( curitem.type.x_getcontrol( curitem, argnum ) )
@@ -159,7 +159,7 @@ function cmds.refreshArgslist( cmd )
 		panel.xguiIgnore = true
 		panel.arg = curitem
 		panel.insertPos = #cmds.argslist.Items + 1
-		panel.button = x_makebutton{ label="Add", w=80, parent=panel }
+		panel.button = xlib.makebutton{ label="Add", w=80, parent=panel }
 		panel.button.DoClick = function( self )
 			local parent = self:GetParent()
 			table.insert( cmds.argslist.Items, parent.insertPos, parent.arg.type.x_getcontrol( parent.arg, parent.argnum ) )
@@ -170,7 +170,7 @@ function cmds.refreshArgslist( cmd )
 			if parent.arg.repeat_max and panel.numItems >= parent.arg.repeat_max - 1 then self:SetDisabled( true ) end
 			if panel.button2:GetDisabled() then panel.button2:SetDisabled( false ) end
 		end
-		panel.button2 = x_makebutton{ label="Remove", x=80, w=80, disabled=true, parent=panel }
+		panel.button2 = xlib.makebutton{ label="Remove", x=80, w=80, disabled=true, parent=panel }
 		panel.button2.DoClick = function( self )
 			local parent = self:GetParent()
 			cmds.argslist.Items[parent.insertPos-1]:Remove()
@@ -192,7 +192,7 @@ function cmds.refreshArgslist( cmd )
 		end
 	end
 	if LocalPlayer():query( cmd.cmd ) then
-		local xgui_temp = x_makebutton{ label=cmd.cmd }
+		local xgui_temp = xlib.makebutton{ label=cmd.cmd }
 		xgui_temp.xguiIgnore = true
 		xgui_temp.DoClick = function()
 			cmds.buildcmd( cmd.cmd )
@@ -200,7 +200,7 @@ function cmds.refreshArgslist( cmd )
 		cmds.argslist:AddItem( xgui_temp )
 	end
 	if cmd.opposite and LocalPlayer():query( cmd.opposite ) then
-		local xgui_temp = x_makebutton{ label=cmd.opposite }
+		local xgui_temp = xlib.makebutton{ label=cmd.opposite }
 		xgui_temp.DoClick = function()
 			cmds.buildcmd( cmd.opposite )
 		end
@@ -221,7 +221,7 @@ function cmds.refreshArgslist( cmd )
 			marker = i+1
 		end
 		table.insert( labelstr, string.sub( cmd.helpStr, marker ) )
-		local xgui_temp = x_makelabel{ label=table.concat( labelstr ), font="DefaultFixed" }
+		local xgui_temp = xlib.makelabel{ label=table.concat( labelstr ), font="DefaultFixed" }
 		xgui_temp.xguiIgnore = true
 		cmds.argslist:AddItem( xgui_temp )
 	end
@@ -252,11 +252,13 @@ end
 --------------
 function cmds:slideAnim( anim, delta, data )
 	--data.panel, data.startpos, data.distance, data.endfunc
-	data.panel:SetPos( data.startpos + ( data.distance*delta ), 0 )
-	
 	if ( anim.Started ) then
 		data.panel:SetPos( data.startpos, 0 )
-	elseif ( anim.Finished ) then
+	end
+	
+	data.panel:SetPos( data.startpos + ( data.distance*delta ), 0 )
+	
+	if ( anim.Finished ) then
 		data.panel:SetPos( data.startpos+data.distance, 0 )
 		if data.endfunc then
 			data.endfunc()
@@ -264,6 +266,7 @@ function cmds:slideAnim( anim, delta, data )
 	end
 end
 cmds.doAnim = Derma_Anim( "Fade", cmds.doAnim, cmds.slideAnim )
+cmds.doAnim.Start = x_anim_Start
 
 function cmds:Think()
 		cmds.doAnim:Run()
@@ -310,10 +313,10 @@ cmds.refresh = function()
 			if catname == nil or catname == "" then catname = "Uncategorized" end
 			if not cmds.cmd_cats[catname] then
 				--Make a new category
-				cmds.cmd_cats[catname] = x_makelistview{ headerheight=0, multiselect=false, h=136 }
+				cmds.cmd_cats[catname] = xlib.makelistview{ headerheight=0, multiselect=false, h=136 }
 				cmds.cmd_cats[catname].OnRowSelected = function( self, LineID ) cmds.setselected( self, LineID ) end
 				cmds.cmd_cats[catname]:AddColumn( "" )
-				local cat = x_makecat{ label=catname, contents=cmds.cmd_cats[catname], expanded=false }
+				local cat = xlib.makecat{ label=catname, contents=cmds.cmd_cats[catname], expanded=false }
 				function cat.Header:OnMousePressed( mcode )
 					if ( mcode == MOUSE_LEFT ) then
 						self:GetParent():Toggle()

@@ -33,14 +33,14 @@ local function xgui_init( authedply )
 	xgui.base = x_makeXGUIbase{}
 
 	--Create the bottom infobar
-	xgui.infobar = x_makepanel{ x=10, y=399, w=580, h=20, parent=xgui.base }
+	xgui.infobar = xlib.makepanel{ x=10, y=399, w=580, h=20, parent=xgui.base }
 	xgui.infobar:NoClipping( true )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.29  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
-	--x_makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.08.29  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
-	xgui.thetime = x_makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
+	xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.09.23  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	--xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.09.23  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	xgui.thetime = xlib.makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
 		xgui.thetime:SetText( os.date( "\n%I:%M:%S %p" ) )
@@ -50,7 +50,7 @@ local function xgui_init( authedply )
 	xgui.thetime.check()
 	
 	--Create an offscreen place to parent modules that the player can't access
-	xgui.null = x_makepanel{ x=-10, y=-10, w=0, h=0 }
+	xgui.null = xlib.makepanel{ x=-10, y=-10, w=0, h=0 }
 	xgui.null:SetVisible( false )
 	
 	--Load modules
@@ -151,7 +151,7 @@ function xgui.processModules( wasvisible )
 		if module then
 			module = xgui.modules.tab[module]
 			if module.xbutton == nil then
-				module.xbutton = x_makesysbutton{ x=565, y=5, w=20, btype="close", parent=module.panel }
+				module.xbutton = xlib.makesysbutton{ x=565, y=5, w=20, btype="close", parent=module.panel }
 				module.xbutton.DoClick = function()
 					xgui.hide()
 				end
@@ -272,19 +272,19 @@ function xgui.PermissionsChanged( ply )
 end
 
 function xgui.isNotInstalled( tabname )
-	xgui.wait = x_makeframepopup{ label="XGUI", w=235, h=50, nopopup=true, showclose=false }
+	xgui.wait = xlib.makeframepopup{ label="XGUI", w=235, h=50, nopopup=true, showclose=false, skin=xgui.settings.skin }
 	xgui.wait.tabname = tabname
-	x_makelabel{ label="Waiting for server confimation... (5 seconds)", x=10, y=30, parent=xgui.wait }
+	xlib.makelabel{ label="Waiting for server confimation... (5 seconds)", x=10, y=30, parent=xgui.wait }
 	timer.Simple( 5, function( tabname )
 		if xgui.isInstalled == nil then
 			xgui.wait:Remove()
 			xgui.wait = nil
 			gui.EnableScreenClicker( true )
 			RestoreCursorPosition( )
-			xgui.notinstalled = x_makeframepopup{ label="Warning!", w=350, h=90, nopopup=true, showclose=false }
-			x_makelabel{ label="XGUI is not installed on this server! XGUI will now run in offline mode.", x=10, y=30, parent=xgui.notinstalled }
-			x_makelabel{ label="Some features may not work, and information will be missing.", x=10, y=45, parent=xgui.notinstalled }
-			x_makebutton{ x=155, y=63, w=40, label="OK", parent=xgui.notinstalled }.DoClick = function()
+			xgui.notinstalled = xlib.makeframepopup{ label="Warning!", w=350, h=90, nopopup=true, showclose=false, skin=xgui.settings.skin }
+			xlib.makelabel{ label="XGUI is not installed on this server! XGUI will now run in offline mode.", x=10, y=30, parent=xgui.notinstalled }
+			xlib.makelabel{ label="Some features may not work, and information will be missing.", x=10, y=45, parent=xgui.notinstalled }
+			xlib.makebutton{ x=155, y=63, w=40, label="OK", parent=xgui.notinstalled }.DoClick = function()
 				xgui.notinstalled:Remove()
 				xgui.show( tabname )
 			end
@@ -298,19 +298,19 @@ function xgui.show( tabname )
 	--Check if XGUI is not installed, display the warning if hasn't been shown yet.
 	if xgui.wait then return end
 	if xgui.isInstalled == nil and xgui.notinstalled == nil then
-		xgui.isNotInstalled( tabname ) 
+		xgui.isNotInstalled( tabname )
 		return
 	end
 	
-	if not ULib.ucl.authed[LocalPlayer():UniqueID()] then 
-		local xgui_temp = x_makeframepopup{ label="XGUI Error!", w=250, h=90, showclose=true }
-		x_makelabel{ label="Your ULX player has not been Authed!", x=10, y=30, parent=xgui_temp }
-		x_makelabel{ label="Please wait a couple seconds and try again.", x=10, y=45, parent=xgui_temp }
-		x_makebutton{ x=50, y=63, w=60, label="Try Again", parent=xgui_temp }.DoClick = function()
+	if not SinglePlayer() and not ULib.ucl.authed[LocalPlayer():UniqueID()] then 
+		local xgui_temp = xlib.makeframepopup{ label="XGUI Error!", w=250, h=90, showclose=true, skin=xgui.settings.skin }
+		xlib.makelabel{ label="Your ULX player has not been Authed!", x=10, y=30, parent=xgui_temp }
+		xlib.makelabel{ label="Please wait a couple seconds and try again.", x=10, y=45, parent=xgui_temp }
+		xlib.makebutton{ x=50, y=63, w=60, label="Try Again", parent=xgui_temp }.DoClick = function()
 			xgui_temp:Remove()
 			xgui.show( tabname )
 		end
-		x_makebutton{ x=140, y=63, w=60, label="Close", parent=xgui_temp }.DoClick = function()
+		xlib.makebutton{ x=140, y=63, w=60, label="Close", parent=xgui_temp }.DoClick = function()
 			xgui_temp:Remove()
 		end
 		return
@@ -372,9 +372,9 @@ function xgui.expectChunks( numofchunks, updated )
 		xgui.flushQueue( "chunkbox" ) --Remove the queue entry that would remove the chunkbox
 	end
 	
-	xgui.chunkbox = x_makeframepopup{ label="XGUI is receiving data!", w=200, h=60, y=ScrH()/2-265, nopopup=true, draggable=false, showclose=false }
+	xgui.chunkbox = xlib.makeframepopup{ label="XGUI is receiving data!", w=200, h=60, y=ScrH()/2-265, nopopup=true, draggable=false, showclose=false, skin=xgui.settings.skin }
 	xgui.chunkbox.max = numofchunks
-	xgui.chunkbox.progress = x_makeprogressbar{ x=10, y=30, w=180, h=20, min=0, max=numofchunks, percent=true, parent=xgui.chunkbox }
+	xgui.chunkbox.progress = xlib.makeprogressbar{ x=10, y=30, w=180, h=20, min=0, max=numofchunks, percent=true, parent=xgui.chunkbox }
 	xgui.chunkbox.progress.Label:SetText( "Waiting for server" .. " - " .. xgui.chunkbox.progress.Label:GetValue() )
 	xgui.chunkbox.progress:PerformLayout()
 	xgui.chunkbox:SetVisible( xgui.base:IsVisible() )

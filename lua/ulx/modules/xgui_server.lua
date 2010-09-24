@@ -655,16 +655,23 @@ function xgui.init()
 	
 	function xgui.updateTeamValue( ply, args )
 		if ply:query( "xgui_managegroups" ) then
-			args[3] = tonumber( args[3] ) or args[3] --If args[3] is a number, turn it into one.
+			local modifier = args[2]
+			local value = tonumber( args[3] ) or args[3] --If args[3] is a number, set value as a number.
 			for k, v in ipairs( xgui.teams ) do
 				if v.name == args[1] then
-					if args[2] == "color" then
+					if modifier == "color" then
 						v.color = { r=tonumber(args[3]), g=tonumber(args[4]), b=tonumber(args[5]), a=255 }
 					else
-						if args[3] ~= "" then
-							v[args[2]] = args[3]
+						if value ~= "" then
+							--Check for out-of-bound values!
+							local def = xgui.teamDefaults[modifier]
+							if type(def) == "table" then
+								if def[2] and value < def[2] then value = def[2] end
+								if def[3] and value > def[3] then value = def[3] end
+							end
+							v[modifier] = value
 						else
-							v[args[2]] = nil
+							v[modifier] = nil
 							--Set the players back to the original value
 							for _, group in ipairs( v.groups ) do
 								xgui.resetTeamValue( group, { args[2] } )
@@ -672,7 +679,7 @@ function xgui.init()
 						end
 					end
 					--Check for order updates, only refresh the teams when args[4] flag is set to prevent multiple data sendings
-					if v[args[2]] ~= "order" or args[4] == "true" then
+					if v[modifier] ~= "order" or args[4] == "true" then
 						xgui.refreshTeams()
 					end
 					break
@@ -707,22 +714,24 @@ function xgui.init()
 		end
 	end
 	
+	--If values are a table, then it specifies default, min, then max. Otherwise it just specifies a min.
+	--Note that the min/max values here are ABSOLUTE values, meaning values outside of this range will probably cause undesirable results.
 	xgui.teamDefaults = { 
-		armor = 0,
-		crouchedWalkSpeed = 0.6,
-		deaths = 0,
+		armor = { 0, 0, 255 },
+		--crouchedWalkSpeed = 0.6, --Pointless setting?
+		deaths = { 0, -2048, 2047 },
 		duckSpeed = 0.3,
-		frags = 0,
+		frags = { 0, -2048, 2047 },
 		gravity = 1,
-		health = 100,
+		health = { 100, 1, 2.14748e+009 },
 		jumpPower = 160,
 		maxHealth = 100,
-		maxSpeed = 250,
+		--maxSpeed = 250,
 		model = "kleiner",
-		runSpeed = 500,
-		stepSize = 18,
+		runSpeed = { 500, 0, nil },
+		stepSize = { 18, 0, 512 },
 		unDuckSpeed = 0.2,
-		walkSpeed = 250 }
+		walkSpeed = { 250, 0, nil } }
 
 	--This function will locate all players affected by team modifier(s) being unset (or team being changed)
 	--and will reset any related modifiers to their defaults.
@@ -731,7 +740,9 @@ function xgui.init()
 			if ply:GetUserGroup() == group then 
 				for _, modifier in ipairs( values ) do
 					--Code from UTeam
-					ply[ "Set" .. modifier:sub( 1, 1 ):upper() .. modifier:sub( 2 ) ]( ply, xgui.teamDefaults[modifier] )
+					local defaultvalue = xgui.teamDefaults[modifier]
+					if type( defaultvalue ) == "table" then defaultvalue = xgui.teamDefaults[modifier][1] end
+					ply[ "Set" .. modifier:sub( 1, 1 ):upper() .. modifier:sub( 2 ) ]( ply, defaultvalue )
 				end
 			end
 		end
@@ -801,7 +812,7 @@ function xgui.init()
 						timer.Destroy( "xgui_unban" .. args[2] )
 					end
 				end
-			elseif cmdName == "ulx addgroup" or cmdName == "ulx removegroup" or cmdName == "ulx renamegroup" or cmdName == "ulx adduser" or cmdName == "ulx adduserid" or cmdName == "ulx removeuser" then
+			elseif cmdName == "ulx addgroup" or cmdName == "ulx removegroup" or cmdName == "ulx renamegroup" or cmdName == "ulx adduser" or cmdName == "ulx adduserid" or cmdName == "ulx removeuser" or cmdName == "ulx removeuserid" then
 				if v ~= args[2] then  --The affected player is already regrabbing the data
 					xgui.sendData( v, {[1]="users"} )
 				end

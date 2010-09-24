@@ -1,7 +1,7 @@
 --Settings module v2 for ULX GUI -- by Stickly Man!
 --Allows changing of various settings
 
-local settings = x_makepanel{ x=5, y=27, parent=xgui.null }
+local settings = xlib.makepanel{ x=5, y=27, parent=xgui.null }
 
 xgui.settings_tabs = vgui.Create( "DPropertySheet", settings )
 xgui.settings_tabs:SetSize( 600, 368 )
@@ -50,9 +50,6 @@ function xgui.settings_tabs:CrossFade( anim, delta, data )
 		if ( anim.Started ) then
 			self.CheckAlpha = false
 		end
-		if ( anim.Finished ) then
-			self.CheckAlpha = true
-		end
 		
 		if ( delta < 0.5 ) then
 			old:SetVisible( true )
@@ -63,8 +60,15 @@ function xgui.settings_tabs:CrossFade( anim, delta, data )
 			new:SetVisible( true )
 			new:SetAlpha( 255*( ( delta-0.5 )*2 ) )
 		end
+		if ( anim.Finished ) then
+			old:SetVisible( false )
+			new:SetVisible( true )
+			new:SetAlpha( 255 )
+			self.CheckAlpha = true
+		end
 	end
 xgui.settings_tabs.animFade = Derma_Anim( "Fade", xgui.settings_tabs, xgui.settings_tabs.CrossFade )
+xgui.settings_tabs.animFade.Start = x_anim_Start
 
 function xgui.settings_tabs:Think()
 	self.animFade:Run()

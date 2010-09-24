@@ -1,13 +1,13 @@
 --Maps module for ULX GUI -- by Stickly Man!
 --Lists maps on server, allows for map voting, changing levels, etc.
 
-local maps = x_makeXpanel{ parent=xgui.null }
+local maps = xlib.makeXpanel{ parent=xgui.null }
 
-maps.maplabel = x_makelabel{ x=10, y=13, w=200, label="Server Votemaps", parent=maps, textcolor=color_black }
-x_makelabel{ x=10, y=348, label="Gamemode:", parent=maps, textcolor=color_black }
-maps.curmap = x_makelabel{ x=187, y=223, w=500, label="No Map Selected", parent=maps, textcolor=color_black }
+maps.maplabel = xlib.makelabel{ x=10, y=13, w=200, label="Server Votemaps", parent=maps, textcolor=color_black }
+xlib.makelabel{ x=10, y=348, label="Gamemode:", parent=maps, textcolor=color_black }
+maps.curmap = xlib.makelabel{ x=187, y=223, w=500, label="No Map Selected", parent=maps, textcolor=color_black }
 
-maps.list = x_makelistview{ x=5, y=30, w=175, h=315, multiselect=true, parent=maps, headerheight=0 } --Remember to enable/disable multiselect based on admin status?
+maps.list = xlib.makelistview{ x=5, y=30, w=175, h=315, multiselect=true, parent=maps, headerheight=0 } --Remember to enable/disable multiselect based on admin status?
 maps.list:AddColumn( "Map Name" )
 maps.list.OnRowSelected = function()
 	if ( file.Exists( "../materials/maps/" .. maps.list:GetSelected()[1]:GetColumnText(1) .. ".vmt" ) ) then 
@@ -22,9 +22,7 @@ maps.list.Think = function()
 	if maps.list.checkVotemaps then
 		for _,line in ipairs( maps.list.Lines ) do
 			if line.isNotVotemap then
-				timer.Simple( 0.01, function() line.Columns[1]:SetTextColor( Color( 255,255,255,90 ) ) end ) --Srsly, wtf derma? This doesn't show properly unless it has been delayed AND on a think function?
-				--ULib.queueFunctionCall( line.Columns[1].SetTextColor, line.Columns[1], Color( 255,255,255,90 ) )
-				--line.Columns[1]:SetTextColor( Color( 255,255,255,90 ) )
+				timer.Simple( 0.01, function() line.Columns[1]:SetTextColor( Color( 255,255,255,90 ) ) end ) --Srsly, wtf derma? This doesn't show properly unless it's called on a think AND delayed?
 			end
 		end
 		maps.list.checkVotemaps = nil
@@ -36,16 +34,16 @@ maps.disp:SetPos( 185, 30 )
 maps.disp:SetImage( "maps/noicon.vmt" )
 maps.disp:SetSize( 192, 192 )
 
-maps.gamemode = x_makemultichoice{ x=70, y=345, w=110, h=20, text="<default>", parent=maps }
+maps.gamemode = xlib.makemultichoice{ x=70, y=345, w=110, h=20, text="<default>", parent=maps }
 
-maps.vote = x_makebutton{ x=185, y=245, w=192, h=20, label="Vote to play this map!", parent=maps }
+maps.vote = xlib.makebutton{ x=185, y=245, w=192, h=20, label="Vote to play this map!", parent=maps }
 maps.vote.DoClick = function()
 	if maps.curmap:GetValue() ~= "No Map Selected" then
 		RunConsoleCommand( "ulx", "votemap", maps.curmap:GetValue() )
 	end
 end
 
-maps.svote = x_makebutton{ x=185, y=270, w=192, h=20, label="Server-wide vote of selected map(s)", parent=maps }
+maps.svote = xlib.makebutton{ x=185, y=270, w=192, h=20, label="Server-wide vote of selected map(s)", parent=maps }
 maps.svote.DoClick = function()
 	if maps.curmap:GetValue() ~= "No Map Selected" then
 		local xgui_temp = {}
@@ -56,7 +54,7 @@ maps.svote.DoClick = function()
 	end
 end
 
-maps.changemap = x_makebutton{ x=185, y=295, w=192, h=20, disabled=true, label="Force changelevel to this map", parent=maps }
+maps.changemap = xlib.makebutton{ x=185, y=295, w=192, h=20, disabled=true, label="Force changelevel to this map", parent=maps }
 maps.changemap.DoClick = function()
 	if maps.curmap:GetValue() ~= "No Map Selected" then
 		Derma_Query( "Are you sure you would like to change the level to \"" .. maps.curmap:GetValue() .. "\"?", "XGUI WARNING",
@@ -66,7 +64,7 @@ maps.changemap.DoClick = function()
 	end
 end
 
-maps.vetomap = x_makebutton{ x=185, y=320, w=192, label="Veto a map vote", parent=maps }
+maps.vetomap = xlib.makebutton{ x=185, y=320, w=192, label="Veto a map vote", parent=maps }
 maps.vetomap.DoClick = function()
 	RunConsoleCommand( "ulx", "veto" )
 end

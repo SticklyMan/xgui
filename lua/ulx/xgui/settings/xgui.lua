@@ -1,32 +1,32 @@
 --XGUI settings module for ULX GUI -- by Stickly Man!
 --Modify XGUI-based settings.
 
-local xgui_settings = x_makeXpanel{ parent=xgui.null }
-x_makebutton{ x=10, y=10, w=150, label="Refresh XGUI Modules", parent=xgui_settings }.DoClick=function()
+local xgui_settings = xlib.makeXpanel{ parent=xgui.null }
+xlib.makebutton{ x=10, y=10, w=150, label="Refresh XGUI Modules", parent=xgui_settings }.DoClick=function()
 	xgui.PermissionsChanged( LocalPlayer() )
 end
-x_makebutton{ x=10, y=30, w=150, label="Refresh Server Data", parent=xgui_settings }.DoClick=function( self )
+xlib.makebutton{ x=10, y=30, w=150, label="Refresh Server Data", parent=xgui_settings }.DoClick=function( self )
 	if xgui.isInstalled then  --We can't be in offline mode to do this
 		self:SetDisabled( true )
 		RunConsoleCommand( "xgui", "getdata" )
 		timer.Simple( 5, function() self:SetDisabled( false ) end )
 	end
 end
-x_makeslider{ x=10, y=55, w=150, label="Anim transition time", min=0.01, max=2, value=xgui.settings.animTime, decimal=2, parent=xgui_settings, textcolor=color_black }.OnValueChanged = function( self, val )
+xlib.makeslider{ x=10, y=55, w=150, label="Anim transition time", max=2, value=xgui.settings.animTime, decimal=2, parent=xgui_settings, textcolor=color_black }.OnValueChanged = function( self, val )
 	val = tonumber( val )
-	if val < 0.01 then 
-		self:SetValue( 0.01 ) 
+	if val < 0 then 
+		self:SetValue( 0 ) 
 	else
 		xgui.settings.animTime = val
 		xgui.base:SetFadeTime( val )
 		xgui.settings_tabs:SetFadeTime( val )
 	end
 end
-x_makecheckbox{ x=10, y=97, w=150, label="Show Startup Messages", value=xgui.settings.showLoadMsgs, parent=xgui_settings, textcolor=color_black }.OnChange = function( self, bVal )
+xlib.makecheckbox{ x=10, y=97, w=150, label="Show Startup Messages", value=xgui.settings.showLoadMsgs, parent=xgui_settings, textcolor=color_black }.OnChange = function( self, bVal )
 	xgui.settings.showLoadMsgs = bVal
 end
-x_makelabel{ x=10, y=117, label="Infobar color:", textcolor=color_black, parent=xgui_settings }
-xgui_settings.infocolor = x_makecolorpicker{ x=10, y=135, w=180, h=150, focuscontrol=true, parent=xgui_settings }
+xlib.makelabel{ x=10, y=117, label="Infobar color:", textcolor=color_black, parent=xgui_settings }
+xgui_settings.infocolor = xlib.makecolorpicker{ x=10, y=135, w=180, h=150, focuscontrol=true, parent=xgui_settings }
 RunConsoleCommand( "colour_r", xgui.settings.infoColor.r )
 RunConsoleCommand( "colour_g", xgui.settings.infoColor.g )
 RunConsoleCommand( "colour_b", xgui.settings.infoColor.b )
@@ -43,7 +43,7 @@ xgui_settings.infocolor.Mixer.AlphaBar.OnChange = function( ctrl, alpha )
 	xgui_settings.infocolor.Mixer:SetColorAlpha( alpha )
 	xgui.settings.infoColor = { r=xgui.settings.infoColor.r, g=xgui.settings.infoColor.g, b=xgui.settings.infoColor.b, a=alpha }
 end
-x_makebutton{ x=10, y=295, w=150, label="Save Clientside Settings", parent=xgui_settings }.DoClick=function()
+xlib.makebutton{ x=10, y=295, w=150, label="Save Clientside Settings", parent=xgui_settings }.DoClick=function()
 	xgui.saveClientSettings()
 end
 
@@ -54,8 +54,8 @@ end
 for _, file in ipairs( file.FindInLua( "skins/*.lua" ) ) do
 	include( "skins/" .. file )
 end
-x_makelabel{ x=10, y=253, label="Derma Theme:", parent=xgui_settings }
-xgui_settings.skinselect = x_makemultichoice{ x=10, y=270, w=150, parent=xgui_settings }
+xlib.makelabel{ x=10, y=253, label="Derma Theme:", textcolor=color_black, parent=xgui_settings }
+xgui_settings.skinselect = xlib.makemultichoice{ x=10, y=270, w=150, parent=xgui_settings }
 if not derma.SkinList[xgui.settings.skin] then
 	xgui.settings.skin = "Default"
 	xgui_settings.skinselect:SetText( derma.SkinList.Default.PrintName )

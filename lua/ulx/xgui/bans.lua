@@ -1,14 +1,14 @@
 --Bans module for ULX GUI -- by Stickly Man!
 --Manages banned users and shows ban details
 
-local xgui_bans = x_makeXpanel{ parent=xgui.null }
+local xgui_bans = xlib.makeXpanel{ parent=xgui.null }
 xgui_bans.isPopulating = 0
-xgui_bans.showperma = x_makecheckbox{ x=445, y=10, value=1, label="Show Permabans", textcolor=color_black, parent=xgui_bans }
+xgui_bans.showperma = xlib.makecheckbox{ x=445, y=10, value=1, label="Show Permabans", textcolor=color_black, parent=xgui_bans }
 function xgui_bans.showperma:OnChange()
 	xgui_bans.updateBans( )
 end
 
-xgui_bans.banlist = x_makelistview{ x=5, y=30, w=580, h=315, multiselect=false, parent=xgui_bans }
+xgui_bans.banlist = xlib.makelistview{ x=5, y=30, w=580, h=315, multiselect=false, parent=xgui_bans }
 	xgui_bans.banlist:AddColumn( "Name/SteamID" )
 	xgui_bans.banlist:AddColumn( "Banned By" )
 	xgui_bans.banlist:AddColumn( "Unban Date" )
@@ -16,19 +16,18 @@ xgui_bans.banlist = x_makelistview{ x=5, y=30, w=580, h=315, multiselect=false, 
 xgui_bans.banlist.DoDoubleClick = function()
 	xgui_bans.ShowBanDetailsWindow( xgui_bans.banlist:GetLine( xgui_bans.banlist:GetSelectedLine() ):GetValue( 5 ) )
 end
-xgui_bans.banlist.OnRowRightClick = function()
+xgui_bans.banlist.OnRowRightClick = function( self, LineID, line )
 	local menu = DermaMenu()
-	local xgui_temp = xgui_bans.banlist:GetLine( xgui_bans.banlist:GetSelectedLine() )
-	menu:AddOption( "Details...", function() xgui_bans.ShowBanDetailsWindow( xgui_temp:GetValue( 5 ) ) end )
-	menu:AddOption( "Update Name...", function() xgui_bans.UpdateBannameWindow( xgui_temp:GetValue( 5 ) ) end )
-	menu:AddOption( "Update Reason...", function() xgui_bans.UpdateBanreasonWindow( xgui_temp:GetValue( 5 ) ) end )
-	menu:AddOption( "Remove", function() xgui_bans.RemoveBan( xgui_temp:GetValue( 5 ) ) end )
+	menu:AddOption( "Details...", function() xgui_bans.ShowBanDetailsWindow( line:GetValue( 5 ) ) end )
+	menu:AddOption( "Update Name...", function() xgui_bans.UpdateBannameWindow( line:GetValue( 5 ) ) end )
+	menu:AddOption( "Update Reason...", function() xgui_bans.UpdateBanreasonWindow( line:GetValue( 5 ) ) end )
+	menu:AddOption( "Remove", function() xgui_bans.RemoveBan( line:GetValue( 5 ) ) end )
 	menu:Open()
 end
 
-x_makelabel{ x=200, y=10, label="Right-click on a ban for more options", parent=xgui_bans, textcolor=color_black }
-xgui_bans.freezeban = x_makecheckbox{ x=140, y=348, label="Use Freezeban", tooltip="Freezes a player you have selected for banning while editing ban information (!fban in chat)", value=1, parent=xgui_bans, textcolor=color_black}
-x_makebutton{ x=5, y=345, w=130, label="Add Ban...", parent=xgui_bans }.DoClick = function()
+xlib.makelabel{ x=200, y=10, label="Right-click on a ban for more options", parent=xgui_bans, textcolor=color_black }
+xgui_bans.freezeban = xlib.makecheckbox{ x=140, y=348, label="Use Freezeban", tooltip="Freezes a player you have selected for banning while editing ban information (!fban in chat)", value=1, parent=xgui_bans, textcolor=color_black}
+xlib.makebutton{ x=5, y=345, w=130, label="Add Ban...", parent=xgui_bans }.DoClick = function()
 	local menu = DermaMenu()
 	for k, v in ipairs( player.GetAll() ) do	
 		menu:AddOption( v:Nick(), function() xgui.ShowBanWindow( v:Nick(), v:SteamID(), xgui_bans.freezeban:GetChecked() ) end )
@@ -37,37 +36,37 @@ x_makebutton{ x=5, y=345, w=130, label="Add Ban...", parent=xgui_bans }.DoClick 
 	menu:AddOption( "Ban by STEAMID...", function() xgui.ShowBanWindow() end )
 	menu:Open()
 end
-xgui_bans.sbanButton = x_makebutton{ x=455, y=345, w=130, label="View Source Bans...", parent=xgui_bans, disabled=#xgui.data.sbans > 0 and false or true }
+xgui_bans.sbanButton = xlib.makebutton{ x=455, y=345, w=130, label="View Source Bans...", parent=xgui_bans, disabled=#xgui.data.sbans > 0 and false or true }
 xgui_bans.sbanButton.DoClick = function()
 	if xgui_bans.sbanWindow and xgui_bans.sbanWindow:IsVisible() then return end
-	xgui_bans.sbanWindow = x_makeframepopup{ w=160, h=400, label="Bans in banned_users.cfg", alwaysontop=true }
-	xgui_bans.sbanWindow.bans = x_makelistview{ x=5, y=50, w=150, h=323, headerheight=0, parent=xgui_bans.sbanWindow }
+	xgui_bans.sbanWindow = xlib.makeframepopup{ w=160, h=400, label="Bans in banned_users.cfg", alwaysontop=true, skin=xgui.settings.skin }
+	xgui_bans.sbanWindow.bans = xlib.makelistview{ x=5, y=50, w=150, h=323, headerheight=0, parent=xgui_bans.sbanWindow }
 	xgui_bans.sbanWindow.bans:AddColumn( "" )
-	x_makelabel{ x=5, y=32, label="100 per page", parent=xgui_bans.sbanWindow }
-	x_makesysbutton{ x=80, y=30, w=20, btype="left", parent=xgui_bans.sbanWindow }.DoClick = function()
+	xlib.makelabel{ x=5, y=32, label="100 per page", parent=xgui_bans.sbanWindow }
+	xlib.makesysbutton{ x=80, y=30, w=20, btype="left", parent=xgui_bans.sbanWindow }.DoClick = function()
 		local xgui_temp = (tonumber( xgui_bans.sbanWindow.sbanPage:GetValue() - 1 ) > 0 ) and xgui_bans.sbanWindow.sbanPage:GetValue() - 1 or nil
 		if xgui_temp then 
 			xgui_bans.sbanWindow.gotoPage( xgui_temp )
 			xgui_bans.sbanWindow.sbanPage:SetText( xgui_temp )
 		end
 	end
-	x_makesysbutton{ x=100, y=30, w=20, btype="right", parent=xgui_bans.sbanWindow }.DoClick = function()
+	xlib.makesysbutton{ x=100, y=30, w=20, btype="right", parent=xgui_bans.sbanWindow }.DoClick = function()
 		local xgui_temp = (tonumber( xgui_bans.sbanWindow.sbanPage:GetValue() + 1 ) <= #xgui_bans.sbanWindow.sbanPage.Choices ) and xgui_bans.sbanWindow.sbanPage:GetValue() + 1 or nil
 		if xgui_temp then 
 			xgui_bans.sbanWindow.gotoPage( xgui_temp )
 			xgui_bans.sbanWindow.sbanPage:SetText( xgui_temp )
 		end
 	end
-	xgui_bans.sbanWindow.sbanPage = x_makemultichoice{x=120, y=30, w=35, text="1", parent=xgui_bans.sbanWindow}
+	xgui_bans.sbanWindow.sbanPage = xlib.makemultichoice{x=120, y=30, w=35, text="1", parent=xgui_bans.sbanWindow}
 	function xgui_bans.sbanWindow.sbanPage:OnSelect()
 		xgui_bans.sbanWindow.gotoPage( tonumber( self:GetValue() ) )
 	end
-	x_makebutton{ x=5, y=373, w=75, label="Delete", parent=xgui_bans.sbanWindow }.DoClick = function()
+	xlib.makebutton{ x=5, y=373, w=75, label="Delete", parent=xgui_bans.sbanWindow }.DoClick = function()
 		if xgui_bans.sbanWindow.bans:GetSelectedLine() then
 			xgui_bans.RemoveBan( xgui_bans.sbanWindow.bans:GetSelected()[1]:GetColumnText(1), true )
 		end
 	end
-	x_makebutton{ x=80, y=373, w=75, label="Add Details...", parent=xgui_bans.sbanWindow }.DoClick = function()
+	xlib.makebutton{ x=80, y=373, w=75, label="Add Details...", parent=xgui_bans.sbanWindow }.DoClick = function()
 		if xgui_bans.sbanWindow.bans:GetSelectedLine() then
 			xgui.ShowBanWindow( nil, xgui_bans.sbanWindow.bans:GetSelected()[1]:GetColumnText(1), nil, true )
 		end
@@ -106,8 +105,8 @@ function xgui_bans.RemoveBan( ID, noName )
 end
 
 function xgui_bans.UpdateBannameWindow( ID )
-	local xgui_updateBanName = x_makeframepopup{ w=400, h=60, label="Update Name of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true }
-	local xgui_newBanName = x_maketextbox{ x=10, y=30, w=380, h=20, text=xgui.data.bans[ID].name, parent=xgui_updateBanName }
+	local xgui_updateBanName = xlib.makeframepopup{ w=400, h=60, label="Update Name of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true, skin=xgui.settings.skin }
+	local xgui_newBanName = xlib.maketextbox{ x=10, y=30, w=380, h=20, text=xgui.data.bans[ID].name, parent=xgui_updateBanName }
 	xgui_newBanName.OnEnter = function()
 		RunConsoleCommand( "xgui", "updateBan", ID, "", "", xgui_newBanName:GetValue() )
 		xgui_updateBanName:Remove()
@@ -115,41 +114,41 @@ function xgui_bans.UpdateBannameWindow( ID )
 end
 
 function xgui_bans.UpdateBanreasonWindow( ID )
-	local xgui_updateBanReason = x_makeframepopup{ w=300, h=80, label="Update Reason of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true }
-	local xgui_newBanReason = x_makemultichoice{ x=10, y=30, w=280, text=xgui.data.bans[ID].reason, parent=xgui_updateBanReason, enableinput=true, focuscontrol=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes }
-	x_makebutton{ x=125, y=55, w=50, label="OK", parent=xgui_updateBanReason }.DoClick = function()
+	local xgui_updateBanReason = xlib.makeframepopup{ w=300, h=80, label="Update Reason of Banned Player " .. ( xgui.data.bans[ID].name or "<Unknown>" ) .. " - " .. ID, alwaysontop=true, skin=xgui.settings.skin }
+	local xgui_newBanReason = xlib.makemultichoice{ x=10, y=30, w=280, text=xgui.data.bans[ID].reason, parent=xgui_updateBanReason, enableinput=true, focuscontrol=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes }
+	xlib.makebutton{ x=125, y=55, w=50, label="OK", parent=xgui_updateBanReason }.DoClick = function()
 		RunConsoleCommand( "xgui", "updateBan", ID, "", xgui_newBanReason:GetValue(), "" )
 		xgui_updateBanReason:Remove()
 	end
 end
 
 function xgui_bans.ShowBanDetailsWindow( ID )
-	local xgui_detailswindow = x_makeframepopup{ label="Ban Details", w=285, h=295, alwaysontop=true }
-	local name = x_makelabel{ x=50, y=30, label="Name:", parent=xgui_detailswindow }
-	x_makelabel{ x=36, y=50, label="SteamID:", parent=xgui_detailswindow }
-	x_makelabel{ x=33, y=70, label="Ban Date:", parent=xgui_detailswindow }
-	x_makelabel{ x=20, y=90, label="Unban Date:", parent=xgui_detailswindow }
-	x_makelabel{ x=10, y=110, label="Length of Ban:", parent=xgui_detailswindow }
-	x_makelabel{ x=33, y=130, label="Time Left:", parent=xgui_detailswindow }
-	x_makelabel{ x=26, y=150, label="Banned By:", parent=xgui_detailswindow }
-	x_makelabel{ x=41, y=185, label="Reason:", parent=xgui_detailswindow }
-	x_makelabel{ x=13, y=205, label="Last Updated:", parent=xgui_detailswindow }
-	x_makelabel{ x=21, y=225, label="Updated by:", parent=xgui_detailswindow }
-	x_makelabel{ x=90, y=30, label=( xgui_temp and xgui.data.bans[ID].name or "<Unknown>" ), parent=xgui_detailswindow }
-	x_makelabel{ x=90, y=50, label=ID, parent=xgui_detailswindow }
-	if xgui.data.bans[ID].time then x_makelabel{ x=90, y=70, label=os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].time ), parent=xgui_detailswindow } end
-	x_makelabel{ x=90, y=90, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "Never" or os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].unban ) ), parent=xgui_detailswindow }
-	x_makelabel{ x=90, y=110, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "Permanent" or xgui.ConvertTime( xgui.data.bans[ID].unban - xgui.data.bans[ID].time ) ), parent=xgui_detailswindow }
-	local timeleft = x_makelabel{ x=90, y=130, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "N/A" or xgui.ConvertTime( xgui.data.bans[ID].unban - os.time() ) ), parent=xgui_detailswindow }
-	if xgui.data.bans[ID].admin then x_makelabel{ x=90, y=150, label=string.gsub( xgui.data.bans[ID].admin, "%(STEAM_%w:%w:%w*%)", "" ), parent=xgui_detailswindow } end
-	if xgui.data.bans[ID].admin then x_makelabel{ x=90, y=165, label=string.match( xgui.data.bans[ID].admin, "%(STEAM_%w:%w:%w*%)" ), parent=xgui_detailswindow } end
-	x_makelabel{ x=90, y=185, label=xgui.data.bans[ID].reason, parent=xgui_detailswindow }
-	x_makelabel{ x=90, y=205, label=( ( xgui.data.bans[ID].modified_time == nil ) and "Never" or os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].modified_time ) ), parent=xgui_detailswindow }
-	if xgui.data.bans[ID].modified_admin then x_makelabel{ x=90, y=225, label=string.gsub( xgui.data.bans[ID].modified_admin, "%(STEAM_%w:%w:%w*%)", "" ), parent=xgui_detailswindow } end
-	if xgui.data.bans[ID].modified_admin then x_makelabel{ x=90, y=240, label=string.match( xgui.data.bans[ID].modified_admin, "%(STEAM_%w:%w:%w*%)" ), parent=xgui_detailswindow } end
-	x_makebutton{ x=5, y=265, w=89, label="Edit Name...", parent=xgui_detailswindow }.DoClick = function() xgui_bans.UpdateBannameWindow( ID ) xgui_detailswindow:Remove() end
-	x_makebutton{ x=99, y=265, w=88, label="Edit Reason...", parent=xgui_detailswindow }.DoClick = function() xgui_bans.UpdateBanreasonWindow( ID ) xgui_detailswindow:Remove() end
-	x_makebutton{ x=192, y=265, w=88, label="Unban", parent=xgui_detailswindow }.DoClick = function() xgui_bans.RemoveBan( ID ) xgui_detailswindow:Remove() end
+	local xgui_detailswindow = xlib.makeframepopup{ label="Ban Details", w=285, h=295, alwaysontop=true, skin=xgui.settings.skin }
+	local name = xlib.makelabel{ x=50, y=30, label="Name:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=36, y=50, label="SteamID:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=33, y=70, label="Ban Date:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=20, y=90, label="Unban Date:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=10, y=110, label="Length of Ban:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=33, y=130, label="Time Left:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=26, y=150, label="Banned By:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=41, y=185, label="Reason:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=13, y=205, label="Last Updated:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=21, y=225, label="Updated by:", parent=xgui_detailswindow }
+	xlib.makelabel{ x=90, y=30, label=( xgui_temp and xgui.data.bans[ID].name or "<Unknown>" ), parent=xgui_detailswindow }
+	xlib.makelabel{ x=90, y=50, label=ID, parent=xgui_detailswindow }
+	if xgui.data.bans[ID].time then xlib.makelabel{ x=90, y=70, label=os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].time ), parent=xgui_detailswindow } end
+	xlib.makelabel{ x=90, y=90, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "Never" or os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].unban ) ), parent=xgui_detailswindow }
+	xlib.makelabel{ x=90, y=110, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "Permanent" or xgui.ConvertTime( xgui.data.bans[ID].unban - xgui.data.bans[ID].time ) ), parent=xgui_detailswindow }
+	local timeleft = xlib.makelabel{ x=90, y=130, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "N/A" or xgui.ConvertTime( xgui.data.bans[ID].unban - os.time() ) ), parent=xgui_detailswindow }
+	if xgui.data.bans[ID].admin then xlib.makelabel{ x=90, y=150, label=string.gsub( xgui.data.bans[ID].admin, "%(STEAM_%w:%w:%w*%)", "" ), parent=xgui_detailswindow } end
+	if xgui.data.bans[ID].admin then xlib.makelabel{ x=90, y=165, label=string.match( xgui.data.bans[ID].admin, "%(STEAM_%w:%w:%w*%)" ), parent=xgui_detailswindow } end
+	xlib.makelabel{ x=90, y=185, label=xgui.data.bans[ID].reason, parent=xgui_detailswindow }
+	xlib.makelabel{ x=90, y=205, label=( ( xgui.data.bans[ID].modified_time == nil ) and "Never" or os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].modified_time ) ), parent=xgui_detailswindow }
+	if xgui.data.bans[ID].modified_admin then xlib.makelabel{ x=90, y=225, label=string.gsub( xgui.data.bans[ID].modified_admin, "%(STEAM_%w:%w:%w*%)", "" ), parent=xgui_detailswindow } end
+	if xgui.data.bans[ID].modified_admin then xlib.makelabel{ x=90, y=240, label=string.match( xgui.data.bans[ID].modified_admin, "%(STEAM_%w:%w:%w*%)" ), parent=xgui_detailswindow } end
+	xlib.makebutton{ x=5, y=265, w=89, label="Edit Name...", parent=xgui_detailswindow }.DoClick = function() xgui_bans.UpdateBannameWindow( ID ) xgui_detailswindow:Remove() end
+	xlib.makebutton{ x=99, y=265, w=88, label="Edit Reason...", parent=xgui_detailswindow }.DoClick = function() xgui_bans.UpdateBanreasonWindow( ID ) xgui_detailswindow:Remove() end
+	xlib.makebutton{ x=192, y=265, w=88, label="Unban", parent=xgui_detailswindow }.DoClick = function() xgui_bans.RemoveBan( ID ) xgui_detailswindow:Remove() end
 	
 	if timeleft:GetValue() ~= "N/A" then
 		function xgui_detailswindow.OnTimer()
@@ -174,14 +173,14 @@ end
 
 function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 	if LocalPlayer():query( "ulx ban" ) then
-		local xgui_banwindow = x_makeframepopup{ label="Ban Player", w=285, h=180, alwaysontop=true, showclose=false }
-			x_makelabel{ x=37, y=33, label="Name:", parent=xgui_banwindow }
-			x_makelabel{ x=23, y=58, label="SteamID:", parent=xgui_banwindow }
-			x_makelabel{ x=28, y=83, label="Reason:", parent=xgui_banwindow }
-			x_makelabel{ x=10, y=108, label="Ban Length:", parent=xgui_banwindow }
+		local xgui_banwindow = xlib.makeframepopup{ label="Ban Player", w=285, h=180, alwaysontop=true, showclose=false, skin=xgui.settings.skin }
+			xlib.makelabel{ x=37, y=33, label="Name:", parent=xgui_banwindow }
+			xlib.makelabel{ x=23, y=58, label="SteamID:", parent=xgui_banwindow }
+			xlib.makelabel{ x=28, y=83, label="Reason:", parent=xgui_banwindow }
+			xlib.makelabel{ x=10, y=108, label="Ban Length:", parent=xgui_banwindow }
 			local name
 			if not isUpdate then
-				name = x_makemultichoice{ x=75, y=30, w=200, parent=xgui_banwindow, enableinput=true, focuscontrol=true }
+				name = xlib.makemultichoice{ x=75, y=30, w=200, parent=xgui_banwindow, enableinput=true, focuscontrol=true }
 				for k,v in pairs( player.GetAll() ) do
 					name:AddChoice( v:Nick(), v:SteamID() )
 				end
@@ -189,16 +188,16 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 					self.steamIDbox:SetText( data )
 				end
 			else
-				name = x_maketextbox{ x=75, y=30, w=200, parent=xgui_banwindow, focuscontrol=true }
+				name = xlib.maketextbox{ x=75, y=30, w=200, parent=xgui_banwindow, focuscontrol=true }
 			end
-			local steamID = x_maketextbox{ x=75, y=55, w=200, parent=xgui_banwindow }
+			local steamID = xlib.maketextbox{ x=75, y=55, w=200, parent=xgui_banwindow }
 			name.steamIDbox = steamID --Make a pointer to the steamID textbox so it can change the value easily without referencing a global variable
 			if isUpdate then
 				steamID:SetDisabled( true )
 			end
-			local reason = x_makemultichoice{ x=75, y=80, w=200, parent=xgui_banwindow, enableinput=true, focuscontrol=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes }
-			local time = x_makeslider{ x=75, y=105, w=200, value=0, min=0, max=360, decimal=0, disabled=true, parent=xgui_banwindow }
-			local interval = x_makemultichoice{x=75, y=105, w=75, text="Permanent", parent=xgui_banwindow}
+			local reason = xlib.makemultichoice{ x=75, y=80, w=200, parent=xgui_banwindow, enableinput=true, focuscontrol=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes }
+			local time = xlib.makeslider{ x=75, y=105, w=200, value=0, min=0, max=360, decimal=0, disabled=true, parent=xgui_banwindow }
+			local interval = xlib.makemultichoice{x=75, y=105, w=75, text="Permanent", parent=xgui_banwindow}
 			interval:AddChoice( "Permanent" )
 			interval:AddChoice( "Minutes" )
 			interval:AddChoice( "Hours" )
@@ -216,13 +215,13 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 				steamID:SetDisabled( true )
 				name:SetDisabled( true )
 			end
-			x_makebutton{ x=165, y=150, w=75, label="Cancel", parent=xgui_banwindow }.DoClick = function()
+			xlib.makebutton{ x=165, y=150, w=75, label="Cancel", parent=xgui_banwindow }.DoClick = function()
 				if doFreeze and ply then
 					RunConsoleCommand( "ulx", "unfreeze", ply )
 				end
 				xgui_banwindow:Remove()
 			end
-			x_makebutton{ x=45, y=150, w=75, label="Ban!", parent=xgui_banwindow }.DoClick = function()
+			xlib.makebutton{ x=45, y=150, w=75, label="Ban!", parent=xgui_banwindow }.DoClick = function()
 				local calctime = time:GetValue()
 				if interval:GetValue() == "Permanent" then calctime = calctime*0
 				elseif interval:GetValue() == "Hours" then calctime = calctime*60
