@@ -48,7 +48,7 @@ adverts.tree.DoRightClick = function( self, node )
 	menu:AddOption( "Delete", function() adverts.removeAdvert( node ) end )
 	menu:Open()
 end
-adverts.message = xlib.maketextbox{ x=130, y=5, w=150, h=20, text="Enter a message...", parent=adverts, focuscontrol=true }
+adverts.message = xlib.maketextbox{ x=130, y=5, w=150, h=20, text="Enter a message...", parent=adverts, selectall=true }
 adverts.message.OnGetFocus = function( self )
 	self:SelectAllText()
 	xgui.base:SetKeyboardInputEnabled( true )
@@ -59,7 +59,7 @@ xlib.makelabel{ x=138, y=117, label="^-Creates a CSay advert-^", parent=adverts 
 local panel = xlib.makepanellist{ h=185, spacing=4, parent=adverts, autosize=false }
 adverts.display = xlib.makeslider{ label="Display Time (seconds)", min=1, max=60, value=10, tooltip="The time in seconds the CSay advert is displayed", adverts }
 panel:AddItem( adverts.display )
-panel:AddItem( xlib.makecolorpicker{ focuscontrol=true, removealpha=true } )
+panel:AddItem( xlib.makecolorpicker{ removealpha=true } )
 adverts.csay = xlib.makecat{ x=130, y=95, w=150, label="CSay Advert Options", contents=panel, parent=adverts, expanded=false }
 xlib.makebutton{ x=192, y=304, w=88, label="Create", parent=adverts }.DoClick = function()
 	local group = nil
@@ -107,9 +107,9 @@ end
 function xgui.base.RenameAdvert( old, isNew )
 	local advertRename
 	if isNew then
-		advertRename = xlib.makeframepopup{ label="Set Name of New Advert Group", w=400, h=80, showclose=false, alwaysontop=true, skin=xgui.settings.skin }
+		advertRename = xlib.makeframe{ label="Set Name of New Advert Group", w=400, h=80, showclose=false, skin=xgui.settings.skin }
 	else
-		advertRename = xlib.makeframepopup{ label="Set Name of Advert Group - " .. old, w=400, h=80, showclose=true, alwaysontop=true, skin=xgui.settings.skin }
+		advertRename = xlib.makeframe{ label="Set Name of Advert Group - " .. old, w=400, h=80, showclose=true, skin=xgui.settings.skin }
 	end
 	advertRename.text = xlib.maketextbox{ x=10, y=30, w=380, h=20, text=old, parent=advertRename }
 	advertRename.text.OnEnter = function( self )
@@ -196,7 +196,7 @@ plist.motdEnabled.Button.DoClick = function( self )
 	end
 end
 plist.motdURLEnabled = xlib.makecheckbox{ label="Get MOTD from URL instead of motd.txt:" }
-bob = plist.motdURLEnabled
+
 function plist.motdURLEnabled:Toggle() self.Button:DoClick() end
 plist.motdURLEnabled.Button.DoClick = function( self )
 	self:Toggle()
@@ -211,7 +211,7 @@ plist.motdURLEnabled.Button.DoClick = function( self )
 		plist.motdURLText:SetDisabled( true )
 	end
 end
-plist.motdURLText = xlib.maketextbox{ focuscontrol=true }
+plist.motdURLText = xlib.maketextbox{ selectall=true }
 function plist.motdURLText:UpdateConvarValue()
 	if plist.motdURLText:GetValue() ~= "" then
 		RunConsoleCommand( "ulx_cl_showMotd", self:GetValue() )
@@ -239,9 +239,9 @@ function plist.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 		end
 	end
 end
-plist.OnOpened = function()
+plist.afterOpened = function()
 	if plist.motdURLEnabled:GetDisabled() then
-		timer.Simple( .001, plist.motdURLEnabled.SetDisabled, plist.motdURLEnabled, true ) --Since the DCheckBox doesn't properly show itself as Disabled on startup, we have to set it here.
+		ULib.queueFunctionCall( plist.motdURLEnabled.SetDisabled, plist.motdURLEnabled, true ) --Since the DCheckBox doesn't properly show itself as Disabled on startup, we have to set it here.
 	end
 end
 hook.Add( "ULibReplicatedCvarChanged", "XGUI_ulx_cl_showMotd", plist.ConVarUpdated )
@@ -249,13 +249,13 @@ plist:AddItem( plist.motdEnabled )
 plist:AddItem( plist.motdURLEnabled )
 plist:AddItem( plist.motdURLText )
 plist:AddItem( xlib.makelabel{ label="\nWelcome Message:" } )
-plist:AddItem( xlib.maketextbox{ repconvar="ulx_cl_welcomemessage", focuscontrol=true } )
+plist:AddItem( xlib.maketextbox{ repconvar="ulx_cl_welcomemessage", selectall=true } )
 plist:AddItem( xlib.makelabel{ label="Allowed variables: %curmap%, %host%" } )
 table.insert( xgui.modules.svsetting, { name="ULX General Settings", panel=plist, access=nil } )
 
 ------------------------------Gimps------------------------------
 local gimps = xlib.makepanel{ w=285, h=327, parent=xgui.null }
-gimps.textbox = xlib.maketextbox{ w=235, h=20, parent=gimps, focuscontrol=true }
+gimps.textbox = xlib.maketextbox{ w=235, h=20, parent=gimps, selectall=true }
 gimps.textbox.OnEnter = function( self )
 	if self:GetValue() then
 		RunConsoleCommand( "xgui", "addGimp", self:GetValue() )

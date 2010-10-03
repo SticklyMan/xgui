@@ -24,13 +24,13 @@ local function xgui_init( authedply )
 	--Set default settings if they didn't get loaded
 	if not xgui.settings.moduleOrder then xgui.settings.moduleOrder = { "Cmds", "Groups", "Maps", "Settings", "Bans" } end
 	if not xgui.settings.settingOrder then xgui.settings.settingOrder = { "Sandbox", "Server", "XGUI" } end
-	if not xgui.settings.animTime then xgui.settings.animTime = 0.2 else xgui.settings.animTime = tonumber( xgui.settings.animTime ) end
+	if not xgui.settings.animTime then xgui.settings.animTime = 0.22 else xgui.settings.animTime = tonumber( xgui.settings.animTime ) end
 	if not xgui.settings.infoColor then xgui.settings.infoColor = Color(100,255,255,128) end
 	if not xgui.settings.showLoadMsgs then xgui.settings.showLoadMsgs = true else xgui.settings.showLoadMsgs = tobool( xgui.settings.showLoadMsgs ) end
 	if not xgui.settings.skin then xgui.settings.skin = "Default" end	
 	
 	--Initiate the base window (see xgui_helpers.lua for code)
-	xgui.base = x_makeXGUIbase{}
+	x_makeXGUIbase{}
 
 	--Create the bottom infobar
 	xgui.infobar = xlib.makepanel{ x=10, y=399, w=580, h=20, parent=xgui.base }
@@ -38,8 +38,7 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.09.23  |  ULX ver SVN  |  ULib ver SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
-	--xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.09.23  |  ULX ver " .. ulx.getVersion() .. "  |  ULib ver " .. ULib.VERSION, textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.10.03  |  ULX ver " .. ulx.version .. " SVN  |  ULib ver " .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = xlib.makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
@@ -129,12 +128,7 @@ function xgui.checkModuleExists( modulename, moduletable )
 	return false
 end
 
-function xgui.processModules( wasvisible )
-	--Temporarily "disable" animations
-	local tempfadetime = xgui.base:GetFadeTime()
-	xgui.base:SetFadeTime( 0.0000001 )
-	xgui.settings_tabs:SetFadeTime( 0.0000001 )
-	
+function xgui.processModules()
 	local activetab = nil
 	if xgui.base:GetActiveTab() then
 		activetab = xgui.base:GetActiveTab():GetValue()
@@ -194,43 +188,41 @@ function xgui.processModules( wasvisible )
 	--Call any functions that requested to be called when permissions change
 	xgui.callRefresh( "onProcessModules" )
 	
-	if activesettingstab then
-		if xgui.settings_tabs:GetActiveTab():GetValue() ~= activesettingstab then
-			for k, v in ipairs( xgui.modules.setting ) do
-				if v.name == activesettingstab and v.panel:GetParent() ~= xgui.null then 
-					xgui.settings_tabs:SetActiveTab( v.tabpanel )
-					break
-				end
-			end
-		end
-		xgui.settings_tabs.animFade:Run()
-	end
-
+	local hasFound = false
 	if activetab then
-		if xgui.base:GetActiveTab():GetValue() ~= activetab then --Don't do anything if it's already on the correct tab.
-			for k, v in ipairs( xgui.modules.tab ) do
-				if v.name == activetab and v.panel:GetParent() ~= xgui.null then 
-					if wasvisible then xgui.show( activetab ) end
-					xgui.base:SetFadeTime( tempfadetime )
-					xgui.settings_tabs:SetFadeTime( tempfadetime )
-					return
-				end
-			end
-			--If the code here executes, that means the previous active tab is now hidden, so we set the active tab to the first tab
-			xgui.base:SetActiveTab( xgui.base.Items[1].Tab )
-			if wasvisible then
-				xgui.base.animFade:Start( xgui.base:GetFadeTime(), { OldTab = xgui.base.m_pActiveTab, NewTab = xgui.base.m_pActiveTab } ) --Rerun the fade animation so it shows up properly
+		for _, v in pairs( xgui.base.Items ) do
+			if v.Tab:GetValue() == activetab then
+				xgui.base:SetActiveTab( v.Tab, true )
+				hasFound = true
+				break
 			end
 		end
+		if not hasFound then
+			xgui.base.m_pActiveTab = "none"
+			xgui.base:SetActiveTab( xgui.base.Items[1].Tab, true )
+		end
 	end
-	xgui.base:SetFadeTime( tempfadetime )
-	xgui.settings_tabs:SetFadeTime( tempfadetime )
+	
+	hasFound = false
+	if activesettingstab then
+		for _, v in pairs( xgui.settings_tabs.Items ) do
+			if v.Tab:GetValue() == activesettingstab then
+				xgui.settings_tabs:SetActiveTab( v.Tab, true )
+				hasFound = true
+				break
+			end
+		end
+		if not hasFound then
+			xgui.settings_tabs.m_pActiveTab = "none"
+			xgui.settings_tabs:SetActiveTab( xgui.settings_tabs.Items[1].Tab, true )
+		end
+	end	
 end
 
 --If the player's group is changed, reprocess the XGUI modules for permissions
 function xgui.PermissionsChanged( ply )
 	if ply == LocalPlayer() then
-		xgui.processModules( xgui.base:IsVisible() )
+		xgui.processModules()
 		
 		--Figure out what data "types" need updating
 		--Exclude the votemaps and gamemodes, since they're available to everybody anyways
@@ -271,8 +263,8 @@ function xgui.PermissionsChanged( ply )
 	end
 end
 
-function xgui.isNotInstalled( tabname )
-	xgui.wait = xlib.makeframepopup{ label="XGUI", w=235, h=50, nopopup=true, showclose=false, skin=xgui.settings.skin }
+function xgui.checkNotInstalled( tabname )
+	xgui.wait = xlib.makeframe{ label="XGUI", w=235, h=50, nopopup=true, showclose=false, skin=xgui.settings.skin }
 	xgui.wait.tabname = tabname
 	xlib.makelabel{ label="Waiting for server confimation... (5 seconds)", x=10, y=30, parent=xgui.wait }
 	timer.Simple( 5, function( tabname )
@@ -281,11 +273,11 @@ function xgui.isNotInstalled( tabname )
 			xgui.wait = nil
 			gui.EnableScreenClicker( true )
 			RestoreCursorPosition( )
-			xgui.notinstalled = xlib.makeframepopup{ label="Warning!", w=350, h=90, nopopup=true, showclose=false, skin=xgui.settings.skin }
-			xlib.makelabel{ label="XGUI is not installed on this server! XGUI will now run in offline mode.", x=10, y=30, parent=xgui.notinstalled }
-			xlib.makelabel{ label="Some features may not work, and information will be missing.", x=10, y=45, parent=xgui.notinstalled }
-			xlib.makebutton{ x=155, y=63, w=40, label="OK", parent=xgui.notinstalled }.DoClick = function()
-				xgui.notinstalled:Remove()
+			xgui.notInstalledWarning = xlib.makeframe{ label="Warning!", w=350, h=90, nopopup=true, showclose=false, skin=xgui.settings.skin }
+			xlib.makelabel{ label="XGUI is not installed on this server! XGUI will now run in offline mode.", x=10, y=30, parent=xgui.notInstalledWarning }
+			xlib.makelabel{ label="Some features may not work, and information will be missing.", x=10, y=45, parent=xgui.notInstalledWarning }
+			xlib.makebutton{ x=155, y=63, w=40, label="OK", parent=xgui.notInstalledWarning }.DoClick = function()
+				xgui.notInstalledWarning:Remove()
 				xgui.show( tabname )
 			end
 		end
@@ -297,27 +289,29 @@ function xgui.show( tabname )
 	
 	--Check if XGUI is not installed, display the warning if hasn't been shown yet.
 	if xgui.wait then return end
-	if xgui.isInstalled == nil and xgui.notinstalled == nil then
-		xgui.isNotInstalled( tabname )
+	if xgui.isInstalled == nil and xgui.notInstalledWarning == nil then
+		xgui.checkNotInstalled( tabname )
 		return
 	end
 	
 	if not SinglePlayer() and not ULib.ucl.authed[LocalPlayer():UniqueID()] then 
-		local xgui_temp = xlib.makeframepopup{ label="XGUI Error!", w=250, h=90, showclose=true, skin=xgui.settings.skin }
-		xlib.makelabel{ label="Your ULX player has not been Authed!", x=10, y=30, parent=xgui_temp }
-		xlib.makelabel{ label="Please wait a couple seconds and try again.", x=10, y=45, parent=xgui_temp }
-		xlib.makebutton{ x=50, y=63, w=60, label="Try Again", parent=xgui_temp }.DoClick = function()
-			xgui_temp:Remove()
+		local unauthedWarning = xlib.makeframe{ label="XGUI Error!", w=250, h=90, showclose=true, skin=xgui.settings.skin }
+		xlib.makelabel{ label="Your ULX player has not been Authed!", x=10, y=30, parent=unauthedWarning }
+		xlib.makelabel{ label="Please wait a couple seconds and try again.", x=10, y=45, parent=unauthedWarning }
+		xlib.makebutton{ x=50, y=63, w=60, label="Try Again", parent=unauthedWarning }.DoClick = function()
+			unauthedWarning:Remove()
 			xgui.show( tabname )
 		end
-		xlib.makebutton{ x=140, y=63, w=60, label="Close", parent=xgui_temp }.DoClick = function()
-			xgui_temp:Remove()
+		xlib.makebutton{ x=140, y=63, w=60, label="Close", parent=unauthedWarning }.DoClick = function()
+			unauthedWarning:Remove()
 		end
 		return
 	end
 	
-	--Process modules if XGUI has no tabs!
-	if #xgui.base.Items == 0 then xgui.processModules() end
+	if xgui.base.refreshSkin then
+		xgui.base:SetSkin( xgui.settings.skin )	
+		xgui.base.refreshSkin = nil
+	end
 	
 	--Sets the active tab to tabname if it was specified
 	if tabname then
@@ -328,22 +322,16 @@ function xgui.show( tabname )
 		for _, v in ipairs( xgui.modules.tab ) do
 			if string.lower( v.name ) == string.lower( tabname ) then
 				xgui.base:SetActiveTab( v.tabpanel )
-				if xgui.base:IsVisible() then return end
+				if xgui.anchor:IsVisible() then return end
 				break
 			end
 		end
 	end
 	
+	xgui.base.animOpen()
 	gui.EnableScreenClicker( true )
 	RestoreCursorPosition()
-	xgui.base:SetVisible( true )
-	if xgui.receivingdata then xgui.chunkbox:SetVisible( true ) end
-	xgui.base.animFadeIn:Start( xgui.base:GetFadeTime(), xgui.base )
-	
-	if xgui.base.refreshSkin then
-		xgui.base:SetSkin( xgui.settings.skin )	
-		xgui.base.refreshSkin = nil
-	end
+	xgui.anchor:SetMouseInputEnabled( true )
 	
 	--Calls the functions requesting to hook when XGUI is opened
 	if xgui.hook["onOpen"] then
@@ -352,18 +340,21 @@ function xgui.show( tabname )
 end
 
 function xgui.hide()
-	xgui.base.animFadeOut:Start( xgui.base:GetFadeTime(), xgui.base )
+	RememberCursorPosition()
+	gui.EnableScreenClicker( false )
+	xgui.anchor:SetMouseInputEnabled( false )
+	xgui.base.animClose()
 end
 
 function xgui.toggle()
-	if xgui.base and not xgui.base:IsVisible() then
+	if xgui.anchor and not xgui.anchor:IsVisible() then
 		xgui.show()
 	else
 		xgui.hide()
 	end
 end
 
---Called by server when data is ready to recieve
+--Called by server when data is ready to be received
 function xgui.expectChunks( numofchunks, updated )
 	xgui.receivingdata = true
 	
@@ -372,16 +363,16 @@ function xgui.expectChunks( numofchunks, updated )
 		xgui.flushQueue( "chunkbox" ) --Remove the queue entry that would remove the chunkbox
 	end
 	
-	xgui.chunkbox = xlib.makeframepopup{ label="XGUI is receiving data!", w=200, h=60, y=ScrH()/2-265, nopopup=true, draggable=false, showclose=false, skin=xgui.settings.skin }
+	xgui.chunkbox = xlib.makeframe{ label="XGUI is receiving data!", w=200, h=60, x=200, y=5, nopopup=true, draggable=false, showclose=false, skin=xgui.settings.skin, parent=xgui.anchor }
 	xgui.chunkbox.max = numofchunks
 	xgui.chunkbox.progress = xlib.makeprogressbar{ x=10, y=30, w=180, h=20, min=0, max=numofchunks, percent=true, parent=xgui.chunkbox }
 	xgui.chunkbox.progress.Label:SetText( "Waiting for server" .. " - " .. xgui.chunkbox.progress.Label:GetValue() )
 	xgui.chunkbox.progress:PerformLayout()
-	xgui.chunkbox:SetVisible( xgui.base:IsVisible() )
+	xgui.chunkbox:SetVisible( xgui.anchor:IsVisible() )
 	function xgui.chunkbox:CloseFunc()
 		xgui.receivingdata = false
 		self:Remove()
-		self = nil 
+		self = nil
 	end
 	--Clear the tables that are going to be updated
 	for _, v in ipairs( updated ) do
@@ -393,9 +384,6 @@ function xgui.expectChunks( numofchunks, updated )
 		elseif v == "sbans" then
 			xgui.callRefresh( "sbans", "clear" )
 		end
-	end
-	function xgui.chunkbox:Think()
-		self:SetAlpha( xgui.base:GetAlpha() )
 	end
 	
 	function xgui.chunkbox:Progress( curtable )
@@ -410,7 +398,7 @@ function xgui.expectChunks( numofchunks, updated )
 	end
 end
 
---Function called when data chunk is recieved from server
+--Function called when data chunk is received from server
 function xgui.getChunk( data, curtable )
 	if curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update its table of votemaps
 		ulx.populateClVotemaps( data )
@@ -426,56 +414,7 @@ function xgui.callRefresh( cmd, data )
 	for _, func in ipairs( xgui.hook[cmd] ) do func( data ) end
 end
 
---This is essentially a straight copy of Megiddo's queueFunctionCall; Since XGUI tends to use it quite a lot, I decided to keep it seperate to prevent delays in ULib's stuff
---I also now get to add a method of flushing the queue based on a tag in the event that new data needs to be updated.
-local stack = {}
-local think_enabled = false
-local function onThink()
-	if not think_enabled then
-		if hook.isInHook( "Think" ) then
-			think_enabled = true
-		end
-	end
-	
-	local num = #stack
-	if num > 0 then
-		for i=1,3 do --Run 3 lines per frame
-			if stack[1] ~= nil then
-				local b, e = pcall( stack[ 1 ].fn, unpack( stack[ 1 ], 1, stack[ 1 ].n ) )
-				if not b then
-					ErrorNoHalt( "ULib queue error: " .. tostring( e ) .. "\n" )
-				end
-			end
-		table.remove( stack, 1 ) -- Remove the first inserted item. This is FIFO
-		end
-	else
-		hook.Remove( "Think", "XGUIQueueThink" )
-	end
-end
-
-function xgui.queueFunctionCall( fn, tag, ... )
-	if type( fn ) ~= "function" then
-		error( "queueFunctionCall received a bad function", 2 )
-		return
-	end
-
-	table.insert( stack, { fn=fn, tag=tag, n=select( "#", ... ), ... } )
-	hook.Add( "Think", "XGUIQueueThink", onThink, -20 )
-end
-
-function xgui.flushQueue( tag )
-	local removeIndecies = {}
-	for i, fncall in ipairs( stack ) do
-		if fncall.tag == tag then
-			table.insert( removeIndecies, i )
-		end
-	end
-	for i=#removeIndecies,1,-1 do --Remove the queue functions backwards to prevent desynchronization of pairs
-		table.remove( stack, removeIndecies[i] )
-	end
-end
-
---As long as we're not sending data, force a check on the server to see if there's more data to send.
+--As long as we're not receiving data, force a check on the server to see if there's more data to send.
 function xgui.forceDataCheck()
 	if not xgui.chunkbox then
 		RunConsoleCommand( "_xgui", "dataComplete" )

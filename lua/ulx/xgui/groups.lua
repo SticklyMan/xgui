@@ -1,7 +1,7 @@
 --Groups/Players module V2 for ULX GUI -- by Stickly Man!
 --Manages groups and players within groups, teams, and permissions/restrictions
 
-local groups = xlib.makeXpanel{ parent=xgui.null }
+local groups = xlib.makepanel{ parent=xgui.null }
 groups.list = xlib.makemultichoice{ x=5, y=5, w=175, parent=groups }
 function groups.list:populate( isGroupManagement )
 	local prev_sel = self:GetValue()
@@ -19,7 +19,7 @@ function groups.list:populate( isGroupManagement )
 				groups.getGroupData( groups.lastOpenGroup )
 			else
 				groups.pnlG1:Close()
-				groups.animQueue_start()
+				xlib.animQueue_start()
 				self:SetText( "Select a group..." )
 			end
 		end
@@ -35,12 +35,12 @@ groups.list.OnSelect = function( self, index, value, data )
 		if value ~= groups.lastOpenGroup then
 			groups.lastOpenGroup = value
 			groups.pnlG1:Open( value )
-			groups.animQueue_start()
+			xlib.animQueue_start()
 		end
 	else
 		groups.lastOpenGroup = nil
 		groups.pnlG2:Open()
-		groups.animQueue_start()
+		xlib.animQueue_start()
 	end
 end
 groups.isGroupManagement = true
@@ -134,19 +134,19 @@ end
 xlib.makebutton{ x=5, y=275, w=160, label="Manage Teams >>", parent=groups.pnlG1 }.DoClick = function()
 	if not groups.pnlG3:IsVisible() then
 		groups.pnlG3:Open()
-		groups.animQueue_start()
+		xlib.animQueue_start()
 	end
 end
 xlib.makebutton{ x=5, y=310, w=160, label="Manage Permissions >>", parent=groups.pnlG1 }.DoClick = function()
 	if not groups.pnlG4:IsVisible() then
 		groups.pnlG4:Open()
-		groups.animQueue_start()
+		xlib.animQueue_start()
 	end
 end
 
 function groups.addBySteamID( group )
-	local frame = xlib.makeframepopup{ label="Add ID to group " .. group, w=190, h=60, alwaysontop=true, skin=xgui.settings.skin }
-	xlib.maketextbox{ x=5, y=30, w=180, parent=frame, focuscontrol=true, text="Enter STEAMID..." }.OnEnter = function( self )
+	local frame = xlib.makeframe{ label="Add ID to group " .. group, w=190, h=60, skin=xgui.settings.skin }
+	xlib.maketextbox{ x=5, y=30, w=180, parent=frame, selectall=true, text="Enter STEAMID..." }.OnEnter = function( self )
 		if ULib.isValidSteamID( self:GetValue() ) then
 			RunConsoleCommand( "ulx", "adduserid", self:GetValue(), group )
 			frame:Remove()
@@ -249,9 +249,9 @@ end
 xlib.makelabel{ x=145, y=8, label="Name:", textcolor=color_black, parent=groups.pnlG2 }
 xlib.makelabel{ x=145, y=33, label="Inherits from:", textcolor=color_black, parent=groups.pnlG2 }
 xlib.makelabel{ x=145, y=58, label="Can Target:", textcolor=color_black, parent=groups.pnlG2 }
-groups.gname = xlib.maketextbox{ x=180, y=5, w=165, text="new_group", focuscontrol=true, parent=groups.pnlG2 }
+groups.gname = xlib.maketextbox{ x=180, y=5, w=165, text="new_group", selectall=true, parent=groups.pnlG2 }
 groups.ginherit = xlib.makemultichoice{ x=215, y=30, w=130, text="user", parent=groups.pnlG2 }
-groups.gcantarget = xlib.maketextbox{ x=205, y=55, w=140, text="", focuscontrol=true, parent=groups.pnlG2 }
+groups.gcantarget = xlib.maketextbox{ x=205, y=55, w=140, text="", selectall=true, parent=groups.pnlG2 }
 groups.gupdate = xlib.makebutton{ x=140, y=175, w=100, label="Create", parent=groups.pnlG2 }
 groups.gupdate.DoClick = function( self )
 	if self:GetValue() == "Update" then --Sanity check, make sure we're not trying to create a new group accidentally
@@ -394,20 +394,20 @@ groups.teammodifiers.OnRowSelected = function( self, LineID, Line )
 	local applybtn = xlib.makebutton{ label="Apply" }
 	if Line:GetColumnText(3) ~= "number" then
 		if Line:GetColumnText(1) == "name" then
-			ctrl = xlib.maketextbox{ focuscontrol=true, text=Line:GetColumnText(2) }
+			ctrl = xlib.maketextbox{ selectall=true, text=Line:GetColumnText(2) }
 			ctrl.OnEnter = function()
 				applybtn.DoClick()
 			end
 			groups.teammodspace:AddItem( ctrl )
 		elseif Line:GetColumnText(1) == "color" then
-			ctrl = xlib.makecolorpicker{ focuscontrol=true, removealpha=true }
+			ctrl = xlib.makecolorpicker{ removealpha=true }
 			local tempcolor = string.Explode( " ", Line:GetColumnText(2) )
 			ULib.queueFunctionCall( RunConsoleCommand, "colour_r", tempcolor[1] )
 			ULib.queueFunctionCall( RunConsoleCommand, "colour_g", tempcolor[2] )
 			ULib.queueFunctionCall( RunConsoleCommand, "colour_b", tempcolor[3] )
 			groups.teammodspace:AddItem( ctrl )
 		elseif Line:GetColumnText(1) == "model" then
-			ctrl = xlib.maketextbox{ focuscontrol=true, text=Line:GetColumnText(2) }
+			ctrl = xlib.maketextbox{ selectall=true, text=Line:GetColumnText(2) }
 			ctrl.OnEnter = function( self )
 				applybtn.DoClick()
 				for i, v in ipairs( groups.modelList.Items ) do
@@ -522,7 +522,7 @@ function groups.pnlG4:Open()
 	self:openAnim()
 end
 function groups.pnlG4:Close()
-	self.closeAnim()
+	self:closeAnim()
 end
 xlib.makelabel{ x=5, y=5, label="Has access to:  (Disabled = inherited)", textcolor=color_black, parent=groups.pnlG4 }
 groups.accesses = xlib.makepanellist{ x=5, y=20, w=190, h=310, padding=1, spacing=1, parent=groups.pnlG4 }
@@ -802,95 +802,39 @@ end
 --------------
 --ANIMATIONS--
 --------------
-function groups:slideAnim( anim, delta, data )
-	--data.panel, data.startx, data.starty, data.endx, data.endy, data.setvisible
-	if ( anim.Started ) then
-		if data.setvisible == true then
-			data.panel:SetVisible( true )
-		end
-		data.panel:SetPos( data.startx, data.starty )
-	end
-	
-	data.panel:SetPos( data.startx+((data.endx-data.startx)*delta), data.starty+((data.endy-data.starty)*delta) )
-	
-	if ( anim.Finished ) then
-		data.panel:SetPos( data.endx, data.endy )
-		if data.setvisible == false then
-			data.panel:SetVisible( false )
-		end
-		groups.animQueue_call()
-	end
-end
-groups.doAnim = Derma_Anim( "Fade", groups.doAnim, groups.slideAnim )
-groups.doAnim.Start = x_anim_Start
-
-function groups:Think()
-	groups.doAnim:Run()
-end
-
----Individual Panel animations
 groups.pnlG1.openAnim = function( self, group )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.getGroupData( group ) groups.animQueue_call() end )
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG1, startx=0, starty=-335, endx=0, endy=0, setvisible=true } ) end )
+	xlib.addToAnimQueue( groups.getGroupData, group )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=0, starty=-335, endx=0, endy=0, setvisible=true } )
 end
 groups.pnlG1.closeAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG1, startx=0, starty=0, endx=0, endy=-335, setvisible=false } ) end )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=0, starty=0, endx=0, endy=-335, setvisible=false } )
 end
 
 groups.pnlG2.openAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG2, startx=0, starty=-200, endx=0, endy=0, setvisible=true } ) end )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=0, starty=-200, endx=0, endy=0, setvisible=true } )
 end
 groups.pnlG2.closeAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG2, startx=0, starty=0, endx=0, endy=-200, setvisible=false } ) end )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=0, starty=0, endx=0, endy=-200, setvisible=false } )
 end
 
 groups.pnlG3.openAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( true ) groups.animQueue_call() end )
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG3, startx=-410, starty=130, endx=5, endy=130, setvisible=true } ) end )
+	xlib.addToAnimQueue( groups.clippanelb.SetVisible, groups.clippanelb, true )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=-410, starty=130, endx=5, endy=130, setvisible=true } )
 end
 groups.pnlG3.closeAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG3, startx=5, starty=130, endx=-410, endy=130, setvisible=false } ) end )
-	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( false ) groups.animQueue_call() end )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=5, starty=130, endx=-410, endy=130, setvisible=false } )
+	xlib.addToAnimQueue( groups.clippanelb.SetVisible, groups.clippanelb, false )
 end
 
 groups.pnlG4.openAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( true ) groups.animQueue_call() end )
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG4, startx=-210, starty=0, endx=5, endy=0, setvisible=true } ) end )
+	xlib.addToAnimQueue( groups.clippanelb.SetVisible, groups.clippanelb, true )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=-210, starty=0, endx=5, endy=0, setvisible=true } )
 end
 groups.pnlG4.closeAnim = function( self )
-	groups.animStep = groups.animStep + 1
-	table.insert( groups.animQueue, function() groups.doAnim:Start( xgui.base:GetFadeTime()/groups.curAnimStep, { panel=groups.pnlG4, startx=5, starty=0, endx=-210, endy=0, setvisible=false } ) end )
-	table.insert( groups.animQueue, function() groups.clippanelb:SetVisible( false ) groups.animQueue_call() end )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=5, starty=0, endx=-210, endy=0, setvisible=false } )
+	xlib.addToAnimQueue( groups.clippanelb.SetVisible, groups.clippanelb, false )
 end
-
----Animation queue stuff
-groups.animQueue = {}
-
---This will allow us to make animations run faster when linked together 
---Makes sure the entire animation length = animationTime (~0.2 sec by default)
-groups.animStep = 0
-
-groups.animQueue_call = function()
-	if #groups.animQueue > 0 then
-		local func = groups.animQueue[1]
-		table.remove( groups.animQueue, 1 )
-		timer.Simple( 0, func ) --Delay calling the function for a frame
-	end
-end
-
---Call this to begin the animation chain
-groups.animQueue_start = function()
-	groups.curAnimStep = groups.animStep
-	groups.animStep = 0
-	groups.animQueue_call()
-end
+--------------
 
 hook.Add( "UCLChanged", "xgui_RefreshGroupPermissions", groups.populateAccesses )
 table.insert( xgui.hook["teams"], groups.updateTeams )

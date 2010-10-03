@@ -1,29 +1,51 @@
 --Commands module (formerly players module) v2 for ULX GUI -- by Stickly Man!
 --Handles all user-based commands, such as kick, slay, ban, etc.
 
-local cmds = xlib.makeXpanel{ parent=xgui.null }
+local cmds = xlib.makepanel{ parent=xgui.null }
 cmds.selcmd = nil
 cmds.mask = xlib.makepanel{ x=160, y=30, w=425, h=335, parent=cmds }
 cmds.argslist = xlib.makepanellist{ w=170, h=335, parent=cmds.mask }
+cmds.argslist.secondaryPos = nil
 cmds.argslist:SetVisible( false )
+function cmds.argslist:Open( cmd, secondary )
+	if secondary then
+		if cmds.plist:IsVisible() then
+			cmds.plist:Close()
+		elseif self:IsVisible() then
+			self:Close()
+		end
+	end
+	cmds.argslist:openAnim( cmd, secondary )
+end
+function cmds.argslist:Close()
+	self:closeAnim( self.secondaryPos )
+end
 cmds.plist = xlib.makelistview{ w=250, h=335, multiselect=true, parent=cmds.mask }
+function cmds.plist:Open( arg )
+	if cmds.argslist.secondaryPos == true then cmds.argslist:Close()
+	elseif self:IsVisible() then self:Close() end
+	self:openAnim( arg )
+	--Determine if the arguments should be visible after changing (If a valid player will be selected)
+	local targets = cmds.calculateValidPlayers( arg )
+	local playerWillBeSelected = false
+	for _, line in ipairs( cmds.plist:GetSelected() ) do
+		if table.HasValue( targets, line.ply ) then
+			playerWillBeSelected = true
+			break
+		end
+	end
+	if playerWillBeSelected then
+		cmds.argslist:Open( ULib.cmds.translatedCmds[arg.cmd], false )
+	end
+end
+function cmds.plist:Close()
+	if cmds.argslist:IsVisible() then cmds.argslist:Close() end
+	self:closeAnim()
+end
 cmds.plist:SetVisible( false )
 cmds.plist:AddColumn( "Name" )
 cmds.plist:AddColumn( "Group" )
-cmds.plist.OnRowSelected = function( self, LineID, Line ) --TODO: Double-click defaults?
-	if cmds.lockply then return end
-	if cmds.doAnim:Active() then
-		cmds.doAnim.Finished = true
-		cmds.doAnim:Run() --Give it a chance to process the finished code
-	end
-	
-	local x,y = cmds.plist:GetPos()
-	if x >= 0 then -- A strange check, but it prevents animation glitches
-		if cmds.argslist:IsVisible() == false then
-			cmds.argslist:animate( ULib.cmds.translatedCmds[cmds.selcmd], false )
-		end
-	end
-end
+
 cmds.cmds = xlib.makepanellist{ x=5, y=30, w=150, h=335, parent=cmds, padding=1, spacing=1 }
 cmds.setselected = function( selcat, LineID )
 	if selcat.Lines[LineID]:GetColumnText(2) == cmds.selcmd then return end
@@ -34,84 +56,83 @@ cmds.setselected = function( selcat, LineID )
 		end
 	end
 	cmds.selcmd = selcat.Lines[LineID]:GetColumnText(2)
+	
+	if cmds.permissionChanged then cmds.refreshPlist() return end
+	
+	if xlib.animRunning then xlib.animQueue_forceStop() end
+	
 	local cmd = ULib.cmds.translatedCmds[cmds.selcmd]
-	if cmd.args[2] then
-		expectingPlayers = ( cmd.args[2].type == ULib.cmds.PlayersArg ) or ( cmd.args[2].type == ULib.cmds.PlayerArg )
+	if cmd.args[2] and ( cmd.args[2].type == ULib.cmds.PlayersArg or cmd.args[2].type == ULib.cmds.PlayerArg ) then
+		cmds.plist:Open( cmd.args[2] )
 	else
-		expectingPlayers = false
-	end	
-	if cmds.plist:IsVisible() then
-		if cmds.argslist:IsVisible() then
-			cmds.lockply = true --Lock player selection (to prevent animation glitches)
-			if expectingPlayers then
-				--Hide argslist, Hide/Reshow playerlist.
-				cmds.doAnim:Start( xgui.base:GetFadeTime()/2, { panel=cmds.argslist, startpos=255, distance=-175, endfunc=function()
-					cmds.argslist:SetVisible( false )
-					cmds.doAnim:Start( xgui.base:GetFadeTime()/2, { panel=cmds.plist, startpos=0, distance=-250, endfunc=function()
-						cmds.refreshPlist( cmd.args[2], 1 )
-						cmds.lockply = nil
-						cmds.doAnim:Start( xgui.base:GetFadeTime()/2, { panel=cmds.plist, startpos=-250, distance=250 } )  end } )  end } )
-			else
-				--Hide argslist, Hide Player List, Show Args List
-				cmds.doAnim:Start( xgui.base:GetFadeTime()/2, { panel=cmds.argslist, startpos=255, distance=-175, endfunc=function()
-					cmds.argslist:SetVisible( false )
-					cmds.doAnim:Start( xgui.base:GetFadeTime()/2, { panel=cmds.plist, startpos=0, distance=-250, endfunc=function()
-						cmds.plist:SetVisible( false )
-						cmds.lockply = nil
-						cmds.argslist:animate( cmd, true, nil, 2 )  end } )  end } )
-						
-			end
-		else
-			if expectingPlayers then
-				--Hide/Reshow playerlist.
-				cmds.doAnim:Start( xgui.base:GetFadeTime()/1.5, { panel=cmds.plist, startpos=0, distance=-250, endfunc=function()
-					cmds.refreshPlist( cmd.args[2], 1 )
-					cmds.lockply = nil
-					cmds.doAnim:Start( xgui.base:GetFadeTime()/1.5, { panel=cmds.plist, startpos=-250, distance=250 } )  end } )
-			else
-				--Hide Player List. Show Args List
-				cmds.doAnim:Start( xgui.base:GetFadeTime()/1.5, { panel=cmds.plist, startpos=0, distance=-250, endfunc=function()
-					cmds.plist:SetVisible( false )
-					cmds.argslist:animate( cmd, true, nil, 1.5 )  end } )
-			end
-		end
-	else
-		if cmds.argslist:IsVisible() then
-			if expectingPlayers then
-				--Hide Args list, Show player list
-				cmds.doAnim:Start( xgui.base:GetFadeTime()/1.5, { panel=cmds.argslist, startpos=0, distance=-170, endfunc=function()
-					cmds.argslist:SetVisible( false )
-					cmds.lockply = nil
-					cmds.plist:animate( cmd, nil, 1.5 )  end } )
-			else
-				--Hide/Reshow argslist.
-				cmds.doAnim:Start( xgui.base:GetFadeTime()/1.5, { panel=cmds.argslist, startpos=0, distance=-170, endfunc=function()
-					cmds.refreshArgslist( cmd )
-					cmds.doAnim:Start( xgui.base:GetFadeTime()/1.5, { panel=cmds.argslist, startpos=-170, distance=170 } )  end } )
-			end
-		else
-			if expectingPlayers then
-				--Show Players List
-				cmds.lockply = nil
-				cmds.plist:animate( cmd )
-			else
-				--Show Args List
-				cmds.argslist:animate( cmd, true )
-			end
-		end
+		cmds.argslist:Open( cmd, true )
 	end
+	xlib.animQueue_start()
 end
 
-function cmds.refreshPlist( arg, argnum )
+function cmds.refreshPlist( arg )
+	if not arg then arg = ULib.cmds.translatedCmds[cmds.selcmd].args[2] end
+	
 	local lastplys = {}
 	for k, Line in pairs( cmds.plist.Lines ) do
 		if ( Line:GetSelected() ) then table.insert( lastplys, Line:GetColumnText(1) ) end
 	end
 	
+	local targets = cmds.calculateValidPlayers( arg )
+	
 	cmds.plist:Clear()
+	cmds.plist:SetMultiSelect( arg.type == ULib.cmds.PlayersArg )
+	for _, ply in ipairs( targets ) do
+		local line = cmds.plist:AddLine( ply:Nick(), ply:GetUserGroup() )
+		line.ply = ply
+		line.OnSelect = function()
+			if cmds.permissionChanged then return end
+			
+			if not xlib.animRunning and not cmds.argslist:IsVisible() then
+				cmds.argslist:Open( ULib.cmds.translatedCmds[cmds.selcmd], false )
+				xlib.animQueue_start( )
+			else
+				if not cmds.clickedFlag then --Prevent this from happening multiple times.
+					cmds.clickedFlag = true
+					xlib.addToAnimQueue( function() if not cmds.argslist:IsVisible() then
+						cmds.argslist:Open( ULib.cmds.translatedCmds[cmds.selcmd], false ) end 
+						cmds.clickedFlag = nil end )
+				end
+			end
+		end
+		
+		--Select previously selected Lines
+		if table.HasValue( lastplys, ply:Nick() ) then
+			cmds.plist:SelectItem( line )
+		end
+	end
+	--Select only the first item if multiselect is disabled.
+	if not cmds.plist:GetMultiSelect() then
+		local firstSelected = cmds.plist:GetSelected()[1]
+		cmds.plist:ClearSelection()
+		cmds.plist:SelectItem( firstSelected )
+	end
+	
+	if not cmds.plist:GetSelectedLine() then
+		if not xlib.animRunning then
+			if cmds.argslist:IsVisible() then
+				cmds.argslist:Close()
+				xlib.animQueue_start()
+			end
+		else
+			if cmds.permissionChanged then
+				xlib.addToAnimQueue( function() if cmds.argslist:IsVisible() and cmds.plist:IsVisible() then cmds.argslist:Close() end end )
+			end
+		end
+	end
+end
+
+function cmds.calculateValidPlayers( arg )
+	if not arg then arg = ULib.cmds.translatedCmds[cmds.selcmd].args[2] end
+
 	local access, tag = LocalPlayer():query( arg.cmd )
 	local restrictions = {}
-	ULib.cmds.PlayerArg.processRestrictions( restrictions, LocalPlayer(), arg, getTagArgNum( tag, argnum ) )
+	ULib.cmds.PlayerArg.processRestrictions( restrictions, LocalPlayer(), arg, getTagArgNum( tag, 1 ) )
 
 	local targets = restrictions.restrictedTargets
 	if targets == false then -- No one allowed
@@ -119,18 +140,10 @@ function cmds.refreshPlist( arg, argnum )
 	elseif targets == nil then -- Everyone allowed
 		targets = player.GetAll()
 	end
-	cmds.plist:SetMultiSelect( arg.type == ULib.cmds.PlayersArg )
-
-	for _, ply in ipairs( targets ) do
-		local line = cmds.plist:AddLine( ply:Nick(), ply:GetUserGroup() )
-		--Select previously selected Lines
-		if table.HasValue( lastplys, ply:Nick() ) then
-			cmds.plist:SelectItem( line )
-		end
-	end
+	return targets
 end
 
-function cmds.refreshArgslist( cmd )
+function cmds.buildArgsList( cmd )
 	cmds.argslist:Clear()
 	local argnum = 0
 	local curitem
@@ -184,25 +197,25 @@ function cmds.refreshArgslist( cmd )
 		cmds.argslist:AddItem( panel )
 	elseif curitem and curitem.type == ULib.cmds.NumArg then
 		cmds.argslist.Items[#cmds.argslist.Items].Wang.TextEntry.OnEnter = function( self )
-			cmds.buildcmd( cmd.cmd )
+			cmds.runCmd( cmd.cmd )
 		end
 	elseif curitem and curitem.type == ULib.cmds.StringArg then
 		cmds.argslist.Items[#cmds.argslist.Items].OnEnter = function( self )
-			cmds.buildcmd( cmd.cmd )
+			cmds.runCmd( cmd.cmd )
 		end
 	end
 	if LocalPlayer():query( cmd.cmd ) then
 		local xgui_temp = xlib.makebutton{ label=cmd.cmd }
 		xgui_temp.xguiIgnore = true
 		xgui_temp.DoClick = function()
-			cmds.buildcmd( cmd.cmd )
+			cmds.runCmd( cmd.cmd )
 		end
 		cmds.argslist:AddItem( xgui_temp )
 	end
 	if cmd.opposite and LocalPlayer():query( cmd.opposite ) then
 		local xgui_temp = xlib.makebutton{ label=cmd.opposite }
 		xgui_temp.DoClick = function()
-			cmds.buildcmd( cmd.opposite )
+			cmds.runCmd( cmd.opposite )
 		end
 		xgui_temp.xguiIgnore = true
 		cmds.argslist:AddItem( xgui_temp )
@@ -227,7 +240,7 @@ function cmds.refreshArgslist( cmd )
 	end
 end
 
-function cmds.buildcmd( cmd )
+function cmds.runCmd( cmd )
 	local cmd = string.Explode( " ", cmd )
 	if cmds.plist:IsVisible() then
 		local plys = {}
@@ -247,65 +260,15 @@ function cmds.buildcmd( cmd )
 	RunConsoleCommand( unpack( cmd ) )
 end
 
---------------
---ANIMATIONS--
---------------
-function cmds:slideAnim( anim, delta, data )
-	--data.panel, data.startpos, data.distance, data.endfunc
-	if ( anim.Started ) then
-		data.panel:SetPos( data.startpos, 0 )
-	end
-	
-	data.panel:SetPos( data.startpos + ( data.distance*delta ), 0 )
-	
-	if ( anim.Finished ) then
-		data.panel:SetPos( data.startpos+data.distance, 0 )
-		if data.endfunc then
-			data.endfunc()
-		end
-	end
-end
-cmds.doAnim = Derma_Anim( "Fade", cmds.doAnim, cmds.slideAnim )
-cmds.doAnim.Start = x_anim_Start
-
-function cmds:Think()
-		cmds.doAnim:Run()
-end
-
-function cmds.plist:animate( cmd, func, factor )
-	if not factor then
-		factor = 1
-	end
-	self:SetPos( -250, 0 )
-	self:SetVisible( true )
-	cmds.refreshPlist( cmd.args[2], 1 )
-	cmds.doAnim:Start( xgui.base:GetFadeTime()/factor, { panel=cmds.plist, startpos=-250, distance=250, endfunc=func } )
-end
-
-function cmds.argslist:animate( cmd, pos, func, factor )
-	if not factor then
-		factor = 1
-	end
-	self:SetVisible( true )
-	cmds.refreshArgslist( cmd )
-	if pos then --Left Side
-		self:SetPos( -170, 0 )
-		cmds.doAnim:Start( xgui.base:GetFadeTime()/factor, { panel=cmds.argslist, startpos=-170, distance=170, endfunc=func } )
-	else --Right side
-		self:SetPos( 80, 0 )
-		cmds.doAnim:Start( xgui.base:GetFadeTime()/factor, { panel=cmds.argslist, startpos=80, distance=175, endfunc=func } )
-	end
-end
-
-cmds.refresh = function()
+cmds.refresh = function( permissionChanged )
 	local lastcmd = cmds.selcmd
 	cmds.cmds:Clear()
 	cmds.cmd_cats = {}
 	cmds.expandedcat = nil
 	cmds.selcmd = nil
-	cmds.argslist:SetVisible( false )
-	cmds.plist:SetVisible( false )
+	cmds.permissionChanged = true
 	
+	local matchedCmdFound = false
 	for cmd, data in pairs( ULib.cmds.translatedCmds ) do
 		local opposite = data.opposite or ""
 		if opposite ~= cmd and ( LocalPlayer():query( data.cmd ) or LocalPlayer():query( opposite ) ) then
@@ -340,16 +303,66 @@ cmds.refresh = function()
 				cmds.cmd_cats[catname]:SelectItem( line )
 				cmds.expandedcat = cmds.cmd_cats[catname]:GetParent()
 				cmds.expandedcat:SetExpanded( true )
+				matchedCmdFound = true
 			end
 		end
 	end
+	if not matchedCmdFound then
+		if cmds.plist:IsVisible() then
+			cmds.plist:Close()
+			xlib.animQueue_start()
+		elseif cmds.argslist:IsVisible() then
+			cmds.argslist:Close()
+			xlib.animQueue_start()
+		end
+	end
+	
 	table.sort( cmds.cmds.Items, function( a,b ) return a.Header:GetValue() < b.Header:GetValue() end )
 	for _, cat in pairs( cmds.cmd_cats ) do
 		cat:SortByColumn( 1 )
 		cat:SetHeight( 17*#cat:GetLines() )
 	end
+	cmds.permissionChanged = nil
 end
 cmds.refresh()
+
+--------------
+--ANIMATIONS--
+--------------
+function cmds.plist:openAnim( arg )
+	xlib.addToAnimQueue( cmds.refreshPlist, arg )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=-250, starty=0, endx=0, endy=0, setvisible=true } )
+end
+
+function cmds.plist:closeAnim()
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=0, starty=0, endx=-250, endy=0, setvisible=false } )
+end
+
+function cmds.argslist:openAnim( cmd, secondary )
+	xlib.addToAnimQueue( function() cmds.argslist.secondaryPos = secondary end )
+	xlib.addToAnimQueue( cmds.buildArgsList, cmd )
+	if secondary then
+		xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=-170, starty=0, endx=0, endy=0, setvisible=true } )
+	else
+		xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=80, starty=0, endx=255, endy=0, setvisible=true } )
+	end
+end
+
+function cmds.argslist:closeAnim( secondary )
+	if secondary then
+		xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=0, starty=0, endx=-170, endy=0, setvisible=false } )
+	else
+		--Apparently derma is REALLY picky when working with panels that aren't visible. To fix a minor drawing issue, we're going to keep the argslist panel 
+		--visible, set it's position manually off the screen, then wait a frame or two. If the panel hasn't been moved since then, then we make it invisible.
+		xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=255, starty=0, endx=80, endy=0, setvisible=true } )
+		xlib.addToAnimQueue( self.SetPos, self, -170, 0 )
+		xlib.addToAnimQueue( timer.Simple, 0.1, function()
+			local x,y = cmds.argslist:GetPos()
+			if x == -170 then cmds.argslist:SetVisible( false ) end end )
+	end
+	xlib.addToAnimQueue( function() cmds.argslist.secondaryPos = nil end )
+end
+--------------
 
 hook.Add( "UCLChanged", "xgui_RefreshPlayerCmds", cmds.refresh )
 table.insert( xgui.modules.tab, { name="Cmds", panel=cmds, icon="gui/silkicons/user", tooltip=nil, access=nil } )

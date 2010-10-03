@@ -44,9 +44,9 @@ local function xlib_init()
 		local pnl = vgui.Create( "DLabel", t.parent )
 		pnl:SetPos( t.x, t.y )
 		pnl:SetText( t.label or "" )
-		pnl:SizeToContents()
 		pnl:SetToolTip( t.tooltip )
 		if t.font then pnl:SetFont( t.font ) end
+		pnl:SizeToContents()
 		if t.w then pnl:SetWidth( t.w ) end
 		if t.h then pnl:SetHeight( t.h ) end
 		if t.textcolor then pnl:SetTextColor( t.textcolor ) end
@@ -83,7 +83,7 @@ local function xlib_init()
 		return pnl
 	end
 	
-	function xlib.makeframepopup( t )
+	function xlib.makeframe( t )
 		local pnl = vgui.Create( "DFrame", t.parent )
 		pnl:SetSize( t.w, t.h )
 		pnl:SetPos( t.x or ScrW()/2-t.w/2, t.y or ScrH()/2-t.h/2 )
@@ -91,7 +91,6 @@ local function xlib_init()
 		if t.draggable ~= nil then pnl:SetDraggable( t.draggable ) end
 		if t.nopopup ~= true then pnl:MakePopup() end
 		if t.showclose ~= nil then pnl:ShowCloseButton( t.showclose ) end
-		if t.alwaysontop ~= nil then pnl:SetDrawOnTop( t.alwaysontop ) end
 		if t.skin then pnl:SetSkin( t.skin ) end
 		return pnl
 	end
@@ -102,31 +101,19 @@ local function xlib_init()
 		pnl:SetWide( t.w )
 		pnl:SetTall( t.h or 20 )
 		pnl:SetEnterAllowed( true )
-		pnl.enabled = true
 		if t.convar then pnl:SetConVar( t.convar ) end
 		if t.text then pnl:SetText( t.text ) end
 		if t.enableinput then pnl:SetEnabled( t.enableinput ) end
+		pnl.selectAll = t.selectall
 		pnl:SetToolTip( t.tooltip )
 		
+		pnl.enabled = true
 		function pnl:SetDisabled( val ) --Do some funky stuff to simulate enabling/disabling of a textbox
 			pnl.enabled = not val
 			pnl:SetEnabled( not val )
 			pnl:SetPaintBackgroundEnabled( val )
 		end
 		
-		--For XGUI keyboard focus handling
-		if ( t.focuscontrol == true ) then
-			pnl.OnGetFocus = function( self )
-				if self.enabled == true then
-					self:SelectAllText()
-					xgui.base:SetKeyboardInputEnabled( true )
-				end
-			end
-			pnl.OnLoseFocus = function( self )
-				xgui.base:SetKeyboardInputEnabled( false )
-				self:UpdateConvarValue()
-			end
-		end
 		--Replicated Convar Updating
 		if t.repconvar then
 			if GetConVar( t.repconvar ) == nil then
@@ -183,47 +170,33 @@ local function xlib_init()
 	function xlib.makeXpanel( t )
 		pnl = vgui.Create( "DPanel_XLIB", t.parent )
 		pnl:MakePopup()
-		pnl:SetKeyboardInputEnabled( false )
-		pnl:SetMouseInputEnabled( true )
-		pnl.IsXPanel = true
 		pnl:SetPos( t.x, t.y )
 		pnl:SetSize( t.w, t.h )
 		return pnl
 	end
 	
-	function xlib.makenumberwang( t )
-		local pnl = vgui.Create( "DNumberWang", t.parent )
-		pnl:SetMinMax( t.min or 0, t.max or 100 )
-		pnl:SetDecimals( t.decimal or 0 )
-		pnl:SetPos( t.x, t.y )
-		pnl:SetWidth( t.w )
-		pnl:SizeToContents()
-		pnl:SetValue( t.value )
-		if t.convar then pnl:SetConVar( t.convar ) end
-		return pnl
-	end
-
 	function xlib.makemultichoice( t )
 		local pnl = vgui.Create( "DMultiChoice", t.parent )
 		pnl:SetText( t.text or "" )
 		pnl:SetPos( t.x, t.y )
 		pnl:SetSize( t.w, t.h or 20 )
-		pnl:SetEditable( t.enableinput )
+		pnl.TextEntry.selectAll = t.selectall
+		pnl:SetEditable( t.enableinput or false )
 
-		if ( t.focuscontrol == true ) then
+		if ( t.enableinput == true ) then
 			pnl.DropButton.OnMousePressed = function( button, mcode ) 
-				xgui.base:SetKeyboardInputEnabled( false )
+				hook.Call( "OnTextEntryLoseFocus", nil, pnl.TextEntry )
 				pnl:OpenMenu( pnl.DropButton )
 			end
 			pnl.TextEntry.OnMousePressed = function( self )
-				self:SelectAllText()
-				xgui.base:SetKeyboardInputEnabled( true )
+				hook.Call( "OnTextEntryGetFocus", nil, self )
 			end
 			pnl.TextEntry.OnLoseFocus = function( self )
-				xgui.base:SetKeyboardInputEnabled( false )
+				hook.Call( "OnTextEntryLoseFocus", nil, self )
 				self:UpdateConvarValue()
 			end
 		end
+		
 		pnl:SetToolTip( t.tooltip )
 		if t.choices then
 			for i, v in ipairs( t.choices ) do
@@ -310,14 +283,6 @@ local function xlib_init()
 		return pnl
 	end
 
-	function xlib.makecombobox( t )
-		local pnl = vgui.Create( "DComboBox", t.parent )
-		pnl:SetPos( t.x, t.y )
-		pnl:SetSize( t.w, t.h )
-		pnl:SetAutoSize( t.autosize )
-		return pnl
-	end
-	
 	function xlib.maketree( t )
 		local pnl = vgui.Create( "DTree", t.parent )
 		pnl:SetPos( t.x, t.y )
@@ -364,42 +329,7 @@ local function xlib_init()
 			if not t.removealpha then
 				pnl:SetConVarA( "colour_a" )
 			end
-			if t.focuscontrol then
-				pnl.txtR.TextEntry.OnGetFocus = function( self )
-					self:SelectAllText()
-					xgui.base:SetKeyboardInputEnabled( true )
-				end
-				pnl.txtR.TextEntry.OnLoseFocus = function( self )
-					xgui.base:SetKeyboardInputEnabled( false )
-					self:UpdateConvarValue()
-				end
-				pnl.txtG.TextEntry.OnGetFocus = function( self )
-					self:SelectAllText()
-					xgui.base:SetKeyboardInputEnabled( true )
-				end
-				pnl.txtG.TextEntry.OnLoseFocus = function( self )
-					xgui.base:SetKeyboardInputEnabled( false )
-					self:UpdateConvarValue()
-				end
-				pnl.txtB.TextEntry.OnGetFocus = function( self )
-					self:SelectAllText()
-					xgui.base:SetKeyboardInputEnabled( true )
-				end
-				pnl.txtB.TextEntry.OnLoseFocus = function( self )
-					xgui.base:SetKeyboardInputEnabled( false )
-					self:UpdateConvarValue()
-				end
-				if pnl.txtA then
-					pnl.txtA.TextEntry.OnGetFocus = function( self )
-						self:SelectAllText()
-						xgui.base:SetKeyboardInputEnabled( true )
-					end
-					pnl.txtA.TextEntry.OnLoseFocus = function( self )
-						xgui.base:SetKeyboardInputEnabled( false )
-						self:UpdateConvarValue()
-					end
-				end
-			end
+			
 			pnl:SetPos( t.x, t.y )
 			pnl:SetSize( t.w, t.h )
 		return pnl
@@ -440,17 +370,14 @@ local function xlib_init()
 		pnl:SetWidth( t.w )
 		pnl:SizeToContents()
 		pnl.Label:SetTextColor( t.textcolor )
+		pnl.Wang.TextEntry.selectAll = t.selectall
 		if t.value then pnl:SetValue( t.value ) end
 		
-		--Keyboard focus stuff
-		pnl.Wang.TextEntry.OnGetFocus = function()
-			xgui.base:SetKeyboardInputEnabled( true )
-		end
 		pnl.Wang.TextEntry.OnLoseFocus = function( self )
+			hook.Call( "OnTextEntryLoseFocus", nil, self )
 			self:UpdateConvarValue()
 			pnl.Wang:SetValue( pnl.Wang.TextEntry:GetValue() )
-			xgui.base:SetKeyboardInputEnabled( false )
-		end	
+		end
 		
 		--Slider update stuff (Most of this code is copied from the default DNumSlider)
 		pnl.Slider.TranslateValues = function( self, x, y )

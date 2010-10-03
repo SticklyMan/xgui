@@ -1,7 +1,7 @@
 --XGUI settings module for ULX GUI -- by Stickly Man!
 --Modify XGUI-based settings.
 
-local xgui_settings = xlib.makeXpanel{ parent=xgui.null }
+local xgui_settings = xlib.makepanel{ parent=xgui.null }
 xlib.makebutton{ x=10, y=10, w=150, label="Refresh XGUI Modules", parent=xgui_settings }.DoClick=function()
 	xgui.PermissionsChanged( LocalPlayer() )
 end
@@ -13,20 +13,15 @@ xlib.makebutton{ x=10, y=30, w=150, label="Refresh Server Data", parent=xgui_set
 	end
 end
 xlib.makeslider{ x=10, y=55, w=150, label="Anim transition time", max=2, value=xgui.settings.animTime, decimal=2, parent=xgui_settings, textcolor=color_black }.OnValueChanged = function( self, val )
-	val = tonumber( val )
-	if val < 0 then 
-		self:SetValue( 0 ) 
-	else
-		xgui.settings.animTime = val
-		xgui.base:SetFadeTime( val )
-		xgui.settings_tabs:SetFadeTime( val )
-	end
+	local testval = math.Clamp( tonumber( val ), 0, 2 )
+	if testval ~= tonumber( val ) then self:SetValue( testval ) end
+	xgui.settings.animTime = tonumber( val )
 end
 xlib.makecheckbox{ x=10, y=97, w=150, label="Show Startup Messages", value=xgui.settings.showLoadMsgs, parent=xgui_settings, textcolor=color_black }.OnChange = function( self, bVal )
 	xgui.settings.showLoadMsgs = bVal
 end
 xlib.makelabel{ x=10, y=117, label="Infobar color:", textcolor=color_black, parent=xgui_settings }
-xgui_settings.infocolor = xlib.makecolorpicker{ x=10, y=135, w=180, h=150, focuscontrol=true, parent=xgui_settings }
+xgui_settings.infocolor = xlib.makecolorpicker{ x=10, y=135, w=180, h=150, parent=xgui_settings }
 RunConsoleCommand( "colour_r", xgui.settings.infoColor.r )
 RunConsoleCommand( "colour_g", xgui.settings.infoColor.g )
 RunConsoleCommand( "colour_b", xgui.settings.infoColor.b )

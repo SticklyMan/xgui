@@ -1,7 +1,7 @@
 --Sandbox settings module for ULX GUI -- by Stickly Man!
 --Defines limits and sbox_ specific settings for the sandbox gamemode.
 
-local sbox_settings = xlib.makeXpanel{ parent=xgui.null }
+local sbox_settings = xlib.makepanel{ parent=xgui.null }
 
 xlib.makecheckbox{ x=10, y=10, label="Enable Noclip", repconvar="rep_sbox_noclip", parent=sbox_settings, textcolor=color_black }
 xlib.makecheckbox{ x=10, y=30, label="Enable Godmode", repconvar="rep_sbox_godmode", parent=sbox_settings, textcolor=color_black }
