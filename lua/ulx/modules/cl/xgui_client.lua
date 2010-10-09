@@ -38,7 +38,7 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.10.03  |  ULX ver " .. ulx.version .. " SVN  |  ULib ver " .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	xlib.makelabel{ x=5, y=-10, label="\nXGUI - A GUI for ULX  |  by Stickly Man!  |  ver 10.10.08  |  ULX ver " .. ulx.version .. " SVN  |  ULib ver " .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = xlib.makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
@@ -344,6 +344,7 @@ function xgui.hide()
 	gui.EnableScreenClicker( false )
 	xgui.anchor:SetMouseInputEnabled( false )
 	xgui.base.animClose()
+	CloseDermaMenus()
 end
 
 function xgui.toggle()

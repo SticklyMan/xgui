@@ -49,10 +49,6 @@ adverts.tree.DoRightClick = function( self, node )
 	menu:Open()
 end
 adverts.message = xlib.maketextbox{ x=130, y=5, w=150, h=20, text="Enter a message...", parent=adverts, selectall=true }
-adverts.message.OnGetFocus = function( self )
-	self:SelectAllText()
-	xgui.base:SetKeyboardInputEnabled( true )
-end
 adverts.time = xlib.makeslider{ x=130, y=30, w=150, label="Repeat Time (seconds)", value=60, min=1, max=1000, tooltip="Time in seconds till the advert is shown/repeated.", parent=adverts }
 adverts.group = xlib.makemultichoice{ x=130, y=70, w=150, parent=adverts, tooltip="Pick an existing advert or group to make adverts appear sequentially." }
 xlib.makelabel{ x=138, y=117, label="^-Creates a CSay advert-^", parent=adverts }
@@ -265,7 +261,7 @@ end
 gimps.textbox.OnGetFocus = function( self )
 	gimps.button:SetText( "Add" )
 	self:SelectAllText()
-	xgui.base:SetKeyboardInputEnabled( true )
+	xgui.anchor:SetKeyboardInputEnabled( true )
 end
 gimps.button = xlib.makebutton{ x=235, w=50, label="Add", parent=gimps }
 gimps.button.DoClick = function( self )

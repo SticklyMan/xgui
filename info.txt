@@ -2,10 +2,10 @@
 {
 	"name"				"XGUI"
 	"version"			"0.9"
-	"up_date"			"October 3, 2010"
+	"up_date"			"October 8, 2010"
 	"author_name"			"Stickly Man! / Team Ulysses"
 	"author_email"			"teamulysses@ulyssesmod.net"
 	"author_url"			"http://www.ulyssesmod.net/"
-	"info"				"GUI for ULX -- Beta 10.10.3"
+	"info"				"GUI for ULX -- Beta 10.10.8"
 	"override"			"0"
 }
