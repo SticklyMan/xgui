@@ -294,11 +294,9 @@ plist:AddItem( xlib.makecheckbox{ label="Log Player Events (Connects, Deaths, et
 plist:AddItem( xlib.makecheckbox{ label="Log Spawns (Props, Effects, Ragdolls, etc.)", repconvar="ulx_cl_logSpawns" } )
 plist:AddItem( xlib.makelabel{ label="Save log files to this directory:" } )
 local logdirbutton = xlib.makebutton{}
-if GetConVar( "ulx_cl_logDir" ) == nil then
-	CreateConVar( "ulx_cl_logDir", 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
-else
-	logdirbutton:SetText( "data/" .. GetConVar( "ulx_cl_logDir" ):GetString() )
-end
+xlib.checkRepCvarCreated( "ulx_cl_logDir" )
+logdirbutton:SetText( "data/" .. GetConVar( "ulx_cl_logDir" ):GetString() )
+
 function logdirbutton.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 	if cl_cvar == "ulx_cl_logDir" then
 		logdirbutton:SetText( "data/" .. new_val )
@@ -313,7 +311,7 @@ local plist = xlib.makepanellist{ w=285, h=327, parent=xgui.null }
 plist:AddItem( xlib.makelabel{ label="Player Votemap Settings" } )
 plist:AddItem( xlib.makecheckbox{ label="Enable Player Votemaps", repconvar="ulx_cl_votemapEnabled" } )
 plist:AddItem( xlib.makeslider{ label="Time (min) before a user can vote for a map", min=0, max=300, repconvar="ulx_cl_votemapMintime" } )
-plist:AddItem( xlib.makeslider{ label="Time (min) until a user can change their vote", min=0, max=60, decimal=1, repconvar="ulx_cl_votemapWaitTime" } )
+plist:AddItem( xlib.makeslider{ label="Time (min) until a user can change their vote", min=0, max=60, decimal=1, repconvar="ulx_cl_votemapWaittime" } )
 plist:AddItem( xlib.makeslider{ label="Ratio of votes needed to accept mapchange", min=0, max=1, decimal=2, repconvar="ulx_cl_votemapSuccessratio" } )
 plist:AddItem( xlib.makeslider{ label="Minimum votes for a successful mapchange", min=0, max=10, repconvar="ulx_cl_votemapMinvotes" } )
 plist:AddItem( xlib.makeslider{ label="Time (sec) for an admin to veto a mapchange", min=0, max=300, repconvar="ulx_cl_votemapVetotime" } )

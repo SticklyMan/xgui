@@ -6,7 +6,7 @@
 
 local function xlib_init()
 	xlib = {}
-	
+
 	function xlib.makecheckbox( t )
 		local pnl = vgui.Create( "DCheckBoxLabel", t.parent )
 		pnl:SetPos( t.x, t.y )
@@ -19,9 +19,7 @@ local function xlib_init()
 		if t.disabled then pnl:SetDisabled( t.disabled ) end
 		--Replicated Convar Updating
 		if t.repconvar then
-			if GetConVar( t.repconvar ) == nil then
-				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
-			end
+			xlib.checkRepCvarCreated( t.repconvar )
 			pnl:SetValue( GetConVar( t.repconvar ):GetBool() )
 			function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 				if cl_cvar == t.repconvar then
@@ -72,8 +70,8 @@ local function xlib_init()
 		pnl:SetText( t.label or "" )
 		pnl:SetDisabled( t.disabled )
 		return pnl
-	end	
-	
+	end
+
 	function xlib.makesysbutton( t )
 		local pnl = vgui.Create( "DSysButton", t.parent )
 		pnl:SetType( t.btype )
@@ -82,7 +80,7 @@ local function xlib_init()
 		pnl:SetDisabled( t.disabled )
 		return pnl
 	end
-	
+
 	function xlib.makeframe( t )
 		local pnl = vgui.Create( "DFrame", t.parent )
 		pnl:SetSize( t.w, t.h )
@@ -106,19 +104,17 @@ local function xlib_init()
 		if t.enableinput then pnl:SetEnabled( t.enableinput ) end
 		pnl.selectAll = t.selectall
 		pnl:SetToolTip( t.tooltip )
-		
+
 		pnl.enabled = true
 		function pnl:SetDisabled( val ) --Do some funky stuff to simulate enabling/disabling of a textbox
 			pnl.enabled = not val
 			pnl:SetEnabled( not val )
 			pnl:SetPaintBackgroundEnabled( val )
 		end
-		
+
 		--Replicated Convar Updating
 		if t.repconvar then
-			if GetConVar( t.repconvar ) == nil then
-				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
-			end
+			xlib.checkRepCvarCreated( t.repconvar )
 			pnl:SetValue( GetConVar( t.repconvar ):GetString() )
 			function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 				if cl_cvar == t.repconvar then
@@ -174,7 +170,7 @@ local function xlib_init()
 		pnl:SetSize( t.w, t.h )
 		return pnl
 	end
-	
+
 	function xlib.makemultichoice( t )
 		local pnl = vgui.Create( "DMultiChoice", t.parent )
 		pnl:SetText( t.text or "" )
@@ -184,7 +180,7 @@ local function xlib_init()
 		pnl:SetEditable( t.enableinput or false )
 
 		if ( t.enableinput == true ) then
-			pnl.DropButton.OnMousePressed = function( button, mcode ) 
+			pnl.DropButton.OnMousePressed = function( button, mcode )
 				hook.Call( "OnTextEntryLoseFocus", nil, pnl.TextEntry )
 				pnl:OpenMenu( pnl.DropButton )
 			end
@@ -196,14 +192,14 @@ local function xlib_init()
 				self:UpdateConvarValue()
 			end
 		end
-		
+
 		pnl:SetToolTip( t.tooltip )
 		if t.choices then
 			for i, v in ipairs( t.choices ) do
 				pnl:AddChoice( v )
 			end
 		end
-		
+
 		pnl.enabled = true
 		function pnl:SetDisabled( val ) --Do some funky stuff to simulate enabling/disabling of a textbox
 			self.enabled = not val
@@ -240,12 +236,10 @@ local function xlib_init()
 				self.Menu:Open( x, y, false, self )
 			ULib.queueFunctionCall( self.RequestFocus, self ) --Force the menu to request focus when opened, to prevent the menu being open, but the focus being to the controls behind it.
 		end
-		
+
 		--Replicated Convar Updating
 		if t.repconvar then
-			if GetConVar( t.repconvar ) == nil then
-				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
-			end
+			xlib.checkRepCvarCreated( t.repconvar )
 			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
 				if t.numOffset == nil then t.numOffset = 1 end
 				local cvar = GetConVar( t.repconvar ):GetInt()
@@ -289,7 +283,7 @@ local function xlib_init()
 		pnl:SetSize( t.w, t.h )
 		return pnl
 	end
-	
+
 	--If we aren't in the sandbox gamemode, then "CtrlColor" isn't included-- Don't see anything wrong with including it here!
 	if gmod.GetGamemode().Name ~= "Sandbox" then
 		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
@@ -329,12 +323,12 @@ local function xlib_init()
 			if not t.removealpha then
 				pnl:SetConVarA( "colour_a" )
 			end
-			
+
 			pnl:SetPos( t.x, t.y )
 			pnl:SetSize( t.w, t.h )
 		return pnl
 	end
-	
+
 	--Includes Garry's ever-so-awesome progress bar!
 	include( "menu/ProgressBar.lua" )
 	function xlib.makeprogressbar( t )
@@ -345,12 +339,18 @@ local function xlib_init()
 		pnl:SetMax( t.max or 100 )
 		pnl:SetValue( t.value or 0 )
 		if t.percent then
-			pnl.m_bLabelAsPercentage = true 
+			pnl.m_bLabelAsPercentage = true
 			pnl:UpdateText()
 		end
 		return pnl
 	end
-	
+
+	function xlib.checkRepCvarCreated( cvar )
+		if GetConVar( cvar ) == nil then
+			CreateClientConVar( cvar, 0, false, false ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
+		end
+	end
+
 	--------------------------------------------------
 	--Megiddo and I are sick of number sliders and their spam of updating convars. Lets modify the NumSlider so that it only sets the value when the mouse is released! (And allows for textbox input)
 	--------------------------------------------------
@@ -372,13 +372,13 @@ local function xlib_init()
 		pnl.Label:SetTextColor( t.textcolor )
 		pnl.Wang.TextEntry.selectAll = t.selectall
 		if t.value then pnl:SetValue( t.value ) end
-		
+
 		pnl.Wang.TextEntry.OnLoseFocus = function( self )
 			hook.Call( "OnTextEntryLoseFocus", nil, self )
 			self:UpdateConvarValue()
 			pnl.Wang:SetValue( pnl.Wang.TextEntry:GetValue() )
 		end
-		
+
 		--Slider update stuff (Most of this code is copied from the default DNumSlider)
 		pnl.Slider.TranslateValues = function( self, x, y )
 			--Store the value and update the textbox to the new value
@@ -401,10 +401,10 @@ local function xlib_init()
 			--Update the actual value to the value we stored earlier
 			pnl.Wang:SetFraction( pnl_x )
 		end
-		
+
 		--This makes it so the value doesnt change while you're typing in the textbox
 		pnl.Wang.TextEntry.OnTextChanged = function() end
-		
+
 		--NumberWang update stuff(Most of this code is copied from the default DNumberWang)
 		pnl.Wang.OnCursorMoved = function( self, x, y )
 			if ( not self.Dragging ) then return end
@@ -419,10 +419,10 @@ local function xlib_init()
 			input.SetCursorPos( x, self.HoldPos )
 			--Instead of updating the value, we're going to store it for later
 			pnl_fVal = fVal
-			
+
 			if ( ValidPanel( self.IndicatorT ) ) then self.IndicatorT:InvalidateLayout() end
 			if ( ValidPanel( self.IndicatorB ) ) then self.IndicatorB:InvalidateLayout() end
-			
+
 			--Since we arent updating the value, we need to manually set the value of the textbox. YAY!!
 			val = tonumber( fVal )
 			val = val or 0
@@ -430,19 +430,19 @@ local function xlib_init()
 				val = Format( "%i", val )
 			elseif ( val ~= 0 ) then
 				val = Format( "%."..self.m_iDecimals.."f", val )
-				val = string.TrimRight( val, "0" )		
+				val = string.TrimRight( val, "0" )
 				val = string.TrimRight( val, "." )
 			end
 			self.TextEntry:SetText( val )
 		end
-		
+
 		pnl.Wang.OnMouseReleased = function( self, mousecode )
 			if ( self.Dragging ) then
 				self:EndWang()
 				self:SetValue( pnl_fVal )
 			return end
 		end
-		
+
 		pnl.enabled = true
 		pnl.SetDisabled = function( self, bval )
 			self.enabled = not bval
@@ -451,12 +451,10 @@ local function xlib_init()
 			self.Wang.TextEntry:SetPaintBackgroundEnabled( bval )
 		end
 		if t.disabled then pnl:SetDisabled( t.disabled ) end
-		
+
 		--Replicated Convar Updating
 		if t.repconvar then
-			if GetConVar( t.repconvar ) == nil then
-				CreateConVar( t.repconvar, 0 ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
-			end
+			xlib.checkRepCvarCreated( t.repconvar )
 			pnl:SetValue( GetConVar( t.repconvar ):GetFloat() )
 			function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 				if cl_cvar == t.repconvar then
@@ -513,9 +511,9 @@ local function xlib_init()
 		self.ColorCube:SetColor( color )
 		self.RGBBar:SetColor( color )
 	end
-	
+
 	function PANEL:Paint() end
-	
+
 	function PANEL:UpdateConVar( strName, strKey, color )
 		if ( !strName ) then return end
 		RunConsoleCommand( strName, tostring( color[ strKey ] ) )
@@ -556,7 +554,7 @@ local function xlib_init()
 		local g = GetConVarNumber( self.m_ConVarG )
 		local b = GetConVarNumber( self.m_ConVarB )
 		local color = Color( r, g, b, 255 )
-		self:SetColor( color )	
+		self:SetColor( color )
 	end
 	vgui.Register( "XLIBColorMixerNoAlpha", PANEL, "DPanel" )
 
@@ -570,7 +568,7 @@ local function xlib_init()
 	Derma_Hook( PANEL, "ApplySchemeSettings", "Scheme", "Panel" )
 
 	function PANEL:Init()
-			self:SetPaintBackground( true )
+		self:SetPaintBackground( true )
 	end
 
 	derma.DefineControl( "DPanel_XLIB", "", PANEL, "EditablePanel" )

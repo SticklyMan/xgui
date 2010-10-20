@@ -57,6 +57,8 @@ groups.clippanela = xlib.makepanel{ x=5, y=30, w=580, h=335, parent=groups }
 groups.clippanela.Paint = function( self ) end
 groups.clippanelb = xlib.makepanel{ x=175, y=30, w=410, h=335, visible=false, parent=groups }
 groups.clippanelb.Paint = function( self ) end
+groups.clippanelc = xlib.makepanel{ x=380, y=30, w=210, h=335, parent=groups }
+groups.clippanelc.Paint = function( self ) end
 
 -----------------------------------
 ------Groups Panel 1 (Users, Teams)
@@ -522,6 +524,9 @@ function groups.pnlG4:Open()
 	self:openAnim()
 end
 function groups.pnlG4:Close()
+	if groups.pnlG5:IsVisible() then
+		groups.pnlG5:Close()
+	end
 	self:closeAnim()
 end
 xlib.makelabel{ x=5, y=5, label="Has access to:  (Disabled = inherited)", textcolor=color_black, parent=groups.pnlG4 }
@@ -537,7 +542,7 @@ function groups.populateAccesses()
 			if foundAccess then
 				line.Columns[2]:SetDisabled( false )
 			else --Access was not given to the group, check for inherited groups!
-				foundAccess, restrictionString, fromGroup = groups.checkInheritedAccess( ULib.ucl.groups[group].inherit_from, access )
+				foundAccess, fromGroup, restrictionString = groups.checkInheritedAccess( ULib.ucl.groups[group].inherit_from, access )
 				if foundAccess then
 					line.Columns[2]:SetDisabled( true )
 				else
@@ -558,9 +563,9 @@ end
 function groups.groupHasAccess( group, access )
 	for k, v in pairs( ULib.ucl.groups[group].allow ) do
 		if v == access then --This means there is no restriction tag
-			return true, ""
+			return true, group, ""
 		elseif k == access then
-			return true, v
+			return true, group, v
 		end
 	end
 	return false, ""
@@ -568,9 +573,9 @@ end
 
 function groups.checkInheritedAccess( group, access )
 	if ULib.ucl.groups[group] then
-		local foundAccess, restrictionString = groups.groupHasAccess( group, access )
+		local foundAccess, fromGroup, restrictionString = groups.groupHasAccess( group, access )
 		if foundAccess then
-			return foundAccess, restrictionString, group
+			return foundAccess, group, restrictionString
 		else
 			return groups.checkInheritedAccess( ULib.ucl.groups[group].inherit_from, access )
 		end
@@ -578,6 +583,58 @@ function groups.checkInheritedAccess( group, access )
 		return false, "", ""
 	end
 end
+
+---------------------------------------------
+------Groups Panel 5 (Restriction Management)
+---------------------------------------------
+groups.pnlG5 = xlib.makepanel{ y=130, w=200, h=335, parent=groups.clippanelc }
+groups.pnlG5:SetVisible( false )
+function groups.pnlG5:Open( cmd, accessStr )
+	if self:IsVisible() then
+		self:Close()
+	end
+	xlib.addToAnimQueue( groups.populateRestrictionArgs, cmd, accessStr )
+	self:openAnim()
+end
+function groups.pnlG5:Close()
+	if self:IsVisible() then
+		self:closeAnim()
+	end
+end
+groups.restrictArg = xlib.makecheckbox{ x=5, w=190, y=20, label="", textcolor=color_black, parent=groups.pnlG5 }
+groups.rArgList = xlib.makepanellist{ x=5, y=40, w=190, h=290, parent=groups.pnlG5 }
+
+function groups.populateRestrictionArgs( cmd, accessStr )
+	groups.rArgList:Clear()
+	groups.restrictArg:SetText( "Restrict " .. cmd )
+	groups.restrictArg:SizeToContents()
+	
+	if ULib.cmds.translatedCmds[cmd].args[2].type == ULib.cmds.PlayerArg or
+	   ULib.cmds.translatedCmds[cmd].args[2].type == ULib.cmds.PlayersArg then
+			groups.rArgList:AddItem( xlib.makecheckbox{ label="Ignore can_target" } )
+	end
+	
+	for i, arg in ipairs( ULib.cmds.translatedCmds[cmd].args ) do
+		if not arg.type.invisible then
+			local outPanel = xlib.makepanel{}
+			if arg.type == ULib.cmds.PlayerArg or arg.type == ULib.cmds.PlayersArg then
+				outPanel:SetHeight( 30 )
+				xlib.makelabel{ x=5, y=10, label="PlayerArg", parent=outPanel }
+			elseif arg.type == ULib.cmds.NumArg then
+				outPanel:SetHeight( 60 )
+				xlib.makelabel{ x=5, y=10, label="NumArg", parent=outPanel }
+			elseif arg.type == ULib.cmds.BoolArg then
+				outPanel:SetHeight( 30 )
+				xlib.makelabel{ x=5, y=10, label="BoolArg", parent=outPanel }
+			elseif arg.type == ULib.cmds.StringArg then
+				outPanel:SetHeight( 100 )
+				xlib.makelabel{ x=5, y=10, label="StringArg", parent=outPanel }
+			end
+			groups.rArgList:AddItem( outPanel )
+		end
+	end
+end
+
 
 
 ---Data refresh/GUI functions
@@ -665,20 +722,39 @@ function groups.updateAccessPanel()
 
 	local function processAccess( access, data )
 		local catname = data.cat or "Uncategorized"
-		if catname == "Command" then catname = "Cmds - " .. ULib.cmds.translatedCmds[access].category end
+		if catname == "Command" then
+			if ULib.cmds.translatedCmds[access] and ULib.cmds.translatedCmds[access].category then
+				catname = "Cmds - " .. ULib.cmds.translatedCmds[access].category
+			else
+				catname = "Cmds - Uncategorized"
+			end
+		end
 		groups.access_expandedcat = nil
 		
 		if not groups.access_cats[catname] then
 			--Make a new category
 			local list = xlib.makelistview{ headerheight=0, multiselect=false, h=136 }
-			list.OnRowRightClick = function( self, LineID, line )
-				groups.showAccessOptions( line )
-			end
 			list:AddColumn( "Tag" )
 			local col = list:AddColumn( "Checkbox" )
 			col:SetMaxWidth( 15 )
 			col:SetMinWidth( 15 )
-			list.OnRowSelected = function( self, LineID ) groups.accessSelected( self, LineID ) end
+			list.OnRowRightClick = function( self, LineID, line )
+				groups.showAccessOptions( line )
+			end
+			list.OnRowSelected = function( self, LineID, Line )
+				groups.accessSelected( self, LineID )
+				local cmd = Line:GetColumnText(1)
+				if ULib.cmds.translatedCmds[cmd] and #ULib.cmds.translatedCmds[cmd].args > 1 then
+					if groups.selcmd == cmd then return end
+					groups.selcmd = cmd
+					groups.pnlG5:Open( cmd, Line:GetColumnText(3) )
+					xlib.animQueue_start()
+				else
+					groups.selcmd = nil
+					groups.pnlG5:Close()
+					xlib.animQueue_start()
+				end
+			end
 			--Hijack the DataLayout function to manually set the position of the checkboxes.
 			local tempfunc = list.DataLayout
 			list.DataLayout = function( list )
@@ -833,6 +909,15 @@ end
 groups.pnlG4.closeAnim = function( self )
 	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=5, starty=0, endx=-210, endy=0, setvisible=false } )
 	xlib.addToAnimQueue( groups.clippanelb.SetVisible, groups.clippanelb, false )
+end
+
+groups.pnlG5.openAnim = function( self )
+	xlib.addToAnimQueue( groups.clippanelc.SetVisible, groups.clippanelc, true )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=-210, starty=0, endx=5, endy=0, setvisible=true } )
+end
+groups.pnlG5.closeAnim = function( self )
+	xlib.addToAnimQueue( "pnlSlide", { panel=self, startx=5, starty=0, endx=-210, endy=0, setvisible=false } )
+	xlib.addToAnimQueue( groups.clippanelc.SetVisible, groups.clippanelc, false )
 end
 --------------
 

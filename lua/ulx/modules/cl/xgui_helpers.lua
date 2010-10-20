@@ -331,6 +331,7 @@ local function xgui_helpers()
 		
 		local defvalue = arg.min
 		if table.HasValue( arg, ULib.cmds.optional ) then defvalue = arg.default end
+		if not defvalue then defvalue = 0 end --No default was set for this command, so we'll use 0.
 		
 		local maxvalue = restrictions.max
 		if restrictions.max == nil and defvalue > 100 then maxvalue = defvalue end
