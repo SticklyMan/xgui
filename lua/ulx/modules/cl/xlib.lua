@@ -243,14 +243,14 @@ local function xlib_init()
 			if t.isNumberConvar then --This is for convar settings stored via numbers (like ulx_rslotsMode)
 				if t.numOffset == nil then t.numOffset = 1 end
 				local cvar = GetConVar( t.repconvar ):GetInt()
-				if cvar + t.numOffset <= #pnl.Choices and cvar + t.numOffset > 0 then
+				if tonumber( new_val ) and cvar + t.numOffset <= #pnl.Choices and cvar + t.numOffset > 0 then
 					pnl:ChooseOptionID( cvar + t.numOffset )
 				else
 					pnl:SetText( "Invalid Convar Value" )
 				end
 				function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 					if cl_cvar == t.repconvar then
-						if new_val + t.numOffset <= #pnl.Choices and new_val + t.numOffset > 0 then
+						if tonumber( new_val ) and new_val + t.numOffset <= #pnl.Choices and new_val + t.numOffset > 0 then
 							pnl:ChooseOptionID( new_val + t.numOffset )
 						else
 							pnl:SetText( "Invalid Convar Value" )

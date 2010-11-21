@@ -38,7 +38,7 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	xlib.makelabel{ x=5, y=-10, label="\nULX Admin Mod :: XGUI - by Stickly Man!  |  ver 10.10.19  |  ULX ver " .. ulx.version .. " SVN  |  ULib ver " .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	xlib.makelabel{ x=5, y=-10, label="\nULX Admin Mod :: XGUI - by Stickly Man! :: v10.11.20  |  ULX v" .. ulx.version .. (ulx.revision > 0 and " SVN " .. ulx.revision or " Release") .. "  |  ULib v" .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = xlib.makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()

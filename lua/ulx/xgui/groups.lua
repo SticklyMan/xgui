@@ -57,7 +57,7 @@ groups.clippanela = xlib.makepanel{ x=5, y=30, w=580, h=335, parent=groups }
 groups.clippanela.Paint = function( self ) end
 groups.clippanelb = xlib.makepanel{ x=175, y=30, w=410, h=335, visible=false, parent=groups }
 groups.clippanelb.Paint = function( self ) end
-groups.clippanelc = xlib.makepanel{ x=380, y=30, w=210, h=335, parent=groups }
+groups.clippanelc = xlib.makepanel{ x=380, y=30, w=210, h=335, visible=false, parent=groups }
 groups.clippanelc.Paint = function( self ) end
 
 -----------------------------------
@@ -529,7 +529,7 @@ function groups.pnlG4:Close()
 	end
 	self:closeAnim()
 end
-xlib.makelabel{ x=5, y=5, label="Has access to:  (Disabled = inherited)", textcolor=color_black, parent=groups.pnlG4 }
+xlib.makelabel{ x=5, y=5, label="Has access to:  (grayed = inherited)", textcolor=color_black, parent=groups.pnlG4 }
 groups.accesses = xlib.makepanellist{ x=5, y=20, w=190, h=310, padding=1, spacing=1, parent=groups.pnlG4 }
 
 function groups.populateAccesses()
@@ -601,8 +601,8 @@ function groups.pnlG5:Close()
 		self:closeAnim()
 	end
 end
-groups.restrictArg = xlib.makecheckbox{ x=5, w=190, y=20, label="", textcolor=color_black, parent=groups.pnlG5 }
-groups.rArgList = xlib.makepanellist{ x=5, y=40, w=190, h=290, parent=groups.pnlG5 }
+groups.restrictArg = xlib.makecheckbox{ x=5, w=190, y=5, label="", textcolor=color_black, parent=groups.pnlG5 }
+groups.rArgList = xlib.makepanellist{ x=5, y=25, w=190, h=290, parent=groups.pnlG5 }
 
 function groups.populateRestrictionArgs( cmd, accessStr )
 	groups.rArgList:Clear()
@@ -615,20 +615,23 @@ function groups.populateRestrictionArgs( cmd, accessStr )
 	end
 	
 	for i, arg in ipairs( ULib.cmds.translatedCmds[cmd].args ) do
+		--if not arg.type.invisible and not arg.invisible then
 		if not arg.type.invisible then
 			local outPanel = xlib.makepanel{}
 			if arg.type == ULib.cmds.PlayerArg or arg.type == ULib.cmds.PlayersArg then
-				outPanel:SetHeight( 30 )
-				xlib.makelabel{ x=5, y=10, label="PlayerArg", parent=outPanel }
+				outPanel:SetHeight( 50 )
+				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "player(s)"), parent=outPanel }
+				xlib.maketextbox{ x=25, y=25, w=125, parent=outPanel }
 			elseif arg.type == ULib.cmds.NumArg then
 				outPanel:SetHeight( 60 )
-				xlib.makelabel{ x=5, y=10, label="NumArg", parent=outPanel }
+				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "number value"), parent=outPanel }
 			elseif arg.type == ULib.cmds.BoolArg then
-				outPanel:SetHeight( 30 )
-				xlib.makelabel{ x=5, y=10, label="BoolArg", parent=outPanel }
+				outPanel:SetHeight( 50 )
+				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "bool value"), parent=outPanel }
+				xlib.makecheckbox{ x=15, y=25, label="Must be this value", parent=outPanel }
 			elseif arg.type == ULib.cmds.StringArg then
 				outPanel:SetHeight( 100 )
-				xlib.makelabel{ x=5, y=10, label="StringArg", parent=outPanel }
+				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "string value") .. " (whitelist)", parent=outPanel }
 			end
 			groups.rArgList:AddItem( outPanel )
 		end
