@@ -134,7 +134,7 @@ function xgui_bans.ShowBanDetailsWindow( ID )
 	xlib.makelabel{ x=41, y=185, label="Reason:", parent=xgui_detailswindow }
 	xlib.makelabel{ x=13, y=205, label="Last Updated:", parent=xgui_detailswindow }
 	xlib.makelabel{ x=21, y=225, label="Updated by:", parent=xgui_detailswindow }
-	xlib.makelabel{ x=90, y=30, label=( xgui_temp and xgui.data.bans[ID].name or "<Unknown>" ), parent=xgui_detailswindow }
+	xlib.makelabel{ x=90, y=30, label=( xgui.data.bans[ID].name or "<Unknown>" ), parent=xgui_detailswindow }
 	xlib.makelabel{ x=90, y=50, label=ID, parent=xgui_detailswindow }
 	if xgui.data.bans[ID].time then xlib.makelabel{ x=90, y=70, label=os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].time ), parent=xgui_detailswindow } end
 	xlib.makelabel{ x=90, y=90, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "Never" or os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].unban ) ), parent=xgui_detailswindow }
@@ -242,10 +242,10 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 						break
 					end
 				end
-				if not isOnline then
-					RunConsoleCommand( "xgui", "updateBanName", steamID:GetValue(), ( name:GetValue() ~= "" and name:GetValue() or nil ), "true" )
-				end
 				RunConsoleCommand( "ulx", "banid", steamID:GetValue(), calctime, reason:GetValue() )
+				if not isOnline then
+					RunConsoleCommand( "xgui", "updateBan", steamID:GetValue(), "", "", ( name:GetValue() ~= "" and name:GetValue() or nil ) )
+				end
 				xgui_banwindow:Remove()
 			else
 				for k, v in ipairs( player.GetAll() ) do
@@ -254,7 +254,8 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 						xgui_banwindow:Remove()
 						break
 					end
-				end
+					Derma_Message( "Invalid SteamID or player name!" )
+				end				
 			end
 		end
 		
