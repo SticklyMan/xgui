@@ -628,7 +628,7 @@ function groups.populateRestrictionArgs( cmd, accessStr )
 			elseif arg.type == ULib.cmds.BoolArg then
 				outPanel:SetHeight( 50 )
 				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "bool value"), parent=outPanel }
-				xlib.makecheckbox{ x=15, y=25, label="Must be this value", parent=outPanel }
+				xlib.makecheckbox{ x=15, y=25, label="Must be 1", parent=outPanel }
 			elseif arg.type == ULib.cmds.StringArg then
 				outPanel:SetHeight( 100 )
 				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "string value") .. " (whitelist)", parent=outPanel }
@@ -790,7 +790,7 @@ function groups.updateAccessPanel()
 						end
 					end
 					groups.access_expandedcat = self:GetParent()
-					return 
+					return
 				end
 				return self:GetParent():OnMousePressed( mcode )
 			end

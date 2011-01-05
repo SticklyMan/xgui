@@ -15,7 +15,13 @@ local function xlib_init()
 		pnl:SetValue( t.value or 0 )
 		if t.convar then pnl:SetConVar( t.convar ) end
 		if t.textcolor then pnl:SetTextColor( t.textcolor ) end
-		if t.tooltip then pnl:SetTooltip( t.tooltip ) end
+		if not t.tooltipwidth then t.tooltipwidth = 250 end
+		if t.tooltip then
+			if t.tooltipwidth ~= 0 then
+				t.tooltip = xlib.wordWrap( t.tooltip, t.tooltipwidth, "MenuItem" )
+			end
+			pnl:SetToolTip( t.tooltip )
+		end
 		if t.disabled then pnl:SetDisabled( t.disabled ) end
 		--Replicated Convar Updating
 		if t.repconvar then
@@ -42,10 +48,23 @@ local function xlib_init()
 		local pnl = vgui.Create( "DLabel", t.parent )
 		pnl:SetPos( t.x, t.y )
 		pnl:SetText( t.label or "" )
-		pnl:SetToolTip( t.tooltip )
+		if not t.tooltipwidth then t.tooltipwidth = 250 end
+		if t.tooltip then
+			if t.tooltipwidth ~= 0 then
+				t.tooltip = xlib.wordWrap( t.tooltip, t.tooltipwidth, "MenuItem" )
+			end
+			pnl:SetToolTip( t.tooltip )
+			pnl:SetMouseInputEnabled( true )
+		end
+
 		if t.font then pnl:SetFont( t.font ) end
 		pnl:SizeToContents()
-		if t.w then pnl:SetWidth( t.w ) end
+		if t.w then
+			pnl:SetWidth( t.w )
+			if t.wordwrap then
+				pnl:SetText( xlib.wordWrap( t.label, t.w, t.font or "default" ) )
+			end
+		end
 		if t.h then pnl:SetHeight( t.h ) end
 		if t.textcolor then pnl:SetTextColor( t.textcolor ) end
 		return pnl
@@ -103,7 +122,13 @@ local function xlib_init()
 		if t.text then pnl:SetText( t.text ) end
 		if t.enableinput then pnl:SetEnabled( t.enableinput ) end
 		pnl.selectAll = t.selectall
-		pnl:SetToolTip( t.tooltip )
+		if not t.tooltipwidth then t.tooltipwidth = 250 end
+		if t.tooltip then
+			if t.tooltipwidth ~= 0 then
+				t.tooltip = xlib.wordWrap( t.tooltip, t.tooltipwidth, "MenuItem" )
+			end
+			pnl:SetToolTip( t.tooltip )
+		end
 
 		pnl.enabled = true
 		function pnl:SetDisabled( val ) --Do some funky stuff to simulate enabling/disabling of a textbox
@@ -152,6 +177,31 @@ local function xlib_init()
 		pnl:SetLabel( t.label or "" )
 		pnl:SetContents( t.contents )
 		if t.expanded ~= nil then pnl:SetExpanded( t.expanded ) end
+		if t.checkbox then
+			pnl.checkBox = vgui.Create( "DCheckBox", pnl.Header )
+			pnl.checkBox:SetPos( t.w-18, 5 )
+			pnl.checkBox:SetChecked( pnl:GetExpanded() )
+			function pnl.checkBox:DoClick()
+				self:Toggle()
+				pnl:Toggle()
+			end
+			function pnl.Header:OnMousePressed( mcode )
+				if ( mcode == MOUSE_LEFT ) then
+					self:GetParent():Toggle()
+					self:GetParent().checkBox:Toggle()
+				return end
+				return self:GetParent():OnMousePressed( mcode )
+			end
+		end
+
+		function pnl:SetOpen( bVal )
+			if not self:GetExpanded() and bVal then
+				pnl.Header:OnMousePressed( MOUSE_LEFT ) --Call the mouse function so it properly toggles the checkbox state (if it exists)
+			elseif self:GetExpanded() and not bVal then
+				pnl.Header:OnMousePressed( MOUSE_LEFT )
+			end
+		end
+
 		return pnl
 	end
 
@@ -193,7 +243,14 @@ local function xlib_init()
 			end
 		end
 
-		pnl:SetToolTip( t.tooltip )
+		if not t.tooltipwidth then t.tooltipwidth = 250 end
+		if t.tooltip then
+			if t.tooltipwidth ~= 0 then
+				t.tooltip = xlib.wordWrap( t.tooltip, t.tooltipwidth, "MenuItem" )
+			end
+			pnl:SetToolTip( t.tooltip )
+		end
+
 		if t.choices then
 			for i, v in ipairs( t.choices ) do
 				pnl:AddChoice( v )
@@ -209,6 +266,7 @@ local function xlib_init()
 			self.DropButton:SetMouseInputEnabled( not val )
 			self:SetMouseInputEnabled( not val )
 		end
+		if t.disabled then pnl:SetDisabled( t.disabled ) end
 
 		--Add support for Spacers
 		function pnl:OpenMenu( pControlOpener ) --Garrys function with no comments, just adding a few things.
@@ -284,6 +342,12 @@ local function xlib_init()
 		return pnl
 	end
 
+	--TODO: Remove this when using not garry's color thingy
+	CreateClientConVar( "colour_r", 0, false, false )
+	CreateClientConVar( "colour_g", 0, false, false )
+	CreateClientConVar( "colour_b", 0, false, false )
+	CreateClientConVar( "colour_a", 0, false, false )
+	
 	--If we aren't in the sandbox gamemode, then "CtrlColor" isn't included-- Don't see anything wrong with including it here!
 	if gmod.GetGamemode().Name ~= "Sandbox" then
 		include( 'sandbox/gamemode/spawnmenu/controls/CtrlColor.lua' )
@@ -329,6 +393,25 @@ local function xlib_init()
 		return pnl
 	end
 
+	--Thanks to Megiddo for this code! :D
+	function xlib.wordWrap( text, width, font )
+		surface.SetFont( font )
+		local output = ""
+		local pos_start, pos_end = 1, 1
+		while true do
+			local begin, stop = text:find( "%s+", pos_end + 1 )
+			if begin == nil then
+				output = output .. text:sub( pos_start ):Trim()
+				break
+			elseif (surface.GetTextSize( text:sub( pos_start, begin ):Trim() ) > width and pos_end - pos_start > 0) then
+				output = output .. text:sub( pos_start, pos_end ):Trim() .. "\n"
+				pos_start = pos_end + 1
+			end
+			pos_end = stop
+		end
+		return output
+	end
+	
 	--Includes Garry's ever-so-awesome progress bar!
 	include( "menu/ProgressBar.lua" )
 	function xlib.makeprogressbar( t )
@@ -365,7 +448,13 @@ local function xlib_init()
 		pnl:SetMinMax( t.min or 0, t.max or 100 )
 		pnl:SetDecimals( t.decimal or 0 )
 		if t.convar then pnl:SetConVar( t.convar ) end
-		pnl:SetTooltip( t.tooltip )
+		if not t.tooltipwidth then t.tooltipwidth = 250 end
+		if t.tooltip then
+			if t.tooltipwidth ~= 0 then
+				t.tooltip = xlib.wordWrap( t.tooltip, t.tooltipwidth, "MenuItem" )
+			end
+			pnl:SetToolTip( t.tooltip )
+		end
 		pnl:SetPos( t.x, t.y )
 		pnl:SetWidth( t.w )
 		pnl:SizeToContents()

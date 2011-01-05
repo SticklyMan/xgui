@@ -12,7 +12,7 @@ local function xgui_init( authedply )
 	RunConsoleCommand( "_xgui", "getInstalled" )
 
 	--Data storing relevant information retrieved from server.
-	xgui.data = { sbans={}, bans={}, users={}, adverts={}, gimps={}, gamemodes={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
+	xgui.data = { sbans={}, bans={}, users={}, adverts={}, gimps={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
 	
 	--Set up XGUI clientside settings, load settings from file if it exists
 	xgui.settings = {}
@@ -26,7 +26,7 @@ local function xgui_init( authedply )
 	if not xgui.settings.settingOrder then xgui.settings.settingOrder = { "Sandbox", "Server", "XGUI" } end
 	if not xgui.settings.animTime then xgui.settings.animTime = 0.22 else xgui.settings.animTime = tonumber( xgui.settings.animTime ) end
 	if not xgui.settings.infoColor then xgui.settings.infoColor = Color(100,255,255,128) end
-	if not xgui.settings.showLoadMsgs then xgui.settings.showLoadMsgs = true else xgui.settings.showLoadMsgs = tobool( xgui.settings.showLoadMsgs ) end
+	if not xgui.settings.showLoadMsgs then xgui.settings.showLoadMsgs = true else xgui.settings.showLoadMsgs = ULib.toBool( xgui.settings.showLoadMsgs ) end
 	if not xgui.settings.skin then xgui.settings.skin = "Default" end	
 	
 	--Initiate the base window (see xgui_helpers.lua for code)
@@ -38,8 +38,8 @@ local function xgui_init( authedply )
 	xgui.infobar.Paint = function( self )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
-	local version_type = ulx.revision and ( ulx.revision > 0 and " SVN " .. ulx.revision or " Release") or ("N/A")
-	xlib.makelabel{ x=5, y=-10, label="\nULX Admin Mod :: XGUI - by Stickly Man! :: v10.12.25  |  ULX v" .. ulx.version .. version_type .. "  |  ULib v" .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	local version_type = ulx.revision and ( ulx.revision > 0 and " SVN " .. ulx.revision or " Release") or (" N/A")
+	xlib.makelabel{ x=5, y=-10, label="\nULX Admin Mod :: XGUI - by Stickly Man! :: v11.1.4  |  ULX v" .. ulx.version .. version_type .. "  |  ULib v" .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = xlib.makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()

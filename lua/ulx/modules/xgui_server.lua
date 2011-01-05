@@ -87,12 +87,10 @@ function xgui.init()
 
 	--Get the list of known Sandbox Cvar Limits
 	function xgui.cvarcallback( contents, size )
-		if size < 2900 then --This means that we probably got a 404 or other HTTP error, in other words, the server is down!
-			xgui.cvarFileStatus = 0
-		else
+		if size > 2900 then --This means that we didn't a 404, HTTP error, or the server is down!
 			file.Write( "ulx/sbox_limits.txt", contents )
-			xgui.cvarFileStatus = 1
 		end
+		xgui.processCvars()
 	end
 	http.Get( "http://ulyssesmod.net/xgui/sbox_cvars.txt", "", xgui.cvarcallback )
 
@@ -103,6 +101,7 @@ function xgui.init()
 		if ULib.isSandbox() then
 			local curgroup
 			local f = file.Read( "ulx/sbox_limits.txt" )
+			if f == nil then Msg( "XGUI ERROR: Sandbox Cvar limits file was needed but could not be found!\n" ) return end
 			local lines = string.Explode( "\n", f )
 			for i,v in ipairs( lines ) do
 				if v:sub( 1,1 ) ~= ";" then
@@ -120,16 +119,8 @@ function xgui.init()
 					end
 				end
 			end
-			if xgui.sendLimits then
-				for _, v in ipairs( player.GetAll() ) do
-					xgui.sendData( v, {[1]="sboxlimits"} )
-				end
-				xgui.sendLimits = nil
-			end
 		end
-		hook.Remove( "ULibLocalPlayerReady", "xgui_processCvars" )
 	end
-	hook.Add( "ULibLocalPlayerReady", "xgui_processCvars", xgui.processCvars )
 	
 	function xgui.splitbans()
 		xgui.sourcebans = {}
@@ -184,7 +175,7 @@ function xgui.init()
 	
 	xgui.DATA_TYPES = { "votemaps", "sboxlimits", "adverts", "gimps", "users", "teams", "accesses", "bans", "sbans", "playermodels" } 
 	
-	--Function hub! All server functions can be called via concommand xgui!
+	--Function hub! These server functions can be called via concommand xgui!
 	function xgui.cmd( ply, func, args )
 		local branch=args[1]
 		table.remove( args, 1 )
@@ -197,11 +188,11 @@ function xgui.init()
 		elseif branch == "removeAdvertGroup" then xgui.removeAdvertGroup( ply, args )
 		elseif branch == "renameAdvertGroup" then xgui.renameAdvertGroup( ply, args )
 		elseif branch == "updateAdvert" then xgui.updateAdvert( ply, args )
+		elseif branch == "moveAdvert" then xgui.moveAdvert( ply, args )
 		elseif branch == "addVotemaps" then xgui.addVotemaps( ply, args )
 		elseif branch == "removeVotemaps" then xgui.removeVotemaps( ply, args )
 		elseif branch == "getVetoState" then xgui.getVetoState( ply, args )
 		elseif branch == "updateBan" then xgui.updateBan( ply, args )
-		elseif branch == "refreshBans" then ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" )
 		elseif branch == "updateTeamValue" then xgui.updateTeamValue( ply, args )
 		elseif branch == "createTeam" then xgui.createTeam( ply, args )
 		elseif branch == "removeTeam" then xgui.removeTeam( ply, args )
@@ -254,12 +245,8 @@ function xgui.init()
 				end
 			elseif u == "sboxlimits" then --Update Sandbox Cvar Limits
 				if ply:query( "xgui_gmsettings" ) then
-					if xgui.sboxLimits ~= nil then
-						if ULib.isSandbox() then
-							table.insert( chunks, { xgui.sboxLimits, "sboxlimits" } )
-						end
-					else
-						xgui.sendLimits = true --The sboxlimits haven't arrived yet, raise a flag for them to be sent when they do.
+					if ULib.isSandbox() then
+						table.insert( chunks, { xgui.sboxLimits, "sboxlimits" } )
 					end
 				end
 			elseif u == "playermodels" then
@@ -294,15 +281,17 @@ function xgui.init()
 				if ply:query( "xgui_managebans" ) then
 					--Send 25 sbans per chunk
 					--Since source doesn't save any bans that have a timelimit, the only valuable information we need per ban is the STEAMID.
-					local i = 1
+					local ind = 1
+					local c = 1
 					local t = {}
 					for ID, _ in pairs( xgui.sourcebans ) do
-						table.insert( t, ID )
-						i = i + 1
-						if i > 25 then 
+						table.insert( t, ind, ID )
+						c = c + 1
+						ind = ind + 1
+						if c > 25 then 
 							table.insert( chunks, { t, "sbans" } )
 							t = {}
-							i = 1
+							c = 1
 						end
 					end
 					table.insert( chunks, { t, "sbans" } )
@@ -392,74 +381,53 @@ function xgui.init()
 		local orig_file = file.Read( "ulx/adverts.txt" )
 		local comment = xgui.getCommentHeader( orig_file )
 		local new_file = comment
-		
+
 		for group_name, group_data in pairs( ulx.adverts ) do
 			local output = ""
 			for i, data in ipairs( group_data ) do
-				if not data.color then -- Must be a tsay advert
-					output = output .. string.format( '%q %q\n', data.message, data.rpt )
+				if not data.len then -- Must be a tsay advert
+					output = output .. string.format( '{\n\t"text" %q\n\t"red" %q\n\t"green" %q\n\t"blue" %q\n\t"time" %q\n}\n',
+						data.message, data.color.r, data.color.g, data.color.b, data.rpt )
 				else -- Must be a csay advert
-					output = output .. string.format( '%q\n{\n\t"red" %q\n\t"green" %q\n\t"blue" %q\n\t"time_on_screen" %q\n\t"time" %q\n}\n',
+					output = output .. string.format( '{\n\t"text" %q\n\t"red" %q\n\t"green" %q\n\t"blue" %q\n\t"time_on_screen" %q\n\t"time" %q\n}\n',
 						data.message, data.color.r, data.color.g, data.color.b, data.len, data.rpt )
 				end
 			end
-			
+
 			if type( group_name ) ~= "number" then
 				output = string.format( "%q\n{\n\t%s}\n", group_name, output:gsub( "\n", "\n\t" ) )
 			end
 			new_file = new_file .. output		
 		end
-		
+
 		file.Write( "ulx/adverts.txt", new_file )
 	end
 
 	function xgui.renameAdvertGroup( ply, args )
 		if ply:query( "xgui_svsettings" ) then
 			local old = args[1]
-			local isNewGroup = tobool( args[2] )
-			table.remove( args, 1 )
-			table.remove( args, 1 )
-			local new = table.concat( args, " " )
+			local new = args[2]
 			if ulx.adverts[old] then
-				if not ulx.adverts[new] then
-					for k, v in pairs( ulx.adverts[old] ) do
-						ulx.addAdvert( v.message, v.rpt, new, v.color, v.len )
-					end
-					xgui.removeAdvertGroup( ply, { old, type( k ) } )
+				for k, v in pairs( ulx.adverts[old] ) do
+					ulx.addAdvert( v.message, v.rpt, new, v.color, v.len )
 				end
+				xgui.removeAdvertGroup( ply, { old, type( k ) } )
 			end
 		end
 	end
 
+	--[1]Message, [2]Delay, [3]GroupName/number, [4]Red, [5]Green, [6]Blue, [7]Length, [8]Hold
 	function xgui.addAdvert( ply, args )
 		if ply:query( "xgui_svsettings" ) then
-			local group = nil
-			if tobool( args[1] ) then --If a new group is being created, then run special code, otherwise just add the new advert
-				local i = 1
-				while ulx.adverts["Group " .. i] do i=i+1 end
-				group = "Group " .. i
-				local old = ( args[2] == "number" ) and tonumber( args[5] ) or args[5]
-				for k, v in pairs( ulx.adverts[old] ) do
-					ulx.addAdvert( v.message, v.rpt, group, v.color, v.len )
+			if args[3] == "<No Group>" then args[3] = nil end
+			local color = { r = tonumber( args[4] ), g = tonumber( args[5] ), b = tonumber( args[6] ), a = 255 } or nil
+			ulx.addAdvert( args[1], tonumber( args[2] ), args[3], color, tonumber( args[7] ) )
+			if args[8] ~= "hold" then
+				for _, v in ipairs( player.GetAll() ) do
+					xgui.sendData( v, {[1]="adverts"} )
 				end
-				xgui.removeAdvertGroup( ply, { old, args[2] }, true )
-				--Open the clientside messagebox to rename the new group
-				if args[2] == "number" then  --Sometimes single adverts have a groupname applied to them from an old group. If one exists, display that for the suggested name.
-					ply:SendLua( "xgui.base.RenameAdvert( \"" .. group .. "\", true )" )
-				else
-					ply:SendLua( "xgui.base.RenameAdvert( \"" .. old .. "\", true )" )
-				end
-			else
-				if args[5] ~= "" then
-					group = ( args[2] == "number" ) and tonumber( args[5] ) or args[5]
-				end
+				xgui.saveAdverts()
 			end
-			local color = ( args[6]~=nil ) and { r = tonumber( args[6] ), g = tonumber( args[7] ), b = tonumber( args[8] ), a = tonumber( args[9] ) } or nil
-			ulx.addAdvert( args[3], tonumber( args[4] ), group, color, tonumber( args[10] ) )
-			for _, v in ipairs( player.GetAll() ) do
-				xgui.sendData( v, {[1]="adverts"} )
-			end
-			xgui.saveAdverts()
 		end
 	end
 
@@ -477,7 +445,9 @@ function xgui.init()
 			end
 		end
 	end
-
+	
+	--[1]Old GroupType, [2]Old GroupName, [3]Old Number (order in group)
+	--[4]New Message, [5]New Repeat, [6]New Red, [7]New Green, [8]New Blue, [9]New Length
 	function xgui.updateAdvert( ply, args )
 		if ply:query( "xgui_svsettings" ) then
 			local group = ( args[1] == "number" ) and tonumber( args[2] ) or args[2]
@@ -485,21 +455,34 @@ function xgui.init()
 			local advert = ulx.adverts[group][number]
 			advert.message = args[4]
 			advert.rpt = tonumber( args[5] )
-			advert.len = tonumber( args[6] )
-			if args[7] then
-				advert.color = { a=255, r=tonumber( args[7] ), g=tonumber( args[8] ), b=tonumber( args[9] ) }
-			else
-				advert.color = nil
-			end
+			advert.color = { a=255, r=tonumber( args[6] ), g=tonumber( args[7] ), b=tonumber( args[8] ) }
+			advert.len = tonumber( args[9] )
 			for _, v in ipairs( player.GetAll() ) do
 				xgui.sendData( v, {[1]="adverts"} )
 			end
 			xgui.saveAdverts()
 		end
 	end
-
+	
+	--[1]Old GroupType, [2]Old GroupName, [3]Old Number, [4]New Number
+	function xgui.moveAdvert( ply, args )
+		if ply:query( "xgui_svsettings" ) then
+			local group = ( args[1] == "number" ) and tonumber( args[2] ) or args[2]
+			local number = tonumber( args[3] )
+			local advert = ulx.adverts[group][number]
+			table.remove( ulx.adverts[group], args[3] )
+			table.insert( ulx.adverts[group], args[4], advert )
+			for _, v in ipairs( player.GetAll() ) do
+				xgui.sendData( v, {[1]="adverts"} )
+			end
+			xgui.saveAdverts()
+		end
+	end
+	
+	--[1]GroupName, [2]Number, [3]GroupType, [4]"Ignore"
 	function xgui.removeAdvert( ply, args, hold )
 		if ply:query( "xgui_svsettings" ) then
+			if args[4] == "hold" then hold = true end
 			local group = ( args[3] == "number" ) and tonumber( args[1] ) or args[1]
 			local number = tonumber( args[2] )
 			if number == #ulx.adverts[group] then
@@ -762,7 +745,7 @@ function xgui.init()
 			if tonumber( data.unban ) ~= 0 then
 				if tonumber( data.unban ) - os.time() <= 3600 then
 					if not timer.IsTimer( "xgui_unban" .. ID ) then
-						timer.Create( "xgui_unban" .. ID, tonumber( data.unban ) - os.time(), 1, function() timer.Destroy( "xgui_unban" .. ID ) ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx banid" ) end )
+						timer.Create( "xgui_unban" .. ID, tonumber( data.unban ) - os.time(), 1, function() ULib.refreshBans() xgui.ULXCommandCalled( nil, "ulx unban", { nil, ID } ) end )
 					end
 				end
 			end
