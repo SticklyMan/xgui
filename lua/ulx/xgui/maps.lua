@@ -1,5 +1,5 @@
 --Maps module for ULX GUI -- by Stickly Man!
---Lists maps on server, allows for map voting, changing levels, etc.
+--Lists maps on server, allows for map voting, changing levels, etc. All players may access this menu.
 
 local maps = xlib.makepanel{ parent=xgui.null }
 

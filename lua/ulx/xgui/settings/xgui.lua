@@ -1,5 +1,5 @@
 --XGUI settings module for ULX GUI -- by Stickly Man!
---Modify XGUI-based settings.
+--A settings module for modifing XGUI-based settings.
 
 local xgui_settings = xlib.makepanel{ parent=xgui.null }
 xlib.makebutton{ x=10, y=10, w=150, label="Refresh XGUI Modules", parent=xgui_settings }.DoClick=function()

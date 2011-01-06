@@ -1,5 +1,5 @@
 --Server settings module for ULX GUI -- by Stickly Man!
---Modify server and ULX based settings.
+--A settings module for modifying server and ULX based settings. Also has the base code for loading the server settings modules.
 
 local server_settings = xlib.makepanel{ parent=xgui.null }
 

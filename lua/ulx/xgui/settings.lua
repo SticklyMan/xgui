@@ -1,5 +1,5 @@
 --Settings module v2 for ULX GUI -- by Stickly Man!
---Allows changing of various settings
+--This bit of code is the base for holding the various settings modules.
 
 local settings = xlib.makepanel{ x=5, y=27, parent=xgui.null }
 

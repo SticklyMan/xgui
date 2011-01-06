@@ -1,5 +1,5 @@
 --Commands module (formerly players module) v2 for ULX GUI -- by Stickly Man!
---Handles all user-based commands, such as kick, slay, ban, etc.
+--Handles all user-executable commands, such as kick, slay, ban, etc.
 
 local cmds = xlib.makepanel{ parent=xgui.null }
 cmds.selcmd = nil

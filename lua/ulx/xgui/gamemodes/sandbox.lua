@@ -1,5 +1,5 @@
 --Sandbox settings module for ULX GUI -- by Stickly Man!
---Defines limits and sbox_ specific settings for the sandbox gamemode.
+--Defines sbox cvar limits and sandbox specific settings for the sandbox gamemode.
 
 local sbox_settings = xlib.makepanel{ parent=xgui.null }
 

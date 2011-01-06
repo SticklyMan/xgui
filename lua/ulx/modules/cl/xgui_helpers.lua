@@ -81,7 +81,7 @@ local function xgui_helpers()
 	
 	function xlibAnimation:Start( Length, Data )
 		self.startFunc( Data )
-		if ( Length == 0 ) then 
+		if ( Length == 0 ) then
 			self.endFunc( Data )
 			xlib.animQueue_call()
 		else
