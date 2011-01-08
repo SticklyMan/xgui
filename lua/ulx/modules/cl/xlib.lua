@@ -28,7 +28,7 @@ local function xlib_init()
 			xlib.checkRepCvarCreated( t.repconvar )
 			pnl:SetValue( GetConVar( t.repconvar ):GetBool() )
 			function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-				if cl_cvar == t.repconvar then
+				if cl_cvar == t.repconvar:lower() then
 					pnl:SetValue( new_val )
 				end
 			end
@@ -142,7 +142,7 @@ local function xlib_init()
 			xlib.checkRepCvarCreated( t.repconvar )
 			pnl:SetValue( GetConVar( t.repconvar ):GetString() )
 			function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-				if cl_cvar == t.repconvar then
+				if cl_cvar == t.repconvar:lower() then
 					pnl:SetValue( new_val )
 				end
 			end
@@ -307,7 +307,7 @@ local function xlib_init()
 					pnl:SetText( "Invalid Convar Value" )
 				end
 				function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
+					if cl_cvar == t.repconvar:lower() then
 						if tonumber( new_val ) and new_val + t.numOffset <= #pnl.Choices and new_val + t.numOffset > 0 then
 							pnl:ChooseOptionID( new_val + t.numOffset )
 						else
@@ -322,7 +322,7 @@ local function xlib_init()
 			else  --Otherwise, use each choice as a string for the convar
 				pnl:SetText( GetConVar( t.repconvar ):GetString() )
 				function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-					if cl_cvar == t.repconvar then
+					if cl_cvar == t.repconvar:lower() then
 						pnl:SetText( new_val )
 					end
 				end
@@ -430,7 +430,7 @@ local function xlib_init()
 
 	function xlib.checkRepCvarCreated( cvar )
 		if GetConVar( cvar ) == nil then
-			CreateClientConVar( cvar, 0, false, false ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
+			CreateClientConVar( cvar:lower(), 0, false, false ) --Replicated cvar hasn't been created via ULib. Create a temporary one to prevent errors
 		end
 	end
 
@@ -546,7 +546,7 @@ local function xlib_init()
 			xlib.checkRepCvarCreated( t.repconvar )
 			pnl:SetValue( GetConVar( t.repconvar ):GetFloat() )
 			function pnl.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-				if cl_cvar == t.repconvar then
+				if cl_cvar == t.repconvar:lower() then
 					pnl:SetValue( new_val )
 				end
 			end

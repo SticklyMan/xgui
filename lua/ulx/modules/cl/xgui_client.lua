@@ -3,7 +3,7 @@ xgui = {}
 --Set up a table for storing third party modules and information
 xgui.modules = { tab={}, setting={}, svsetting={} }
 --Set up various hooks modules can "hook" into. 
-xgui.hook = { onUnban={}, updateBan={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, sboxlimits={}, teams={}, playermodels={}, accesses={} }
+xgui.hook = { onUnban={}, updateBan={}, onProcessModules={}, onOpen={}, sbans={}, bans={}, users={}, adverts={}, gimps={}, maps={}, votemaps={}, sboxlimits={}, banreasons={}, teams={}, playermodels={}, accesses={} }
 
 local function xgui_init( authedply )
 	if authedply ~= LocalPlayer() then return end
@@ -39,7 +39,7 @@ local function xgui_init( authedply )
 		draw.RoundedBoxEx( 4, 0, 1, 580, 20, xgui.settings.infoColor, false, false, true, true )
 	end
 	local version_type = ulx.revision and ( ulx.revision > 0 and " SVN " .. ulx.revision or " Release") or (" N/A")
-	xlib.makelabel{ x=5, y=-10, label="\nULX Admin Mod :: XGUI - by Stickly Man! :: v11.1.4  |  ULX v" .. ulx.version .. version_type .. "  |  ULib v" .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
+	xlib.makelabel{ x=5, y=-10, label="\nULX Admin Mod :: XGUI - by Stickly Man! :: v11.1.8  |  ULX v" .. ulx.version .. version_type .. "  |  ULib v" .. ULib.VERSION .. " SVN", textcolor=color_black, parent=xgui.infobar }:NoClipping( true )
 	xgui.thetime = xlib.makelabel{ x=515, y=-10, label="", textcolor=color_black, parent=xgui.infobar }
 	xgui.thetime:NoClipping( true )
 	xgui.thetime.check = function()
@@ -406,8 +406,12 @@ end
 function xgui.getChunk( data, curtable )
 	if curtable == "votemaps" then --Since ULX uses autocomplete for it's votemap list, we need to update its table of votemaps
 		ulx.populateClVotemaps( data )
+	elseif curtable == "banreasons" then
+		ulx.populateKickReasons( data )
 	else
-		table.Merge( xgui.data[curtable], data )
+		if data then
+			table.Merge( xgui.data[curtable], data )
+		end
 	end
 	xgui.callRefresh( curtable, data )
 	xgui.chunkbox:Progress( curtable )

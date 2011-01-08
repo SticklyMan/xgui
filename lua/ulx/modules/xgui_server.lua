@@ -119,6 +119,9 @@ function xgui.init()
 					end
 				end
 			end
+			for k,v in pairs( player.GetAll() ) do
+				xgui.sendData( v, {[1]="sboxlimits"} )
+			end
 		end
 	end
 	
@@ -173,7 +176,7 @@ function xgui.init()
 		xgui.accesses[k].cat = v
 	end
 	
-	xgui.DATA_TYPES = { "votemaps", "sboxlimits", "adverts", "gimps", "users", "teams", "accesses", "bans", "sbans", "playermodels" } 
+	xgui.DATA_TYPES = { "votemaps", "sboxlimits", "adverts", "gimps", "banreasons", "users", "teams", "accesses", "bans", "sbans", "playermodels" } 
 	
 	--Function hub! These server functions can be called via concommand xgui!
 	function xgui.cmd( ply, func, args )
@@ -183,6 +186,8 @@ function xgui.init()
 		elseif branch == "setinheritance" then xgui.setInheritance( ply, args )
 		elseif branch == "addGimp" then xgui.addGimp( ply, args )
 		elseif branch == "removeGimp" then xgui.removeGimp( ply, args )
+		elseif branch == "addBanReason" then xgui.addBanReason( ply, args )
+		elseif branch == "removeBanReason" then xgui.removeBanReason( ply, args )
 		elseif branch == "addAdvert" then xgui.addAdvert( ply, args )
 		elseif branch == "removeAdvert" then xgui.removeAdvert( ply, args )
 		elseif branch == "removeAdvertGroup" then xgui.removeAdvertGroup( ply, args )
@@ -234,6 +239,10 @@ function xgui.init()
 			elseif u == "gimps" then --Update GimpSays
 				if ply:query( "xgui_svsettings" ) then
 					table.insert( chunks, { ulx.gimpSays, "gimps" } )
+				end	
+			elseif u == "banreasons" then --Update Kick/Ban Reasons
+				if ply:query( "xgui_svsettings" ) then
+					table.insert( chunks, { ulx.common_kick_reasons, "banreasons" } )
 				end
 			elseif u == "adverts" then --Update Adverts
 				if ply:query( "xgui_svsettings" ) then
@@ -377,6 +386,48 @@ function xgui.init()
 		file.Write( "ulx/gimps.txt", new_file )
 	end
 
+	function xgui.addBanReason( ply, args )
+		if ply:query( "xgui_svsettings" ) then
+			ulx.addKickReason( args[1] )
+			for _, v in ipairs( player.GetAll() ) do
+				if v:query( "xgui_svsettings" ) then
+					xgui.sendData( v, {[1]="banreasons"} )
+				end
+			end
+			xgui.saveBanReason()
+		end
+	end
+
+	function xgui.removeBanReason( ply, args )
+		if ply:query( "xgui_svsettings" ) then
+			for a, b in ipairs( ulx.common_kick_reasons ) do
+				if b == args[1] then
+					table.remove( ulx.common_kick_reasons, a )
+					for _, v in ipairs( player.GetAll() ) do
+						if v:query( "xgui_svsettings" ) then
+							xgui.sendData( v, {[1]="banreasons"} )
+						end
+					end
+					xgui.saveBanReason()
+					return nil
+				end
+			end
+		end
+	end
+
+	function xgui.saveBanReason()
+		local orig_file = file.Read( "ulx/banreasons.txt" )
+		local comment = xgui.getCommentHeader( orig_file )
+
+		local new_file = comment
+
+		for i, banReason in ipairs( ulx.common_kick_reasons ) do
+			new_file = new_file .. banReason .. "\n"
+		end
+		
+		file.Write( "ulx/banreasons.txt", new_file )
+	end	
+	
 	function xgui.saveAdverts()
 		local orig_file = file.Read( "ulx/adverts.txt" )
 		local comment = xgui.getCommentHeader( orig_file )
@@ -732,7 +783,7 @@ function xgui.init()
 	end
 	
 	function xgui.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-		if cl_cvar == "ulx_cl_votemapMapmode" then
+		if cl_cvar == "ulx_cl_votemapmapmode" then
 			xgui.saveVotemaps( tonumber( new_val ) )
 		end
 	end

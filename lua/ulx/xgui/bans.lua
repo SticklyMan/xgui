@@ -33,7 +33,7 @@ xlib.makebutton{ x=5, y=345, w=130, label="Add Ban...", parent=xgui_bans }.DoCli
 		menu:AddOption( v:Nick(), function() xgui.ShowBanWindow( v:Nick(), v:SteamID(), xgui_bans.freezeban:GetChecked() ) end )
 	end
 	menu:AddSpacer()
-	menu:AddOption( "Ban by STEAMID...", function() xgui.ShowBanWindow() end )
+	if LocalPlayer():query("ulx banid") then menu:AddOption( "Ban by STEAMID...", function() xgui.ShowBanWindow() end ) end
 	menu:Open()
 end
 xlib.makebutton{ x=455, y=345, w=130, label="View Source Bans...", parent=xgui_bans }.DoClick = function()
@@ -153,7 +153,7 @@ function xgui_bans.ShowBanDetailsWindow( ID )
 	local timeleft = xlib.makelabel{ x=90, y=130, label=( tonumber( xgui.data.bans[ID].unban ) == 0 and "N/A" or xgui.ConvertTime( xgui.data.bans[ID].unban - os.time() ) ), parent=xgui_detailswindow }
 	if xgui.data.bans[ID].admin then xlib.makelabel{ x=90, y=150, label=string.gsub( xgui.data.bans[ID].admin, "%(STEAM_%w:%w:%w*%)", "" ), parent=xgui_detailswindow } end
 	if xgui.data.bans[ID].admin then xlib.makelabel{ x=90, y=165, label=string.match( xgui.data.bans[ID].admin, "%(STEAM_%w:%w:%w*%)" ), parent=xgui_detailswindow } end
-	xlib.makelabel{ x=90, y=185, w=190, label=xgui.data.bans[ID].reason, parent=xgui_detailswindow, tooltip=xgui.data.bans[ID].reason }
+	xlib.makelabel{ x=90, y=185, w=190, label=xgui.data.bans[ID].reason, parent=xgui_detailswindow, tooltip=xgui.data.bans[ID].reason == "" and xgui.data.bans[ID].reason or nil }
 	xlib.makelabel{ x=90, y=205, label=( ( xgui.data.bans[ID].modified_time == nil ) and "Never" or os.date( "%b %d, %Y - %I:%M:%S %p", xgui.data.bans[ID].modified_time ) ), parent=xgui_detailswindow }
 	if xgui.data.bans[ID].modified_admin then xlib.makelabel{ x=90, y=225, label=string.gsub( xgui.data.bans[ID].modified_admin, "%(STEAM_%w:%w:%w*%)", "" ), parent=xgui_detailswindow } end
 	if xgui.data.bans[ID].modified_admin then xlib.makelabel{ x=90, y=240, label=string.match( xgui.data.bans[ID].modified_admin, "%(STEAM_%w:%w:%w*%)" ), parent=xgui_detailswindow } end
@@ -183,7 +183,7 @@ function xgui_bans.ShowBanDetailsWindow( ID )
 end
 
 function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
-	if LocalPlayer():query( "ulx ban" ) then
+	if LocalPlayer():query( "ulx ban" ) or LocalPlayer():query( "ulx banid" ) then
 		local xgui_banwindow = xlib.makeframe{ label="Ban Player", w=285, h=180, skin=xgui.settings.skin }
 		xlib.makelabel{ x=37, y=33, label="Name:", parent=xgui_banwindow }
 		xlib.makelabel{ x=23, y=58, label="SteamID:", parent=xgui_banwindow }
@@ -203,7 +203,7 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 		end
 		local steamID = xlib.maketextbox{ x=75, y=55, w=200, selectall=true, parent=xgui_banwindow }
 		name.steamIDbox = steamID --Make a pointer to the steamID textbox so it can change the value easily without referencing a global variable
-		if isUpdate then
+		if isUpdate or not LocalPlayer():query( "ulx banid" ) then
 			steamID:SetDisabled( true )
 		end
 		local reason = xlib.makemultichoice{ x=75, y=80, w=200, parent=xgui_banwindow, enableinput=true, selectall=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes }
@@ -254,13 +254,15 @@ function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate )
 				local isOnline = false
 				for k, v in ipairs( player.GetAll() ) do
 					if v:SteamID() == steamID:GetValue() then
-						isOnline = true
+						isOnline = v
 						break
 					end
 				end
-				RunConsoleCommand( "ulx", "banid", steamID:GetValue(), calctime, reason:GetValue() )
 				if not isOnline then
+					RunConsoleCommand( "ulx", "banid", steamID:GetValue(), calctime, reason:GetValue() )
 					RunConsoleCommand( "xgui", "updateBan", steamID:GetValue(), "", "", ( name:GetValue() ~= "" and name:GetValue() or nil ) )
+				else
+					RunConsoleCommand( "ulx", "ban", isOnline:Nick(), calctime, reason:GetValue() )
 				end
 				xgui_banwindow:Remove()
 			else

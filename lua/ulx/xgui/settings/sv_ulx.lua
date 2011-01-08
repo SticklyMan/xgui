@@ -299,9 +299,10 @@ table.insert( xgui.modules.svsetting, { name="ULX Adverts", panel=adverts, acces
 local plist = xlib.makepanellist{ w=285, h=327, parent=xgui.null }
 plist:AddItem( xlib.makelabel{ label="Command/Event Echo Settings" } )
 plist:AddItem( xlib.makecheckbox{ label="Echo players vote choices", repconvar="ulx_cl_voteEcho" } )
+plist:AddItem( xlib.makecheckbox{ label="Enable colored event echoes", repconvar="ulx_cl_logEchoColors" } )
 plist:AddItem( xlib.makemultichoice{ repconvar="ulx_cl_logEcho", isNumberConvar=true, choices={ "Do not echo admin commands", "Echo admin commands anonymously", "Echo commands and identify admin" } } )
 plist:AddItem( xlib.makemultichoice{ repconvar="ulx_cl_logSpawnsEcho", isNumberConvar=true, choices={ "Do not echo spawns", "Echo spawns to admins only", "Echo spawns to everyone" } } )
-table.insert( xgui.modules.svsetting, { name="ULX Command/Event Echos", panel=plist, access=nil } )
+table.insert( xgui.modules.svsetting, { name="ULX Command/Event Echoes", panel=plist, access=nil } )
 
 ------------------------General Settings-------------------------
 local plist = xlib.makepanellist{ w=285, h=327, parent=xgui.null }
@@ -348,7 +349,7 @@ function plist.motdURLText:UpdateConvarValue()
 end
 function plist.motdURLText:OnEnter() self:UpdateConvarValue() end
 function plist.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-	if cl_cvar == "ulx_cl_showMotd" then
+	if cl_cvar == "ulx_cl_showmotd" then
 		if tonumber( new_val ) == nil then --MOTD is enabled and set to a URL 
 			plist.motdEnabled:SetValue( 1 )
 			plist.motdURLEnabled:SetValue( 1 )
@@ -368,12 +369,12 @@ function plist.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
 		end
 	end
 end
+hook.Add( "ULibReplicatedCvarChanged", "XGUI_ulx_cl_showMotd", plist.ConVarUpdated )
 plist.afterOpened = function()
 	if plist.motdURLEnabled:GetDisabled() then
 		ULib.queueFunctionCall( plist.motdURLEnabled.SetDisabled, plist.motdURLEnabled, true ) --Since the DCheckBox doesn't properly show itself as Disabled on startup, we have to set it here.
 	end
 end
-hook.Add( "ULibReplicatedCvarChanged", "XGUI_ulx_cl_showMotd", plist.ConVarUpdated )
 plist:AddItem( plist.motdEnabled )
 plist:AddItem( plist.motdURLEnabled )
 plist:AddItem( plist.motdURLText )
@@ -381,10 +382,8 @@ plist:AddItem( xlib.makelabel{ label="\nWelcome Message:" } )
 plist:AddItem( xlib.maketextbox{ repconvar="ulx_cl_welcomemessage", selectall=true } )
 plist:AddItem( xlib.makelabel{ label="Allowed variables: %curmap%, %host%" } )
 table.insert( xgui.modules.svsetting, { name="ULX General Settings", panel=plist, access=nil } )
---Force the client to think the CVar has been updated, if it exists.
-local testval = GetConVar( "ulx_cl_showMotd" )
-if testval then plist.ConVarUpdated( nil, "ulx_cl_showMotd", nil, nil, testval:GetString() )
-else timer.Simple( 5, function() plist.ConVarUpdated( nil, "ulx_cl_showMotd", nil, nil, GetConVar( "ulx_cl_showMotd" ):GetString() ) end ) end
+xlib.checkRepCvarCreated( "ulx_cl_showMotd" )
+plist.ConVarUpdated( nil, "ulx_cl_showMotd", nil, nil, GetConVar( "ulx_cl_showMotd" ):GetString() )
 
 ------------------------------Gimps------------------------------
 local gimps = xlib.makepanel{ w=285, h=327, parent=xgui.null }
@@ -422,6 +421,42 @@ end
 table.insert( xgui.hook["gimps"], gimps.updateGimps )
 table.insert( xgui.modules.svsetting, { name="ULX Gimps", panel=gimps, access=nil } )
 
+------------------------Kick/Ban Reasons-------------------------
+local panel = xlib.makepanel{ w=285, h=327, parent=xgui.null }
+panel.textbox = xlib.maketextbox{ w=235, h=20, parent=panel, selectall=true }
+panel.textbox.OnEnter = function( self )
+	if self:GetValue() then
+		RunConsoleCommand( "xgui", "addBanReason", self:GetValue() )
+		self:SetText( "" )
+	end
+end
+panel.textbox.OnGetFocus = function( self )
+	panel.button:SetText( "Add" )
+	self:SelectAllText()
+	xgui.anchor:SetKeyboardInputEnabled( true )
+end
+panel.button = xlib.makebutton{ x=235, w=50, label="Add", parent=panel }
+panel.button.DoClick = function( self )
+	if self:GetValue() == "Add" then
+		panel.textbox:OnEnter()
+	elseif panel.list:GetSelectedLine() then
+		RunConsoleCommand( "xgui", "removeBanReason", panel.list:GetSelected()[1]:GetColumnText(1) )
+	end
+end
+panel.list = xlib.makelistview{ y=20, w=285, h=307, multiselect=false, headerheight=0, parent=panel }
+panel.list:AddColumn( "Kick/Ban Reasons" )
+panel.list.OnRowSelected = function()
+	panel.button:SetText( "Remove" )
+end
+panel.updateBanReasons = function()
+	panel.list:Clear()
+	for k, v in pairs( ulx.common_kick_reasons ) do
+		panel.list:AddLine( v )
+	end
+end
+table.insert( xgui.hook["banreasons"], panel.updateBanReasons )
+table.insert( xgui.modules.svsetting, { name="ULX Kick/Ban Reasons", panel=panel, access=nil } )
+
 --------------------------Log Settings---------------------------
 local plist = xlib.makepanellist{ w=285, h=327, parent=xgui.null }
 plist:AddItem( xlib.makelabel{ label="Logging Settings" } )
@@ -431,11 +466,11 @@ plist:AddItem( xlib.makecheckbox{ label="Log Player Events (Connects, Deaths, et
 plist:AddItem( xlib.makecheckbox{ label="Log Spawns (Props, Effects, Ragdolls, etc.)", repconvar="ulx_cl_logSpawns" } )
 plist:AddItem( xlib.makelabel{ label="Save log files to this directory:" } )
 local logdirbutton = xlib.makebutton{}
-xlib.checkRepCvarCreated( "ulx_cl_logDir" )
+xlib.checkRepCvarCreated( "ulx_cl_logdir" )
 logdirbutton:SetText( "data/" .. GetConVar( "ulx_cl_logDir" ):GetString() )
 
 function logdirbutton.ConVarUpdated( sv_cvar, cl_cvar, ply, old_val, new_val )
-	if cl_cvar == "ulx_cl_logDir" then
+	if cl_cvar == "ulx_cl_logdir" then
 		logdirbutton:SetText( "data/" .. new_val )
 	end
 end

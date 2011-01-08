@@ -359,11 +359,19 @@ groups.teamlist.OnRowSelected = function( self, LineID, Line )
 	end
 end
 
-xlib.makebutton{ x=5, y=160, w=80, label="Create New", parent=groups.pnlG3 }.DoClick = function()
+local function checkNewTeamExists( name, number )
 	for _, v in ipairs( xgui.data.teams ) do
-		if v.name == "New_Team" then return end
+		if v.name == name .. number then 
+			name, number = checkNewTeamExists( name, number == "" and 1 or number+1 )
+			break
+		end
 	end
-	RunConsoleCommand( "xgui", "createTeam", "New_Team", 255, 255, 255 )
+	return name, number
+end
+
+xlib.makebutton{ x=5, y=160, w=80, label="Create New", parent=groups.pnlG3 }.DoClick = function()
+	local teamname, number = checkNewTeamExists( "New_Team", "" )
+	RunConsoleCommand( "xgui", "createTeam", teamname..number, 255, 255, 255 )
 end
 groups.teamdelete = xlib.makebutton{ x=5, y=180, w=80, label="Delete", disabled=true, parent=groups.pnlG3 }
 groups.teamdelete.DoClick = function()
@@ -601,12 +609,18 @@ function groups.pnlG5:Close()
 		self:closeAnim()
 	end
 end
-groups.restrictArg = xlib.makecheckbox{ x=5, w=190, y=5, label="", textcolor=color_black, parent=groups.pnlG5 }
-groups.rArgList = xlib.makepanellist{ x=5, y=25, w=190, h=290, parent=groups.pnlG5 }
+groups.rArgList = xlib.makepanellist{ x=5, y=25, w=190, h=325, parent=groups.pnlG5 }
+groups.restrictArg = xlib.makecat{ x=5, y=5, w=190, checkbox=true, contents=groups.rArgList, expanded=false, parent=groups.pnlG5 }
+local tempfunc = groups.restrictArg.PerformLayout
+groups.restrictArg.PerformLayout = function( self )
+	tempfunc( self )
+	groups.restrictArg:SetBGColor( Color( 100,100,100 ) )
+end
+
 
 function groups.populateRestrictionArgs( cmd, accessStr )
 	groups.rArgList:Clear()
-	groups.restrictArg:SetText( "Restrict " .. cmd )
+	groups.restrictArg.Header:SetText( "Restrict " .. cmd )
 	groups.restrictArg:SizeToContents()
 	
 	if ULib.cmds.translatedCmds[cmd].args[2].type == ULib.cmds.PlayerArg or
@@ -617,23 +631,24 @@ function groups.populateRestrictionArgs( cmd, accessStr )
 	for i, arg in ipairs( ULib.cmds.translatedCmds[cmd].args ) do
 		--if not arg.type.invisible and not arg.invisible then
 		if not arg.type.invisible then
-			local outPanel = xlib.makepanel{}
+			local outCat
 			if arg.type == ULib.cmds.PlayerArg or arg.type == ULib.cmds.PlayersArg then
-				outPanel:SetHeight( 50 )
-				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "player(s)"), parent=outPanel }
-				xlib.maketextbox{ x=25, y=25, w=125, parent=outPanel }
+				local outPanel = xlib.makepanel{ h=30 }
+				xlib.maketextbox{ x=5, y=5, w=125, parent=outPanel }
+				outCat = xlib.makecat{ label="Restrict " .. (arg.hint or "player(s)"), w=180, checkbox=true, expanded=false, contents=outPanel }
 			elseif arg.type == ULib.cmds.NumArg then
-				outPanel:SetHeight( 60 )
-				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "number value"), parent=outPanel }
+				local outPanel = xlib.makepanel{ h=40 }
+				outCat = xlib.makecat{ label="Restrict " .. (arg.hint or "number value"), w=180, checkbox=true, expanded=false, contents=outPanel }
 			elseif arg.type == ULib.cmds.BoolArg then
-				outPanel:SetHeight( 50 )
-				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "bool value"), parent=outPanel }
-				xlib.makecheckbox{ x=15, y=25, label="Must be 1", parent=outPanel }
+				local outPanel = xlib.makepanel{ h=25 }
+				xlib.makecheckbox{ x=5, y=5, label="Must be true (or 1)", parent=outPanel }
+				outCat = xlib.makecat{ label="Restrict " .. (arg.hint or "bool value"), w=180, checkbox=true, expanded=false, contents=outPanel }
 			elseif arg.type == ULib.cmds.StringArg then
-				outPanel:SetHeight( 100 )
-				xlib.makecheckbox{ x=5, y=5, label="Restrict " .. (arg.hint or "string value") .. " (whitelist)", parent=outPanel }
+				local outPanel = xlib.makepanel{ h=80 }
+				outCat = xlib.makecat{ label="Restrict " .. (arg.hint or "string value"), w=180, checkbox=true, expanded=false, contents=outPanel }
+				xlib.makelabel{ x=5, y=5, label="Whitelist Only", parent=outPanel }
 			end
-			groups.rArgList:AddItem( outPanel )
+			groups.rArgList:AddItem( outCat )
 		end
 	end
 end
